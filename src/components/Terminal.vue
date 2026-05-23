@@ -3,16 +3,12 @@ import { ref } from "vue";
 import { Terminal as WTerm, type WTerm as WTermInstance } from "@wterm/vue";
 import "@wterm/vue/css";
 
-const props = defineProps<{ token: string }>();
-
 const termRef = ref<InstanceType<typeof WTerm> | null>(null);
 const wsRef = ref<WebSocket | null>(null);
 
 function onReady(wt: WTermInstance) {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
-  const ws = new WebSocket(
-    `${proto}//${location.host}/ws?token=${props.token}`
-  );
+  const ws = new WebSocket(`${proto}//${location.host}/ws`);
   wsRef.value = ws;
 
   ws.onopen = () => {
@@ -24,7 +20,7 @@ function onReady(wt: WTermInstance) {
   };
 
   ws.onclose = () => {
-    termRef.value?.write("\r\n\x1b[90m[session ended — restart server for a new token]\x1b[0m\r\n");
+    termRef.value?.write("\r\n\x1b[90m[session ended — reload to reconnect]\x1b[0m\r\n");
     wsRef.value = null;
   };
 }

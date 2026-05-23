@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { ref } from "vue";
+import Login from "./components/Login.vue";
 import Terminal from "./components/Terminal.vue";
 
-const urlToken = new URLSearchParams(window.location.search).get("token");
-if (urlToken) localStorage.setItem("terminal-token", urlToken);
-const token = urlToken ?? localStorage.getItem("terminal-token") ?? "";
+const authenticated = ref(false);
 </script>
 
 <template>
-  <Terminal :token="token" style="width: 100%; height: 100vh;" />
+  <Login v-if="!authenticated" @authenticated="authenticated = true" />
+  <Terminal v-else style="width: 100%; height: 100vh;" />
 </template>
