@@ -8,13 +8,37 @@ import { activateSession } from "./session.js";
 import { isInviteValid, consumeInvite } from "./invite.js";
 import type { LanManager } from "../settings/lan.js";
 import { authBodySchema } from "../../schemas/api.js";
+import { isLocalRequest } from "./local.js";
+
+function setSessionCookie(c: Parameters<typeof setCookie>[0], sid: string) {
+  setCookie(c, "sid", sid, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+    maxAge: 3600,
+    path: "/",
+  });
+}
 
 export function createAuthRouter(
   token: SessionToken,
   session: Session,
   lan: LanManager,
 ) {
-  return new Hono().post("/", zValidator("json", authBodySchema), async (c) => {
+  return new Hono()
+    .post("/local", async (c) => {
+      if (!isLocalRequest(c)) {
+        return c.json({ error: "Forbidden" }, 403);
+      }
+
+      if (!session.active) {
+        activateSession(session);
+      }
+
+      setSessionCookie(c, session.sid);
+      return c.json({ ok: true as const });
+    })
+    .post("/", zValidator("json", authBodySchema), async (c) => {
     const { token: inputToken } = c.req.valid("json");
     const input = inputToken ?? "";
 
@@ -25,13 +49,7 @@ export function createAuthRouter(
       }
       consumeInvite(invite!);
       activateSession(session);
-      setCookie(c, "sid", session.sid, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "Strict",
-        maxAge: 3600,
-        path: "/",
-      });
+      setSessionCookie(c, session.sid);
       return c.json({ ok: true });
     }
 
@@ -56,15 +74,7 @@ export function createAuthRouter(
     }
 
     activateSession(session);
-
-    setCookie(c, "sid", session.sid, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Strict",
-      maxAge: 3600,
-      path: "/",
-    });
-
+    setSessionCookie(c, session.sid);
     return c.json({ ok: true as const });
   });
 }

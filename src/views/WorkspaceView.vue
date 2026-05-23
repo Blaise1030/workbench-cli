@@ -1,0 +1,64 @@
+<script setup lang="ts">
+import { computed, watch } from "vue";
+import { useRoute, useRouter, RouterLink } from "vue-router";
+import { SettingsIcon } from "@lucide/vue";
+import WorkspaceLayout from "@/layouts/WorkspaceLayout.vue";
+import TerminalWorkspace from "@/components/TerminalWorkspace.vue";
+import WorkspaceSidebarToggle from "@/components/WorkspaceSidebarToggle.vue";
+import ThemeToggle from "@/components/ThemeToggle.vue";
+import { Button } from "@/components/ui/button";
+import { projectsQueryOptions } from "@/api/workspace";
+import { useQuery } from "@tanstack/vue-query";
+
+const route = useRoute();
+const router = useRouter();
+
+const worktreeId = computed(() => route.params.worktreeId as string | undefined);
+
+const { data: projects } = useQuery(projectsQueryOptions());
+
+watch(
+  [projects, worktreeId],
+  async ([list, id]) => {
+    if (id || route.name !== "home") return;
+    if (!list?.length) return;
+    const last = localStorage.getItem("lastWorktreeId");
+    if (last) {
+      await router.replace({ name: "workspace", params: { worktreeId: last } });
+    }
+  },
+  { immediate: true },
+);
+</script>
+
+<template>
+  <WorkspaceLayout :active-worktree-id="worktreeId">
+    <TerminalWorkspace
+      v-if="worktreeId"
+      :worktree-id="worktreeId"
+      class="flex min-h-0 flex-1 flex-col"
+    >
+      <template #toolbar-end>
+        <ThemeToggle />
+        <Button variant="ghost" size="icon-xs" as-child>
+          <RouterLink to="/settings" aria-label="Settings">
+            <SettingsIcon />
+            <span class="sr-only">Settings</span>
+          </RouterLink>
+        </Button>
+      </template>
+    </TerminalWorkspace>
+
+    <div v-else class="flex h-full min-h-0 flex-1 flex-col">
+      <header class="flex h-8 shrink-0 items-stretch border-b bg-muted">
+        <WorkspaceSidebarToggle />
+      </header>
+      <div
+        class="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground"
+      >
+        <p class="text-sm">Select a worktree from the sidebar</p>
+        <p class="text-xs">or add a project to begin</p>
+      </div>
+    </div>
+  </WorkspaceLayout>
+</template>

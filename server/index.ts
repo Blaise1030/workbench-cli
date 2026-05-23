@@ -12,6 +12,8 @@ import { ensureTLS } from "./tls.js";
 import type { TLSCredentials } from "./tls.js";
 import { LanManager } from "./modules/settings/lan.js";
 import { getLanIP } from "./modules/settings/network.js";
+import { createDatabase } from "./db/index.js";
+import type { AppDatabase } from "./db/index.js";
 import { attachWebSocketUpgrade } from "./modules/terminal/handler.js";
 
 export { getLanIP } from "./modules/settings/network.js";
@@ -20,6 +22,7 @@ interface ServerRuntime {
   httpServer: Server;
   wss: WebSocketServer;
   session: Session;
+  database: AppDatabase;
 }
 
 let runtime: ServerRuntime | null = null;
@@ -38,6 +41,7 @@ async function listen(
   port: number,
   hostname: string,
   session: Session,
+  database: AppDatabase,
 ): Promise<void> {
   await closeRuntime();
 
@@ -60,7 +64,7 @@ async function listen(
 
   // Register PTY upgrade handler BEFORE Vite attaches its HMR listener,
   // so our /ws handler runs first and non-/ws paths fall through to Vite.
-  attachWebSocketUpgrade(httpServer, wss, session);
+  attachWebSocketUpgrade(httpServer, wss, session, database);
 
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
@@ -72,12 +76,13 @@ async function listen(
   }
 
   (httpServer as any).listen(port, hostname);
-  runtime = { httpServer, wss, session };
+  runtime = { httpServer, wss, session, database };
 }
 
 export async function startServer(port = 3000): Promise<void> {
   const sessionToken = createToken();
   const session = createSession();
+  const database = createDatabase();
   const lan = new LanManager(port);
 
   async function onLanToggle(enabled: boolean): Promise<void> {
@@ -88,19 +93,19 @@ export async function startServer(port = 3000): Promise<void> {
       }
       lan.enable(ip);
       const tls = await ensureTLS(...lan.getTlsHosts());
-      const app = createApp(sessionToken, session, lan, onLanToggle);
-      await listen(app, tls, port, lan.getHostname(), session);
+      const app = createApp(sessionToken, session, lan, onLanToggle, database);
+      await listen(app, tls, port, lan.getHostname(), session, database);
     } else {
       lan.disable();
       const tls = await ensureTLS("localhost");
-      const app = createApp(sessionToken, session, lan, onLanToggle);
-      await listen(app, tls, port, lan.getHostname(), session);
+      const app = createApp(sessionToken, session, lan, onLanToggle, database);
+      await listen(app, tls, port, lan.getHostname(), session, database);
     }
   }
 
   const tls = await ensureTLS("localhost");
-  const app = createApp(sessionToken, session, lan, onLanToggle);
-  await listen(app, tls, port, lan.getHostname(), session);
+  const app = createApp(sessionToken, session, lan, onLanToggle, database);
+  await listen(app, tls, port, lan.getHostname(), session, database);
 
   console.log(`\n  Access token: ${sessionToken.value}`);
   console.log(`  Open: https://localhost:${port}/\n`);

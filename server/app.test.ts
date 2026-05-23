@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { createApp } from "./app.js";
+import { createDatabase } from "./db/index.js";
 import { createToken } from "./modules/auth/token.js";
 import { createSession, activateSession } from "./modules/auth/session.js";
 import { LanManager } from "./modules/settings/lan.js";
@@ -8,9 +9,42 @@ function makeApp() {
   const token = createToken();
   const session = createSession();
   const lan = new LanManager(3000);
-  const app = createApp(token, session, lan, async () => {});
-  return { token, session, lan, app };
+  const database = createDatabase(":memory:");
+  const app = createApp(token, session, lan, async () => {}, database);
+  return { token, session, lan, app, database };
 }
+
+function loopbackEnv() {
+  return {
+    incoming: {
+      socket: {
+        remoteAddress: "127.0.0.1",
+        remotePort: 12345,
+        remoteFamily: "IPv4",
+      },
+    },
+  };
+}
+
+describe("POST /auth/local", () => {
+  it("returns 403 for non-loopback clients", async () => {
+    const { app } = makeApp();
+    const res = await app.request("/api/auth/local", { method: "POST" });
+    expect(res.status).toBe(403);
+  });
+
+  it("activates session and sets cookie for loopback", async () => {
+    const { session, app } = makeApp();
+    const res = await app.request(
+      "/api/auth/local",
+      { method: "POST" },
+      loopbackEnv(),
+    );
+    expect(res.status).toBe(200);
+    expect(session.active).toBe(true);
+    expect(res.headers.get("set-cookie")).toContain("sid=");
+  });
+});
 
 describe("POST /auth", () => {
   it("returns 401 for wrong token", async () => {
@@ -110,5 +144,17 @@ describe("GET /api/settings/lan", () => {
     const body = await res.json();
     expect(body.enabled).toBe(true);
     expect(body.lanUrl).toMatch(/\?invite=/);
+  });
+});
+
+describe("POST /projects/pick-folder", () => {
+  it("returns 403 for non-loopback clients", async () => {
+    const { session, app } = makeApp();
+    activateSession(session);
+    const res = await app.request("/api/projects/pick-folder", {
+      method: "POST",
+      headers: { cookie: `sid=${session.sid}` },
+    });
+    expect(res.status).toBe(403);
   });
 });

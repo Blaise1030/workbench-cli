@@ -36,3 +36,8 @@
   background: var(--ring);
   color: var(--background);
 }
+
+.terminal-drop-zone--active .wterm.theme-app {
+  outline: 2px dashed color-mix(in oklch, var(--ring) 70%, transparent);
+  outline-offset: -2px;
+}

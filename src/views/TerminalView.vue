@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 import { SettingsIcon } from "@lucide/vue";
-import Terminal from "@/components/Terminal.vue";
+import TerminalWorkspace from "@/components/TerminalWorkspace.vue";
 import ThemeToggle from "@/components/ThemeToggle.vue";
 import { Button } from "@/components/ui/button";
 </script>
 
 <template>
   <div class="flex h-screen flex-col">
-    <header class="flex shrink-0 items-center justify-between px-3 py-2">
-      <span class="text-sm text-muted-foreground">lan-terminal</span>
-      <div class="flex items-center gap-0.5">
+    <TerminalWorkspace class="min-h-0 flex-1">
+      <template #toolbar-end>
         <ThemeToggle />
         <Button variant="ghost" size="icon-xs" as-child>
           <RouterLink to="/settings" aria-label="Settings">
@@ -18,8 +17,7 @@ import { Button } from "@/components/ui/button";
             <span class="sr-only">Settings</span>
           </RouterLink>
         </Button>
-      </div>
-    </header>
-    <Terminal class="min-h-0 flex-1 radius-none" />
+      </template>
+    </TerminalWorkspace>
   </div>
 </template>
