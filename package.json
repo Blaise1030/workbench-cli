@@ -2,11 +2,15 @@
   "name": "lan-terminal",
   "version": "0.1.0",
   "type": "module",
+  "bin": {
+    "lan-terminal": "dist/cli/index.js"
+  },
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx watch server/index.ts\"",
-    "build": "vite build",
-    "start": "NODE_ENV=production tsx server/index.ts",
-    "test": "vitest run"
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "start": "node dist/cli/index.js",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
