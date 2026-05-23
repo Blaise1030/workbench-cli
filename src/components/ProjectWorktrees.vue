@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GitBranchIcon, PlusIcon } from "@lucide/vue";
+import { GitBranchIcon } from "@lucide/vue";
 import {
   SidebarMenuSub,
   SidebarMenuSubButton,
@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import { worktreesQueryOptions, type Worktree } from "@/api/workspace";
 import { useQuery } from "@tanstack/vue-query";
+import NewWorktreeDialog from "@/components/NewWorktreeDialog.vue";
 
 const props = defineProps<{
   projectId: string;
@@ -15,7 +16,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [worktree: Worktree];
-  newWorktree: [];
 }>();
 
 const { data: worktrees } = useQuery(worktreesQueryOptions(() => props.projectId));
@@ -46,16 +46,7 @@ function label(w: Worktree) {
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton
-        as="button"
-        type="button"
-        size="sm"
-        class="text-muted-foreground"
-        @click="emit('newWorktree')"
-      >
-        <PlusIcon />
-        <span>New worktree</span>
-      </SidebarMenuSubButton>
+      <NewWorktreeDialog :project-id="projectId" />
     </SidebarMenuSubItem>
   </SidebarMenuSub>
 </template>

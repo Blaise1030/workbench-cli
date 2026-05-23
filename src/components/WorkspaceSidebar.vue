@@ -3,7 +3,6 @@ import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ChevronRightIcon, FolderGit2Icon, FolderOpenIcon } from "@lucide/vue";
 import AddProjectDialog from "@/components/AddProjectDialog.vue";
-import NewWorktreeDialog from "@/components/NewWorktreeDialog.vue";
 import ProjectWorktrees from "@/components/ProjectWorktrees.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,8 +31,6 @@ defineProps<{
 const router = useRouter();
 const addProjectOpen = ref(false);
 const addProjectError = ref("");
-const newWorktreeProjectId = ref<string | null>(null);
-const newWorktreeOpen = ref(false);
 const expandedProjects = ref<Record<string, boolean>>({});
 
 const { data: projects } = useQuery(projectsQueryOptions());
@@ -54,11 +51,6 @@ watch(
 
 function setExpanded(projectId: string, open: boolean) {
   expandedProjects.value = { ...expandedProjects.value, [projectId]: open };
-}
-
-function openNewWorktree(projectId: string) {
-  newWorktreeProjectId.value = projectId;
-  newWorktreeOpen.value = true;
 }
 
 function selectWorktree(worktree: Worktree) {
@@ -139,7 +131,6 @@ async function addProject() {
                 :project-id="project.id"
                 :active-worktree-id="activeWorktreeId"
                 @select="selectWorktree"
-                @new-worktree="openNewWorktree(project.id)"
               />
             </CollapsibleContent>
           </Collapsible>
@@ -149,9 +140,4 @@ async function addProject() {
   </div>
 
   <AddProjectDialog v-model:open="addProjectOpen" />
-  <NewWorktreeDialog
-    v-if="newWorktreeProjectId"
-    v-model:open="newWorktreeOpen"
-    :project-id="newWorktreeProjectId"
-  />
 </template>

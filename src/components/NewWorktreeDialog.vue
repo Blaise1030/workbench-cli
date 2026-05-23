@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { PlusIcon } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  SidebarMenuSubButton,
+} from "@/components/ui/sidebar";
+import BranchCombobox from "@/components/BranchCombobox.vue";
 import {
   branchesQueryOptions,
   useCreateWorktreeMutation,
@@ -28,12 +24,9 @@ const props = defineProps<{
   projectId: string;
 }>();
 
-const open = defineModel<boolean>("open", { default: false });
-
-const mode = ref<"existing" | "new">("new");
+const open = ref(false);
 const baseBranch = ref("");
 const branch = ref("");
-const path = ref("");
 const error = ref("");
 
 const router = useRouter();
@@ -56,8 +49,6 @@ watch(open, (isOpen) => {
   if (!isOpen) {
     error.value = "";
     branch.value = "";
-    path.value = "";
-    mode.value = "new";
     return;
   }
   if (branchData.value && !baseBranch.value) {
@@ -74,7 +65,7 @@ async function submit() {
     error.value = "Enter a branch name";
     return;
   }
-  if (mode.value === "new" && !baseBranch.value) {
+  if (!baseBranch.value) {
     error.value = "Choose a branch to create from";
     return;
   }
@@ -82,9 +73,8 @@ async function submit() {
   try {
     const worktree = await createWorktree.mutateAsync({
       branch: branchName,
-      baseBranch: mode.value === "new" ? baseBranch.value : undefined,
-      path: path.value.trim() || undefined,
-      isNewBranch: mode.value === "new",
+      baseBranch: baseBranch.value,
+      isNewBranch: true,
     });
     open.value = false;
     localStorage.setItem("lastWorktreeId", worktree.id);
@@ -96,81 +86,38 @@ async function submit() {
 </script>
 
 <template>
-  <Dialog v-model:open="open">
-    <DialogContent class="sm:max-w-md">
-      <DialogHeader>
-        <DialogTitle>New worktree</DialogTitle>
-      </DialogHeader>
+  <Popover v-model:open="open">
+    <PopoverTrigger as-child>
+      <SidebarMenuSubButton as="button" type="button" size="sm" class="text-muted-foreground">
+        <PlusIcon />
+        <span>New worktree</span>
+      </SidebarMenuSubButton>
+    </PopoverTrigger>
+    <PopoverContent class="w-72" align="start" side="right">
       <form class="grid gap-4" @submit.prevent="submit">
-        <div class="flex gap-2">
-          <Button
-            type="button"
-            size="sm"
-            :variant="mode === 'new' ? 'default' : 'outline'"
-            @click="mode = 'new'"
-          >
-            New branch
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            :variant="mode === 'existing' ? 'default' : 'outline'"
-            @click="mode = 'existing'"
-          >
-            Existing branch
-          </Button>
-        </div>
+        <p class="text-sm font-medium">New worktree</p>
 
-        <div v-if="mode === 'new'" class="grid gap-2">
+        <div class="grid gap-2">
           <Label>Create from branch</Label>
-          <Select v-model="baseBranch">
-            <SelectTrigger>
-              <SelectValue placeholder="Select base branch" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="b in branches" :key="b" :value="b">
-                {{ b }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <BranchCombobox v-model="baseBranch" :branches="branches" placeholder="Select base branch" />
         </div>
 
         <div class="grid gap-2">
-          <Label>{{ mode === "new" ? "New branch name" : "Branch" }}</Label>
-          <Select v-if="mode === 'existing'" v-model="branch">
-            <SelectTrigger>
-              <SelectValue placeholder="Select branch" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="b in branches" :key="b" :value="b">
-                {{ b }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Input v-else v-model="branch" placeholder="feat-my-change" autocomplete="off" />
-        </div>
-
-        <div class="grid gap-2">
-          <Label for="worktree-path">Path (optional)</Label>
-          <Input
-            id="worktree-path"
-            v-model="path"
-            placeholder="Auto-generated next to repo"
-            autocomplete="off"
-          />
+          <Label>New branch name</Label>
+          <Input v-model="branch" placeholder="feat-my-change" autocomplete="off" />
         </div>
 
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" @click="open = false">
+        <div class="flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" @click="open = false">
             Cancel
           </Button>
-          <Button type="submit" :disabled="createWorktree.isPending.value">
-            Create worktree
+          <Button type="submit" size="sm" :disabled="createWorktree.isPending.value">
+            Create
           </Button>
-        </DialogFooter>
+        </div>
       </form>
-    </DialogContent>
-  </Dialog>
+    </PopoverContent>
+  </Popover>
 </template>
