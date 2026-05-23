@@ -32,7 +32,8 @@ if (!isDev) {
 const server = serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" });
 
 const lanIP = getLanIP();
-const openURL = `http://${lanIP}:${PORT}/?token=${sessionToken.value}`;
+const frontendPort = isDev ? (parseInt(process.env.VITE_PORT ?? "5173", 10)) : PORT;
+const openURL = `http://${lanIP}:${frontendPort}/?token=${sessionToken.value}`;
 console.log(`\n  Access token: ${sessionToken.value}`);
 console.log(`  Open: ${openURL}\n`);
 
