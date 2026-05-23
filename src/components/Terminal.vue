@@ -50,6 +50,6 @@ function onResize(cols: number, rows: number) {
     @ready="onReady"
     @data="onData"
     @resize="onResize"
-    style="width: 100%; height: 100%;"
+    style="width: 100%; height: 100%; max-height: 100dvh;"
   />
 </template>
