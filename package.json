@@ -20,6 +20,7 @@
     "@hugeicons/core-free-icons": "^4.1.4",
     "@hugeicons/vue": "^1.0.5",
     "@lucide/vue": "^1.16.0",
+    "@pierre/diffs": "^1.2.2",
     "@tanstack/vue-query": "^5.100.13",
     "@tanstack/vue-table": "^8.21.3",
     "@vee-validate/zod": "^4.15.1",

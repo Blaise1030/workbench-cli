@@ -34,6 +34,26 @@ export interface TerminalTab {
   createdAt: string;
 }
 
+export type GitFileStatusCode =
+  | "added"
+  | "modified"
+  | "deleted"
+  | "renamed"
+  | "copied"
+  | "untracked"
+  | "unmerged"
+  | "ignored"
+  | "unknown";
+
+export interface GitStatusEntry {
+  path: string;
+  previousPath?: string;
+  staged: GitFileStatusCode | null;
+  unstaged: GitFileStatusCode | null;
+}
+
+export type GitDiffScope = "all" | "staged" | "unstaged";
+
 export const workspaceKeys = {
   all: ["workspace"] as const,
   projects: () => [...workspaceKeys.all, "projects"] as const,
@@ -45,6 +65,10 @@ export const workspaceKeys = {
     [...workspaceKeys.all, "worktree", worktreeId] as const,
   terminals: (worktreeId: string) =>
     [...workspaceKeys.all, "terminals", worktreeId] as const,
+  gitStatus: (worktreeId: string) =>
+    [...workspaceKeys.all, "git-status", worktreeId] as const,
+  gitDiff: (worktreeId: string, scope: GitDiffScope, path: string | null) =>
+    [...workspaceKeys.all, "git-diff", worktreeId, scope, path] as const,
 };
 
 export function projectsQueryOptions() {
@@ -121,6 +145,51 @@ export function terminalsQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
 
 export function useTerminalsQuery(worktreeId: MaybeRefOrGetter<string>) {
   return useQuery(terminalsQueryOptions(worktreeId));
+}
+
+export function gitStatusQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
+  return queryOptions({
+    queryKey: computed(() => workspaceKeys.gitStatus(toValue(worktreeId))),
+    queryFn: async () => {
+      const id = toValue(worktreeId);
+      const res = await apiClient.worktrees[":id"].git.status.$get({
+        param: { id },
+      });
+      return ensureOk<{ branch: string | null; files: GitStatusEntry[] }>(res);
+    },
+    enabled: computed(() => Boolean(toValue(worktreeId))),
+    refetchInterval: 5_000,
+  });
+}
+
+export function gitDiffQueryOptions(
+  worktreeId: MaybeRefOrGetter<string>,
+  scope: MaybeRefOrGetter<GitDiffScope>,
+  path: MaybeRefOrGetter<string | null>,
+) {
+  return queryOptions({
+    queryKey: computed(() =>
+      workspaceKeys.gitDiff(
+        toValue(worktreeId),
+        toValue(scope),
+        toValue(path),
+      ),
+    ),
+    queryFn: async () => {
+      const id = toValue(worktreeId);
+      const res = await apiClient.worktrees[":id"].git.diff.$get({
+        param: { id },
+        query: {
+          scope: toValue(scope),
+          ...(toValue(path) ? { path: toValue(path)! } : {}),
+        },
+      });
+      return ensureOk<{ patch: string; scope: GitDiffScope; path: string | null }>(
+        res,
+      );
+    },
+    enabled: computed(() => Boolean(toValue(worktreeId))),
+  });
 }
 
 export function useRegisterProjectMutation() {

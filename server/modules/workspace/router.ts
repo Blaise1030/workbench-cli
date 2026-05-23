@@ -33,12 +33,28 @@ import {
   updateTerminal,
 } from "./terminals.js";
 import { pickFolder } from "./pick-folder.js";
+import {
+  getGitDiffForWorktree,
+  getGitStatusForWorktree,
+  GitPanelError,
+} from "./git.js";
+import type { GitDiffScope } from "../git/diff.js";
 
 function handleWorkspaceError(err: unknown) {
-  if (err instanceof ProjectError || err instanceof WorktreeError || err instanceof TerminalError) {
+  if (
+    err instanceof ProjectError ||
+    err instanceof WorktreeError ||
+    err instanceof TerminalError ||
+    err instanceof GitPanelError
+  ) {
     return { message: err.message, status: err.status as 400 | 404 };
   }
   throw err;
+}
+
+function parseDiffScope(value: string | undefined): GitDiffScope {
+  if (value === "staged" || value === "unstaged") return value;
+  return "all";
 }
 
 export function createWorkspaceRouter(session: Session, { db }: AppDatabase) {
@@ -128,6 +144,33 @@ export function createWorkspaceRouter(session: Session, { db }: AppDatabase) {
       const worktree = await getWorktree(db, c.req.param("id"));
       if (!worktree) return c.json({ error: "Worktree not found" }, 404);
       return c.json({ worktree });
+    })
+    .get("/worktrees/:id/git/status", async (c) => {
+      try {
+        const status = await getGitStatusForWorktree(db, c.req.param("id"));
+        return c.json(status);
+      } catch (err) {
+        const e = handleWorkspaceError(err);
+        if (e) return c.json({ error: e.message }, e.status);
+        throw err;
+      }
+    })
+    .get("/worktrees/:id/git/diff", async (c) => {
+      try {
+        const scope = parseDiffScope(c.req.query("scope"));
+        const path = c.req.query("path");
+        const diff = await getGitDiffForWorktree(
+          db,
+          c.req.param("id"),
+          scope,
+          path || undefined,
+        );
+        return c.json(diff);
+      } catch (err) {
+        const e = handleWorkspaceError(err);
+        if (e) return c.json({ error: e.message }, e.status);
+        throw err;
+      }
     })
     .delete("/worktrees/:id", async (c) => {
       try {
