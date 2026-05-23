@@ -1,16 +1,22 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createApp } from "./app.js";
 import { createToken } from "./token.js";
-import { createSession } from "./session.js";
+import { createSession, activateSession } from "./session.js";
+import { LanManager } from "./lan.js";
+
+function makeApp() {
+  const token = createToken();
+  const session = createSession();
+  const lan = new LanManager(3000);
+  const app = createApp(token, session, lan, async () => {});
+  return { token, session, lan, app };
+}
 
 describe("POST /auth", () => {
   it("returns 401 for wrong token", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    const token = createToken();
-    const session = createSession();
-    const app = createApp(token, session);
+    const { app } = makeApp();
     const res = await app.request("/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -23,9 +29,7 @@ describe("POST /auth", () => {
   it("returns 401 with expiry message when token is expired", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    const token = createToken();
-    const session = createSession();
-    const app = createApp(token, session);
+    const { token, app } = makeApp();
     vi.setSystemTime(3_600_001);
     const res = await app.request("/auth", {
       method: "POST",
@@ -41,10 +45,8 @@ describe("POST /auth", () => {
   it("returns 409 when a session is already active", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    const token = createToken();
-    const session = createSession();
-    session.active = true; // simulate existing active session
-    const app = createApp(token, session);
+    const { token, session, app } = makeApp();
+    session.active = true;
     const res = await app.request("/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -57,9 +59,7 @@ describe("POST /auth", () => {
   it("returns 200 and sets sid cookie for valid token and no active session", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    const token = createToken();
-    const session = createSession();
-    const app = createApp(token, session);
+    const { token, session, app } = makeApp();
     const res = await app.request("/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -72,5 +72,43 @@ describe("POST /auth", () => {
     expect(setCookie).toContain("SameSite=Strict");
     expect(session.active).toBe(true);
     vi.useRealTimers();
+  });
+
+  it("authenticates with valid invite token", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    const { session, lan, app } = makeApp();
+    lan.enable("192.168.1.10");
+    const invite = lan.getInvite()!.value;
+    const res = await app.request("/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: invite }),
+    });
+    expect(res.status).toBe(200);
+    expect(lan.getInvite()!.used).toBe(true);
+    expect(session.active).toBe(true);
+    vi.useRealTimers();
+  });
+});
+
+describe("GET /api/settings/lan", () => {
+  it("requires session", async () => {
+    const { app } = makeApp();
+    const res = await app.request("/api/settings/lan");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns lan state when authenticated", async () => {
+    const { session, lan, app } = makeApp();
+    activateSession(session);
+    lan.enable("192.168.1.10");
+    const res = await app.request("/api/settings/lan", {
+      headers: { cookie: `sid=${session.sid}` },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.enabled).toBe(true);
+    expect(body.lanUrl).toMatch(/\?invite=/);
   });
 });

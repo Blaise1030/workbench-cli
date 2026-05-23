@@ -50,7 +50,11 @@ function installMkcert(): void {
   }
 }
 
-export async function ensureTLS(lanIP: string): Promise<TLSCredentials> {
+export async function ensureTLS(...hosts: string[]): Promise<TLSCredentials> {
+  if (hosts.length === 0) {
+    throw new Error("ensureTLS requires at least one host");
+  }
+
   if (!isMkcertInstalled()) {
     installMkcert();
   }
@@ -61,7 +65,6 @@ export async function ensureTLS(lanIP: string): Promise<TLSCredentials> {
   const cacheDir = join(homedir(), ".lan-terminal", "certs");
   mkdirSync(cacheDir, { recursive: true });
 
-  const hosts = ["localhost", lanIP];
   const { certFile, keyFile } = parseCertPaths(cacheDir, ...hosts);
 
   if (!existsSync(certFile) || !existsSync(keyFile)) {

@@ -1,7 +1,7 @@
 # LAN Terminal — Localhost-First Binding & Settings Design Spec
 
 **Date:** 2026-05-23  
-**Status:** Draft (pending user review)
+**Status:** Approved
 
 ---
 
@@ -48,8 +48,9 @@ The existing **startup token** auth workflow is unchanged for manual login. Invi
 
 ### Navigation
 
-- View state in `App.vue`: `login` | `terminal` | `settings` (no vue-router in v1).
-- Gear icon in terminal header → Settings; back control returns to terminal.
+- **vue-router** routes: `/login` (public), `/` (terminal), `/settings`.
+- Auth guard: `beforeEach` calls `GET /api/settings/lan` with credentials; `401` → redirect to `/login` (preserves query, e.g. `?invite=`).
+- Gear icon in terminal header → `/settings`; back link returns to `/`.
 - Settings requires an authenticated session (same as terminal).
 
 ### Components
