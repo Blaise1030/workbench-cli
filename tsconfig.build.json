@@ -9,5 +9,6 @@
     "declaration": false,
     "lib": ["ESNext"]
   },
-  "include": ["server", "cli"]
+  "include": ["server", "cli"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"]
 }

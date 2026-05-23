@@ -27,7 +27,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist",
+    outDir: "dist/public",
   },
   optimizeDeps: {
     exclude: ["@wterm/dom", "@wterm/vue"],
