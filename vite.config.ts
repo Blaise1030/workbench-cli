@@ -14,9 +14,15 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
+      "/auth": {
+        target: "https://localhost:3001",
+        secure: false,
+        changeOrigin: true,
+      },
       "/ws": {
-        target: "ws://localhost:3001",
+        target: "wss://localhost:3001",
         ws: true,
+        secure: false,
       },
     },
   },

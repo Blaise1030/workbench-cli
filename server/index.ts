@@ -109,3 +109,11 @@ export function startServer(tls: TLSCredentials, port = 3000): void {
     wss.handleUpgrade(req, socket, head, (ws) => handlePTYConnection(ws));
   });
 }
+
+// Direct run (dev mode via tsx)
+if (process.argv[1] && process.argv[1].endsWith("index.ts")) {
+  import("./tls.js").then(({ ensureTLS }) => {
+    const port = parseInt(process.env.PORT ?? "3001", 10);
+    ensureTLS(getLanIP()).then((tls) => startServer(tls, port));
+  });
+}
