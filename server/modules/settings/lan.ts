@@ -1,12 +1,8 @@
-import { createInvite, type InviteToken } from "./invite.js";
+import { createInvite, type InviteToken } from "../auth/invite.js";
+import type { LanPublicState } from "../../schemas/api.js";
 
 export type BindMode = "localhost" | "lan";
-
-export interface LanPublicState {
-  enabled: boolean;
-  lanUrl?: string;
-  inviteExpiresAt?: number;
-}
+export type { LanPublicState };
 
 export class LanManager {
   mode: BindMode = "localhost";

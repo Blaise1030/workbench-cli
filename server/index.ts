@@ -1,26 +1,20 @@
 import { createServer } from "node:https";
-import type { Server } from "node:http";
-import { serve } from "@hono/node-server";
-import { WebSocketServer, WebSocket } from "ws";
-import * as pty from "node-pty";
+import type { Server, IncomingMessage, ServerResponse } from "node:http";
+import { getRequestListener } from "@hono/node-server";
+import { WebSocketServer } from "ws";
+import type { ViteDevServer } from "vite";
 import type { Hono } from "hono";
-import { createToken } from "./token.js";
-import { createSession, validateSession, deactivateSession } from "./session.js";
-import type { Session } from "./session.js";
+import { createToken } from "./modules/auth/token.js";
+import { createSession } from "./modules/auth/session.js";
+import type { Session } from "./modules/auth/session.js";
 import { createApp } from "./app.js";
-import { parseResize } from "./pty.js";
 import { ensureTLS } from "./tls.js";
 import type { TLSCredentials } from "./tls.js";
-import { LanManager } from "./lan.js";
-import { getLanIP } from "./network.js";
+import { LanManager } from "./modules/settings/lan.js";
+import { getLanIP } from "./modules/settings/network.js";
+import { attachWebSocketUpgrade } from "./modules/terminal/handler.js";
 
-export { getLanIP } from "./network.js";
-
-function parseSid(cookieHeader: string | undefined): string {
-  if (!cookieHeader) return "";
-  const match = cookieHeader.match(/(?:^|;\s*)sid=([^;]+)/);
-  return match?.[1] ?? "";
-}
+export { getLanIP } from "./modules/settings/network.js";
 
 interface ServerRuntime {
   httpServer: Server;
@@ -29,73 +23,6 @@ interface ServerRuntime {
 }
 
 let runtime: ServerRuntime | null = null;
-
-function attachWebSocketUpgrade(httpServer: Server, wss: WebSocketServer, session: Session): void {
-  httpServer.on("upgrade", (req, socket, head) => {
-    const url = new URL(req.url ?? "/", "https://localhost");
-    if (url.pathname !== "/ws") {
-      socket.destroy();
-      return;
-    }
-
-    const sid = parseSid(req.headers.cookie);
-    if (!validateSession(session, sid)) {
-      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-      socket.destroy();
-      return;
-    }
-
-    wss.handleUpgrade(req, socket, head, (ws) => handlePTYConnection(ws, session));
-  });
-}
-
-function handlePTYConnection(ws: WebSocket, session: Session): void {
-  const shell = process.env.SHELL ?? "/bin/zsh";
-  let ptyProcess: pty.IPty | null = null;
-
-  ws.on("message", (msg: Buffer | string) => {
-    const input = typeof msg === "string" ? msg : msg.toString("utf-8");
-    const resize = parseResize(input);
-
-    if (resize) {
-      if (!ptyProcess) {
-        const env: Record<string, string> = {};
-        for (const [k, v] of Object.entries(process.env)) {
-          if (v !== undefined) env[k] = v;
-        }
-        try {
-          ptyProcess = pty.spawn(shell, ["-l"], {
-            name: "xterm-256color",
-            cols: resize.cols,
-            rows: resize.rows,
-            cwd: process.env.HOME ?? "/",
-            env,
-          });
-        } catch (err) {
-          console.error("PTY spawn failed:", err);
-          if (ws.readyState === WebSocket.OPEN) ws.close();
-          return;
-        }
-        ptyProcess.onData((data) => {
-          if (ws.readyState === WebSocket.OPEN) ws.send(data);
-        });
-        ptyProcess.onExit(() => {
-          if (ws.readyState === WebSocket.OPEN) ws.close();
-        });
-      } else {
-        ptyProcess.resize(resize.cols, resize.rows);
-      }
-      return;
-    }
-
-    ptyProcess?.write(input);
-  });
-
-  ws.on("close", () => {
-    ptyProcess?.kill();
-    deactivateSession(session);
-  });
-}
 
 async function closeRuntime(): Promise<void> {
   if (!runtime) return;
@@ -115,16 +42,36 @@ async function listen(
   await closeRuntime();
 
   const wss = new WebSocketServer({ noServer: true });
+  const honoHandler = getRequestListener(app.fetch);
 
-  const httpServer = serve({
-    fetch: app.fetch,
-    port,
-    hostname,
-    createServer: (opts: object, handler: (...args: unknown[]) => void) =>
-      createServer({ ...opts, ...tls }, handler),
-  } as Parameters<typeof serve>[0]) as Server;
+  let viteMiddlewares: ViteDevServer["middlewares"] | null = null;
 
+  const httpServer = createServer(
+    tls,
+    (req: IncomingMessage, res: ServerResponse) => {
+      const url = req.url ?? "/";
+      if (viteMiddlewares && !url.startsWith("/api")) {
+        viteMiddlewares(req, res, () => honoHandler(req, res));
+      } else {
+        honoHandler(req, res);
+      }
+    },
+  ) as unknown as Server;
+
+  // Register PTY upgrade handler BEFORE Vite attaches its HMR listener,
+  // so our /ws handler runs first and non-/ws paths fall through to Vite.
   attachWebSocketUpgrade(httpServer, wss, session);
+
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true, hmr: { server: httpServer as any } },
+      appType: "spa",
+    });
+    viteMiddlewares = vite.middlewares;
+  }
+
+  (httpServer as any).listen(port, hostname);
   runtime = { httpServer, wss, session };
 }
 

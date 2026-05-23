@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -14,55 +14,44 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import LanShareCard from "@/components/LanShareCard.vue";
+import {
+  useLanSettingsQuery,
+  useRefreshInviteMutation,
+  useSetLanMutation,
+} from "@/api/settings";
+import { ApiError } from "@/lib/api-error";
 
-interface LanState {
-  enabled: boolean;
-  lanUrl?: string;
-  inviteExpiresAt?: number;
-}
+const { data, isPending } = useLanSettingsQuery();
+const setLan = useSetLanMutation();
+const refreshInvite = useRefreshInviteMutation();
 
-const enabled = ref(false);
-const lanUrl = ref<string | undefined>();
-const inviteExpiresAt = ref<number | undefined>();
-const loading = ref(false);
+const enabled = computed(() => data.value?.enabled ?? false);
+const lanUrl = computed(() => data.value?.lanUrl);
+const inviteExpiresAt = computed(() => data.value?.inviteExpiresAt);
+
 const error = ref("");
 const confirmEnable = ref(false);
 const confirmDisable = ref(false);
 const pendingEnable = ref<boolean | null>(null);
 
-async function fetchState(): Promise<void> {
-  const res = await fetch("/api/settings/lan", { credentials: "include" });
-  if (!res.ok) return;
-  const body = (await res.json()) as LanState;
-  enabled.value = body.enabled;
-  lanUrl.value = body.lanUrl;
-  inviteExpiresAt.value = body.inviteExpiresAt;
+const loading = computed(
+  () =>
+    isPending.value ||
+    setLan.isPending.value ||
+    refreshInvite.isPending.value,
+);
+
+function mutationErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.message;
+  return fallback;
 }
 
-async function setLan(next: boolean): Promise<void> {
+async function applyLan(next: boolean): Promise<void> {
   error.value = "";
-  loading.value = true;
   try {
-    const res = await fetch("/api/settings/lan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ enabled: next }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      error.value = body.error ?? "Failed to update LAN settings.";
-      await fetchState();
-      return;
-    }
-    enabled.value = body.enabled;
-    lanUrl.value = body.lanUrl;
-    inviteExpiresAt.value = body.inviteExpiresAt;
-  } catch {
-    error.value = "Could not reach server.";
-    await fetchState();
-  } finally {
-    loading.value = false;
+    await setLan.mutateAsync(next);
+  } catch (err) {
+    error.value = mutationErrorMessage(err, "Failed to update LAN settings.");
   }
 }
 
@@ -79,52 +68,35 @@ function onSwitchChange(checked: boolean) {
 async function confirmEnableAction() {
   confirmEnable.value = false;
   if (pendingEnable.value !== true) return;
-  await setLan(true);
+  await applyLan(true);
   pendingEnable.value = null;
 }
 
 function cancelEnable() {
   confirmEnable.value = false;
   pendingEnable.value = null;
-  enabled.value = false;
 }
 
 async function confirmDisableAction() {
   confirmDisable.value = false;
   if (pendingEnable.value !== false) return;
-  await setLan(false);
+  await applyLan(false);
   pendingEnable.value = null;
 }
 
 function cancelDisable() {
   confirmDisable.value = false;
   pendingEnable.value = null;
-  enabled.value = true;
 }
 
-async function refreshInvite() {
-  loading.value = true;
+async function onRefreshInvite() {
   error.value = "";
   try {
-    const res = await fetch("/api/settings/lan/refresh-invite", {
-      method: "POST",
-      credentials: "include",
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      error.value = body.error ?? "Failed to regenerate link.";
-      return;
-    }
-    lanUrl.value = body.lanUrl;
-    inviteExpiresAt.value = body.inviteExpiresAt;
-  } catch {
-    error.value = "Could not reach server.";
-  } finally {
-    loading.value = false;
+    await refreshInvite.mutateAsync();
+  } catch (err) {
+    error.value = mutationErrorMessage(err, "Failed to regenerate link.");
   }
 }
-
-onMounted(fetchState);
 </script>
 
 <template>
@@ -143,7 +115,7 @@ onMounted(fetchState);
         </div>
         <Switch
           id="lan-switch"
-          :checked="enabled"
+          :checked="pendingEnable ?? enabled"
           :disabled="loading"
           @update:checked="onSwitchChange"
         />
@@ -156,7 +128,7 @@ onMounted(fetchState);
       v-if="enabled && lanUrl"
       :lan-url="lanUrl"
       :invite-expires-at="inviteExpiresAt"
-      @refresh="refreshInvite"
+      @refresh="onRefreshInvite"
     />
 
     <AlertDialog :open="confirmEnable" @update:open="(v) => !v && cancelEnable()">

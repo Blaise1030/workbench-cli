@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { Terminal as WTerm, type WTerm as WTermInstance } from "@wterm/vue";
 import "@wterm/vue/css";
+import "@/assets/terminal.css";
 
 const termRef = ref<InstanceType<typeof WTerm> | null>(null);
 const wsRef = ref<WebSocket | null>(null);
@@ -20,7 +21,9 @@ function onReady(wt: WTermInstance) {
   };
 
   ws.onclose = () => {
-    termRef.value?.write("\r\n\x1b[90m[session ended — reload to reconnect]\x1b[0m\r\n");
+    termRef.value?.write(
+      "\r\n\x1b[90m[session ended — reload to reconnect]\x1b[0m\r\n",
+    );
     wsRef.value = null;
   };
 }
@@ -41,11 +44,12 @@ function onResize(cols: number, rows: number) {
 <template>
   <WTerm
     ref="termRef"
+    theme="app"
     auto-resize
     cursor-blink
     @ready="onReady"
     @data="onData"
     @resize="onResize"
-    style="width: 100%; height: 100%; max-height: 100dvh;"
+    style="width: 100%; height: 100%; max-height: 100dvh"
   />
 </template>

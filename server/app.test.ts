@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { createApp } from "./app.js";
-import { createToken } from "./token.js";
-import { createSession, activateSession } from "./session.js";
-import { LanManager } from "./lan.js";
+import { createToken } from "./modules/auth/token.js";
+import { createSession, activateSession } from "./modules/auth/session.js";
+import { LanManager } from "./modules/settings/lan.js";
 
 function makeApp() {
   const token = createToken();
@@ -17,7 +17,7 @@ describe("POST /auth", () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
     const { app } = makeApp();
-    const res = await app.request("/auth", {
+    const res = await app.request("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: "wrong" }),
@@ -31,7 +31,7 @@ describe("POST /auth", () => {
     vi.setSystemTime(0);
     const { token, app } = makeApp();
     vi.setSystemTime(3_600_001);
-    const res = await app.request("/auth", {
+    const res = await app.request("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token.value }),
@@ -47,7 +47,7 @@ describe("POST /auth", () => {
     vi.setSystemTime(0);
     const { token, session, app } = makeApp();
     session.active = true;
-    const res = await app.request("/auth", {
+    const res = await app.request("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token.value }),
@@ -60,7 +60,7 @@ describe("POST /auth", () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
     const { token, session, app } = makeApp();
-    const res = await app.request("/auth", {
+    const res = await app.request("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token.value }),
@@ -80,7 +80,7 @@ describe("POST /auth", () => {
     const { session, lan, app } = makeApp();
     lan.enable("192.168.1.10");
     const invite = lan.getInvite()!.value;
-    const res = await app.request("/auth", {
+    const res = await app.request("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: invite }),

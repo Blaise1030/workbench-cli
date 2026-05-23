@@ -2,11 +2,14 @@
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Login from "@/components/Login.vue";
+import { useAuthMutation } from "@/api/auth";
+import { ApiError } from "@/lib/api-error";
 
 const route = useRoute();
 const router = useRouter();
 const inviteLoading = ref(false);
 const inviteError = ref("");
+const auth = useAuthMutation();
 
 onMounted(async () => {
   const invite = route.query.invite;
@@ -15,21 +18,11 @@ onMounted(async () => {
   inviteLoading.value = true;
   inviteError.value = "";
   try {
-    const res = await fetch("/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ token: invite }),
-    });
-    if (res.ok) {
-      await router.replace({ name: "terminal" });
-      return;
-    }
-    const body = await res.json().catch(() => ({}));
+    await auth.mutateAsync(invite);
+    await router.replace({ name: "terminal" });
+  } catch (err) {
     inviteError.value =
-      typeof body.error === "string" ? body.error : "Invalid invite link.";
-  } catch {
-    inviteError.value = "Could not reach server.";
+      err instanceof ApiError ? err.message : "Invalid invite link.";
   } finally {
     inviteLoading.value = false;
   }

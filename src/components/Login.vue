@@ -3,38 +3,32 @@ import { ref } from "vue";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuthMutation } from "@/api/auth";
+import { ApiError } from "@/lib/api-error";
 
 const emit = defineEmits<{ authenticated: [] }>();
 
 const token = ref("");
 const error = ref("");
-const loading = ref(false);
+const auth = useAuthMutation();
 
 async function submit() {
   error.value = "";
-  loading.value = true;
   try {
-    const res = await fetch("/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: token.value }),
-    });
-    if (res.ok) {
-      emit("authenticated");
-      return;
-    }
-    const body = await res.json().catch(() => ({}));
-    if (res.status === 409) {
-      error.value = "Another session is already active.";
-    } else if (res.status === 401 && body.error?.includes("expired")) {
-      error.value = "Token expired — restart the server.";
+    await auth.mutateAsync(token.value);
+    emit("authenticated");
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.status === 409) {
+        error.value = "Another session is already active.";
+      } else if (err.status === 401 && err.message.includes("expired")) {
+        error.value = "Token expired — restart the server.";
+      } else {
+        error.value = err.message || "Invalid token.";
+      }
     } else {
-      error.value = "Invalid token.";
+      error.value = "Could not reach server.";
     }
-  } catch {
-    error.value = "Could not reach server.";
-  } finally {
-    loading.value = false;
   }
 }
 </script>
@@ -56,8 +50,8 @@ async function submit() {
             autofocus
           />
           <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-          <Button type="submit" :disabled="loading || !token">
-            {{ loading ? "Connecting…" : "Connect" }}
+          <Button type="submit" :disabled="auth.isPending.value || !token">
+            {{ auth.isPending.value ? "Connecting…" : "Connect" }}
           </Button>
         </form>
       </CardContent>
