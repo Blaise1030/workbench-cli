@@ -41,9 +41,18 @@ Migrate workspace panel tabs and the settings page to full Vue Router nested rou
 
 ### What is kept
 
-- `clientPanels` ref + localStorage — still tracks *which* client panels (git, explorer) appear in the tab bar (open/closed state). Active state is no longer stored here.
+- `clientPanels` ref — still tracks *which* client panels (git, explorer) appear in the tab bar (open/closed state). Active state is no longer stored here.
 - `createTerminal` / `deleteTerminal` mutations — unchanged.
 - `terminalSessionsKey` / session store — unchanged.
+
+### localStorage migration
+
+`worktree-panels-storage.ts` is rewritten as a composable using VueUse `useLocalStorage`:
+
+- `activeTabId` is **removed** from `WorktreeAuxPanelsState` — the URL owns active state now
+- Remaining state `{ git: boolean, explorer: boolean }` becomes a reactive `useLocalStorage` ref, keyed per worktree (`lan-terminal:worktree-panels:{worktreeId}`)
+- `loadAuxPanels` / `saveAuxPanels` functions are deleted — consumers use the reactive ref directly
+- Consistent with how sidebar collapsed state and sidebar width already use `useLocalStorage` from VueUse
 
 ### Tab interaction changes
 
