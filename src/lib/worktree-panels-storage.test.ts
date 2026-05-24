@@ -1,58 +1,55 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  auxPanelsStateFromClient,
   clientPanelsFromState,
   explorerPanelId,
   gitPanelId,
-  loadAuxPanels,
-  saveAuxPanels,
 } from "./worktree-panels-storage.js";
 
 const WORKTREE = "wt-1";
 
 describe("worktree-panels-storage", () => {
-  beforeEach(() => {
-    const store = new Map<string, string>();
-    vi.stubGlobal("localStorage", {
-      getItem: (key: string) => store.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        store.set(key, value);
-      },
-      removeItem: (key: string) => {
-        store.delete(key);
-      },
-      clear: () => store.clear(),
-    });
+  it("generates stable git panel ids", () => {
+    expect(gitPanelId(WORKTREE)).toBe("panel-git-wt-1");
+    expect(gitPanelId("wt-abc")).toBe("panel-git-wt-abc");
   });
 
-  it("round-trips aux panel flags per worktree", () => {
-    saveAuxPanels(WORKTREE, { git: true, explorer: false, activeTabId: null });
-    expect(loadAuxPanels(WORKTREE)).toEqual({
+  it("generates stable explorer panel ids", () => {
+    expect(explorerPanelId(WORKTREE)).toBe("panel-explorer-wt-1");
+    expect(explorerPanelId("wt-abc")).toBe("panel-explorer-wt-abc");
+  });
+
+  it("builds client panels based on state flags", () => {
+    const panels = clientPanelsFromState(WORKTREE, {
       git: true,
-      explorer: false,
-      activeTabId: null,
+      explorer: true,
     });
-  });
-
-  it("persists active tab id", () => {
-    saveAuxPanels(WORKTREE, {
-      git: true,
-      explorer: false,
-      activeTabId: "term-abc",
-    });
-    expect(loadAuxPanels(WORKTREE).activeTabId).toBe("term-abc");
-  });
-
-  it("builds stable client panel ids", () => {
-    const panels = clientPanelsFromState(WORKTREE, { git: true, explorer: true });
     expect(panels).toEqual([
       { id: gitPanelId(WORKTREE), type: "git", title: "Git" },
       { id: explorerPanelId(WORKTREE), type: "explorer", title: "Files" },
     ]);
-    expect(auxPanelsStateFromClient(panels)).toEqual({
+  });
+
+  it("includes only enabled panels", () => {
+    const panelsGitOnly = clientPanelsFromState(WORKTREE, {
       git: true,
-      explorer: true,
-      activeTabId: null,
+      explorer: false,
     });
+    expect(panelsGitOnly).toEqual([
+      { id: gitPanelId(WORKTREE), type: "git", title: "Git" },
+    ]);
+
+    const panelsExplorerOnly = clientPanelsFromState(WORKTREE, {
+      git: false,
+      explorer: true,
+    });
+    expect(panelsExplorerOnly).toEqual([
+      { id: explorerPanelId(WORKTREE), type: "explorer", title: "Files" },
+    ]);
+
+    const panelsNone = clientPanelsFromState(WORKTREE, {
+      git: false,
+      explorer: false,
+    });
+    expect(panelsNone).toEqual([]);
   });
 });
