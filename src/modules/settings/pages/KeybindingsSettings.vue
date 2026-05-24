@@ -8,6 +8,8 @@ import {
 } from "@/modules/keyboard/queries/keybindings";
 import type { KeybindingAction, KeybindingsMap } from "@/modules/keyboard/types";
 import { toast } from "vue-sonner";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const { data: serverBindings } = useKeybindingsQuery();
 const updateMutation = useUpdateKeybindingsMutation();
@@ -93,33 +95,32 @@ function resetToDefaults() {
 </script>
 
 <template>
-  <div @keydown="onCaptureKeydown" tabindex="-1">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-sm font-medium">Keyboard Shortcuts</h2>
-      <div class="flex gap-2">
-        <button
-          class="px-3 py-1 text-xs rounded border text-muted-foreground hover:text-foreground"
-          @click="resetToDefaults"
-        >
-          Reset to defaults
-        </button>
-        <button
-          class="px-3 py-1 text-xs rounded bg-foreground text-background hover:opacity-90"
-          :disabled="updateMutation.isPending.value"
-          @click="save"
-        >
-          {{ updateMutation.isPending.value ? "Saving…" : "Save" }}
-        </button>
+  <Card class="max-w-5xl" @keydown="onCaptureKeydown" tabindex="-1">
+    <CardHeader class="flex flex-row items-start justify-between gap-4 space-y-0">
+      <div class="space-y-1">
+        <CardTitle>Keyboard Shortcuts</CardTitle>
+        <CardDescription>
+          Remap workspace shortcuts. Changes are saved to your local workbench config.
+        </CardDescription>
       </div>
-    </div>
+      <div class="flex shrink-0 gap-2">
+        <Button variant="outline" size="sm" @click="resetToDefaults">
+          Reset to defaults
+        </Button>
+        <Button size="sm" :disabled="updateMutation.isPending.value" @click="save">
+          {{ updateMutation.isPending.value ? "Saving…" : "Save" }}
+        </Button>
+      </div>
+    </CardHeader>
 
-    <div v-if="hasConflict" class="mb-3 text-xs text-amber-500">
-      Conflict: this chord is also assigned to "{{
-        KEYBINDING_DESCRIPTORS.find((d) => d.action === hasConflict)?.label
-      }}". Both will be saved — last key pressed wins.
-    </div>
+    <CardContent>
+      <div v-if="hasConflict" class="mb-3 text-xs text-amber-500">
+        Conflict: this chord is also assigned to "{{
+          KEYBINDING_DESCRIPTORS.find((d) => d.action === hasConflict)?.label
+        }}". Both will be saved — last key pressed wins.
+      </div>
 
-    <table class="w-full text-sm">
+      <table class="w-full text-sm">
       <thead>
         <tr class="border-b text-xs text-muted-foreground">
           <th class="pb-2 text-left font-normal">Action</th>
@@ -155,5 +156,6 @@ function resetToDefaults() {
         </tr>
       </tbody>
     </table>
-  </div>
+    </CardContent>
+  </Card>
 </template>

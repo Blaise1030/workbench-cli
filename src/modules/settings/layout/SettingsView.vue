@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRouter, useRoute, RouterView } from "vue-router";
+import type { Component } from "vue";
+import { useRouter, useRoute, RouterView, RouterLink } from "vue-router";
+import {
+  ChevronLeftIcon,
+  GlobeIcon,
+  KeyboardIcon,
+  Settings2Icon,
+} from "@lucide/vue";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
+  SidebarGroupLabel,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -18,34 +24,30 @@ import {
 const router = useRouter();
 const route = useRoute();
 
-const navItems = [
-  { label: "General", name: "settings-general" },
-  { label: "Network", name: "settings-network" },
-  { label: "Keybindings", name: "settings-keybindings" },
+const navItems: { label: string; name: string; icon: Component }[] = [
+  { label: "General", name: "settings-general", icon: Settings2Icon },
+  { label: "Network", name: "settings-network", icon: GlobeIcon },
+  { label: "Keybindings", name: "settings-keybindings", icon: KeyboardIcon },
 ];
-
-const activeLabel = computed(
-  () => navItems.find((item) => item.name === route.name)?.label ?? "Settings",
-);
 </script>
 
 <template>
-  <SidebarProvider class="h-svh">
-    <Sidebar collapsible="none" class="min-h-full">
-      <SidebarHeader class="px-4 py-3">
-        <span class="text-base font-semibold">Settings</span>
-      </SidebarHeader>
-
+  <SidebarProvider class="h-svh overflow-hidden">
+    <Sidebar>
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu class="gap-1.5">
               <SidebarMenuItem v-for="item in navItems" :key="item.name">
                 <SidebarMenuButton
+                  as-child
                   :is-active="route.name === item.name"
-                  @click="router.push({ name: item.name })"
                 >
-                  {{ item.label }}
+                  <RouterLink :to="{ name: item.name }">
+                    <component :is="item.icon"></component>
+                    <span>{{ item.label }}</span>
+                  </RouterLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -53,21 +55,20 @@ const activeLabel = computed(
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter class="px-2 py-3">
-        <button
-          class="text-sm text-muted-foreground hover:text-foreground transition-colors px-2"
-          @click="router.back()"
-        >
-          ← Back
-        </button>
+      <SidebarFooter>
+        <SidebarMenu class="gap-1.5">
+          <SidebarMenuItem>
+            <SidebarMenuButton @click="router.back()">
+              <ChevronLeftIcon />
+              <span>Back</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
 
-    <SidebarInset>
-      <header class="flex h-10 items-center border-b px-4">
-        <span class="text-sm font-medium">{{ activeLabel }}</span>
-      </header>
-      <div class="p-6 max-w-lg">
+    <SidebarInset class="min-h-0 flex-1 flex-col overflow-hidden">
+      <div class="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-y-auto p-6">
         <RouterView />
       </div>
     </SidebarInset>

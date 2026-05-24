@@ -77,16 +77,7 @@ async function addProject() {
 
 <template>
   <div class="flex h-full min-h-0 flex-col bg-background">
-    <div class="flex h-8 items-center justify-between px-3">
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        aria-label="Add project from folder"
-        :disabled="pickProjectFolder.isPending.value"
-        @click="addProject"
-      >
-        <FolderOpenIcon />
-      </Button>
+    <div class="flex h-8 items-center justify-end px-3">
       <div class="flex items-center gap-0.5">
         <ThemeToggle />
         <Button variant="ghost" size="icon-xs" as-child>
@@ -105,7 +96,7 @@ async function addProject() {
       {{ addProjectError }}
     </p>
 
-    <div class="min-h-0 flex-1 overflow-y-auto p-1">
+    <div class="min-h-0 flex-1 overflow-y-auto p-2">
       <p
         v-if="!projects?.length"
         class="px-2 py-4 text-center text-sm text-muted-foreground"
@@ -144,6 +135,17 @@ async function addProject() {
               />
             </CollapsibleContent>
           </Collapsible>
+        </SidebarMenuItem>
+        <SidebarMenuItem class="flex">
+          <SidebarMenuButtonChild
+            type="button"
+            class="h-7 w-fit text-muted-foreground"
+            :disabled="pickProjectFolder.isPending.value"
+            @click="addProject"
+          >
+            <FolderOpenIcon class="size-4 shrink-0" />
+            <span>Add project</span>
+          </SidebarMenuButtonChild>
         </SidebarMenuItem>
       </SidebarMenu>
     </div>
