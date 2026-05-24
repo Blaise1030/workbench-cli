@@ -4,6 +4,7 @@ import WorkspaceView from "@/modules/workspace/pages/WorkspaceView.vue";
 import SettingsView from "@/modules/settings/layout/SettingsView.vue";
 import GeneralSettings from "@/modules/settings/pages/GeneralSettings.vue";
 import NetworkSettings from "@/modules/settings/pages/NetworkSettings.vue";
+import KeybindingsSettings from "@/modules/settings/pages/KeybindingsSettings.vue";
 import Terminal from "@/modules/terminal/pages/Terminal.vue";
 import GitPanel from "@/modules/git/pages/GitPanel.vue";
 import FileExplorerPanel from "@/modules/file-explorer/pages/FileExplorerPanel.vue";
@@ -70,6 +71,7 @@ const router = createRouter({
       children: [
         { path: "general", name: "settings-general", component: GeneralSettings },
         { path: "network", name: "settings-network", component: NetworkSettings },
+        { path: "keybindings", name: "settings-keybindings", component: KeybindingsSettings },
       ],
     },
   ],

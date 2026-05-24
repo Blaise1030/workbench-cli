@@ -21,6 +21,7 @@ const route = useRoute();
 const navItems = [
   { label: "General", name: "settings-general" },
   { label: "Network", name: "settings-network" },
+  { label: "Keybindings", name: "settings-keybindings" },
 ];
 
 const activeLabel = computed(
@@ -29,8 +30,8 @@ const activeLabel = computed(
 </script>
 
 <template>
-  <SidebarProvider class="min-h-screen">
-    <Sidebar collapsible="none">
+  <SidebarProvider class="h-svh">
+    <Sidebar collapsible="none" class="min-h-full">
       <SidebarHeader class="px-4 py-3">
         <span class="text-base font-semibold">Settings</span>
       </SidebarHeader>
