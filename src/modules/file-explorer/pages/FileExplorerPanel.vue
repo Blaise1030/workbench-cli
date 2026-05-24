@@ -210,6 +210,11 @@ function mountTree(newPaths: string[]) {
     icons: "minimal",
     initialExpandedPaths: initialExpandedPaths(),
     onSelectionChange: syncSelectionToUrl,
+    unsafeCSS: `
+      [data-file-tree-virtualized-scroll='true'] {
+        scrollbar-gutter: auto;
+      }
+    `,
   });
   tree.render({ fileTreeContainer: treeEl.value });
 

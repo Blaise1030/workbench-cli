@@ -279,6 +279,11 @@ async function runGitAction(action: GitFileAction) {
     paths: [...selectedPaths.value],
   });
   selectedPaths.value = [];
+  if (action === "stage") {
+    activeTab.value = "staged";
+  } else if (action === "unstage") {
+    activeTab.value = "unstaged";
+  }
 }
 
 async function submitCommit() {
