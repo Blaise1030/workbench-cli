@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { ChevronRightIcon, FolderGit2Icon, FolderOpenIcon } from "@lucide/vue";
+import { useRouter, RouterLink } from "vue-router";
+import { ChevronRightIcon, FolderGit2Icon, FolderOpenIcon, SettingsIcon } from "@lucide/vue";
 import AddProjectDialog from "@/components/AddProjectDialog.vue";
 import ProjectWorktrees from "@/components/ProjectWorktrees.vue";
+import ThemeToggle from "@/components/ThemeToggle.vue";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -76,7 +77,7 @@ async function addProject() {
 
 <template>
   <div class="flex h-full min-h-0 flex-col bg-background">
-    <div class="flex items-center justify-between px-3 py-2">
+    <div class="flex h-8 items-center justify-between px-3">
       <Button
         variant="ghost"
         size="icon-xs"
@@ -86,6 +87,15 @@ async function addProject() {
       >
         <FolderOpenIcon />
       </Button>
+      <div class="flex items-center gap-0.5">
+        <ThemeToggle />
+        <Button variant="ghost" size="icon-xs" as-child>
+          <RouterLink to="/settings" aria-label="Settings">
+            <SettingsIcon />
+            <span class="sr-only">Settings</span>
+          </RouterLink>
+        </Button>
+      </div>
     </div>
 
     <p
@@ -95,7 +105,7 @@ async function addProject() {
       {{ addProjectError }}
     </p>
 
-    <div class="min-h-0 flex-1 overflow-y-auto p-2">
+    <div class="min-h-0 flex-1 overflow-y-auto p-1">
       <p
         v-if="!projects?.length"
         class="px-2 py-4 text-center text-sm text-muted-foreground"

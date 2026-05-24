@@ -31,6 +31,8 @@ export class TerminalSession {
   private oscCarry = "";
   private onLabelChange?: (label: string) => void;
   private shouldNotifySuccess: () => boolean = () => true;
+  private disposed = false;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(meta: TerminalSessionMeta) {
     this.id = meta.id;
@@ -113,9 +115,16 @@ export class TerminalSession {
     };
 
     ws.onclose = () => {
-      const ended = "\r\n\x1b[90m[session ended — reload to reconnect]\x1b[0m\r\n";
-      this.handleOutput(ended);
       this.ws = null;
+      if (!this.disposed) {
+        this.reconnectTimer = setTimeout(() => {
+          this.reconnectTimer = null;
+          this.buffer = "";
+          this.oscCarry = "";
+          this.terminal?.write(CLEAR_SCREEN);
+          this.connect();
+        }, 1000);
+      }
     };
   }
 
@@ -146,6 +155,11 @@ export class TerminalSession {
   }
 
   dispose() {
+    this.disposed = true;
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.detach();
     this.ws?.close();
     this.ws = null;

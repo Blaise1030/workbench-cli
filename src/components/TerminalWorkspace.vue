@@ -246,7 +246,7 @@ function openResumeDialog(terminalId: string) {
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
     <header class="flex shrink-0 items-stretch bg-muted">
-      <div class="flex shrink-0 items-stretch border-e border-border/60">
+      <div class="flex aspect-square shrink-0 items-stretch border-e border-border/60">
         <WorkspaceSidebarToggle />
       </div>
       <div
