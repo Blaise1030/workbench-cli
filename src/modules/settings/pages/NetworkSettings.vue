@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -14,6 +12,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import LanShareCard from "@/modules/settings/components/LanShareCard.vue";
+import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
+import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
+import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 import {
   useLanSettingsQuery,
   useRefreshInviteMutation,
@@ -100,30 +101,27 @@ async function onRefreshInvite() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <Card>
-      <CardHeader>
-        <CardTitle>Network</CardTitle>
-        <CardDescription>Control who can reach this terminal on your local network.</CardDescription>
-      </CardHeader>
-      <CardContent class="flex flex-col gap-4">
-        <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-        <div class="flex items-center justify-between gap-4">
-          <div class="space-y-1">
-            <Label for="lan-switch">Allow LAN access</Label>
-            <p class="text-sm text-muted-foreground">
-              Let other devices on your Wi‑Fi reach this terminal.
-            </p>
-          </div>
-          <Switch
-            id="lan-switch"
-            :checked="pendingEnable ?? enabled"
-            :disabled="loading"
-            @update:checked="onSwitchChange"
-          />
-        </div>
-      </CardContent>
-    </Card>
+  <SettingsPage
+    title="Network"
+    description="Control who can reach this terminal on your local network."
+  >
+    <div v-if="error" class="border-b border-destructive/30 bg-destructive/10 px-8 py-3 text-sm text-destructive">
+      {{ error }}
+    </div>
+
+    <SettingsSection title="LAN access">
+      <SettingsRow
+        label="Allow LAN access"
+        description="Let other devices on your Wi‑Fi reach this terminal."
+      >
+        <Switch
+          id="lan-switch"
+          :checked="pendingEnable ?? enabled"
+          :disabled="loading"
+          @update:checked="onSwitchChange"
+        />
+      </SettingsRow>
+    </SettingsSection>
 
     <LanShareCard
       v-if="enabled && lanUrl"
@@ -161,5 +159,5 @@ async function onRefreshInvite() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  </div>
+  </SettingsPage>
 </template>

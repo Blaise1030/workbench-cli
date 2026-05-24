@@ -128,9 +128,13 @@ function persistWorkspaceRoute() {
   }
 }
 
-watch(() => [route.name, route.params.terminalId] as const, persistWorkspaceRoute, {
-  immediate: true,
-});
+watch(
+  () => [route.name, route.params.terminalId] as const,
+  persistWorkspaceRoute,
+  {
+    immediate: true,
+  },
+);
 
 function restoreDefaultRoute(list: { id: string }[]) {
   const state = panelsState.value;
@@ -149,7 +153,10 @@ function restoreDefaultRoute(list: { id: string }[]) {
   }
 
   if (lastRoute === "explorer" && state.explorer) {
-    router.replace({ name: "explorer", params: { worktreeId: props.worktreeId } });
+    router.replace({
+      name: "explorer",
+      params: { worktreeId: props.worktreeId },
+    });
     return;
   }
 
@@ -165,30 +172,24 @@ function restoreDefaultRoute(list: { id: string }[]) {
 }
 
 // Bare /w/:id (no child) → restore last panel when available
-watch(
-  [terminals, () => route.name],
-  ([list, name]) => {
-    if (!list?.length || name !== "workspace") return;
-    restoreDefaultRoute(list);
-  },
-);
+watch([terminals, () => route.name], ([list, name]) => {
+  if (!list?.length || name !== "workspace") return;
+  restoreDefaultRoute(list);
+});
 
 // Redirect if current terminal no longer exists
-watch(
-  [terminals, () => route.params.terminalId],
-  ([list, terminalId]) => {
-    if (!list || route.name !== "terminal") return;
-    if (terminalId && !list.some((t) => t.id === terminalId)) {
-      const first = list[0];
-      if (first) {
-        router.replace({
-          name: "terminal",
-          params: { worktreeId: props.worktreeId, terminalId: first.id },
-        });
-      }
+watch([terminals, () => route.params.terminalId], ([list, terminalId]) => {
+  if (!list || route.name !== "terminal") return;
+  if (terminalId && !list.some((t) => t.id === terminalId)) {
+    const first = list[0];
+    if (first) {
+      router.replace({
+        name: "terminal",
+        params: { worktreeId: props.worktreeId, terminalId: first.id },
+      });
     }
-  },
-);
+  }
+});
 
 function navigateToTerminal(tabId: string) {
   router.push({
@@ -253,9 +254,7 @@ function navigateToFirstTerminal() {
 
 function toggleAuxPanel(type: "git" | "explorer") {
   const isActive =
-    type === "git"
-      ? route.name === "git"
-      : route.name === "explorer";
+    type === "git" ? route.name === "git" : route.name === "explorer";
 
   if (isActive) {
     if (type === "git") panelsState.value.git = false;
@@ -283,7 +282,7 @@ function tabTriggerClass(tabId: string, index: number) {
           "z-10 -mb-px border-x bg-background text-foreground",
           index === 0 && "border-l-0",
         )
-      : "bg-transparent text-muted-foreground",
+      : "bg-transparent text-muted-foreground opacity-60",
   );
 }
 
@@ -311,8 +310,10 @@ function openResumeDialog(terminalId: string) {
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
-    <header class="flex shrink-0 items-stretch bg-muted">
-      <div class="flex aspect-square shrink-0 items-stretch border-e border-border/60">
+    <header class="flex shrink-0 items-stretch bg-sidebar">
+      <div
+        class="flex aspect-square shrink-0 items-stretch border-e border-border/60"
+      >
         <WorkspaceSidebarToggle />
       </div>
       <div
@@ -422,7 +423,7 @@ function openResumeDialog(terminalId: string) {
           </Button>
         </div>
       </div>
-      <RouterView v-else class="absolute inset-0" />
+      <RouterView v-else class="absolute border-t inset-0" />
     </div>
 
     <TerminalResumeDialog

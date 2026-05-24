@@ -13,6 +13,7 @@ import { lanSettingsQueryOptions } from "@/modules/settings/queries/settings";
 import { queryClient } from "@/lib/query-client";
 import { ApiError, ensureOk } from "@/lib/api-error";
 import { isLocalHost } from "@/lib/is-local-host";
+import { rememberSettingsReturnRoute } from "@/modules/settings/lib/settings-return-route";
 const VALID_GIT_TABS = ["staged", "unstaged"] as const;
 
 const router = createRouter({
@@ -77,7 +78,11 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
+  if (to.path.startsWith("/settings") && !from.path.startsWith("/settings")) {
+    rememberSettingsReturnRoute(from.fullPath);
+  }
+
   if (to.meta.public) {
     if (to.name === "login" && isLocalHost()) {
       await ensureLocalAuth();

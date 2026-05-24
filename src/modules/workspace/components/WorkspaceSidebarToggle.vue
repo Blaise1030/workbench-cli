@@ -15,13 +15,11 @@ const { isCollapsed, toggle } = useWorkspaceSidebar();
   <Button
     variant="ghost"
     size="icon-xs"
-    :class="cn('h-6 w-6 mx-auto my-auto shrink-0 rounded-none', props.class)"
+    :class="cn('mx-auto my-auto shrink-0', props.class)"
     :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
     :aria-expanded="!isCollapsed"
     @click="toggle"
   >
-    <PanelLeftIcon
-      :class="cn('cn-rtl-flip size-4', isCollapsed && 'opacity-60')"
-    />
+    <PanelLeftIcon :class="cn('cn-rtl-flip', isCollapsed && 'opacity-60')" />
   </Button>
 </template>

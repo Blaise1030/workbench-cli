@@ -20,9 +20,14 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { resolveSettingsBackTarget } from "@/modules/settings/lib/settings-return-route";
 
 const router = useRouter();
 const route = useRoute();
+
+function leaveSettings() {
+  void router.push(resolveSettingsBackTarget());
+}
 
 const navItems: { label: string; name: string; icon: Component }[] = [
   { label: "General", name: "settings-general", icon: Settings2Icon },
@@ -38,7 +43,7 @@ const navItems: { label: string; name: string; icon: Component }[] = [
         <SidebarGroup>
           <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu class="gap-1.5">
+            <SidebarMenu>
               <SidebarMenuItem v-for="item in navItems" :key="item.name">
                 <SidebarMenuButton
                   as-child
@@ -56,9 +61,9 @@ const navItems: { label: string; name: string; icon: Component }[] = [
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu class="gap-1.5">
+        <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton @click="router.back()">
+            <SidebarMenuButton @click="leaveSettings">
               <ChevronLeftIcon />
               <span>Back</span>
             </SidebarMenuButton>
@@ -67,10 +72,8 @@ const navItems: { label: string; name: string; icon: Component }[] = [
       </SidebarFooter>
     </Sidebar>
 
-    <SidebarInset class="min-h-0 flex-1 flex-col overflow-hidden">
-      <div class="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-y-auto p-6">
-        <RouterView />
-      </div>
+    <SidebarInset class="min-h-0 flex-1 overflow-y-auto bg-background">
+      <RouterView />
     </SidebarInset>
   </SidebarProvider>
 </template>

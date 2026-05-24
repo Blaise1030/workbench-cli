@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { CheckIcon, ChevronsUpDownIcon, GitBranchIcon } from "@lucide/vue";
+import { Button } from "@/components/ui/button";
 import {
   Combobox,
   ComboboxAnchor,
@@ -25,14 +26,14 @@ const open = ref(false);
 <template>
   <Combobox v-model="model" v-model:open="open" :filter-function="(list, term) => (list as string[]).filter(b => b.toLowerCase().includes(term.toLowerCase()))">
     <ComboboxAnchor as-child>
-      <ComboboxTrigger
-        class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-9 w-full items-center justify-between rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <span class="flex min-w-0 items-center gap-2">
-          <GitBranchIcon class="size-3.5 shrink-0 text-muted-foreground" />
-          <span class="truncate">{{ model || placeholder || 'Select branch' }}</span>
-        </span>
-        <ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" />
+      <ComboboxTrigger as-child>
+        <Button variant="outline" size="sm" class="w-full justify-between">
+          <span class="flex min-w-0 items-center gap-2">
+            <GitBranchIcon class="size-3.5 shrink-0 text-muted-foreground" />
+            <span class="truncate">{{ model || placeholder || 'Select branch' }}</span>
+          </span>
+          <ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" />
+        </Button>
       </ComboboxTrigger>
     </ComboboxAnchor>
 

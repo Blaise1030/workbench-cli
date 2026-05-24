@@ -8,8 +8,10 @@ import {
 } from "@/modules/keyboard/queries/keybindings";
 import type { KeybindingAction, KeybindingsMap } from "@/modules/keyboard/types";
 import { toast } from "vue-sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
+import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
+import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 
 const { data: serverBindings } = useKeybindingsQuery();
 const updateMutation = useUpdateKeybindingsMutation();
@@ -95,67 +97,51 @@ function resetToDefaults() {
 </script>
 
 <template>
-  <Card class="max-w-5xl" @keydown="onCaptureKeydown" tabindex="-1">
-    <CardHeader class="flex flex-row items-start justify-between gap-4 space-y-0">
-      <div class="space-y-1">
-        <CardTitle>Keyboard Shortcuts</CardTitle>
-        <CardDescription>
-          Remap workspace shortcuts. Changes are saved to your local workbench config.
-        </CardDescription>
-      </div>
-      <div class="flex shrink-0 gap-2">
-        <Button variant="outline" size="sm" @click="resetToDefaults">
-          Reset to defaults
-        </Button>
-        <Button size="sm" :disabled="updateMutation.isPending.value" @click="save">
-          {{ updateMutation.isPending.value ? "Saving…" : "Save" }}
-        </Button>
-      </div>
-    </CardHeader>
+  <div tabindex="-1" @keydown="onCaptureKeydown">
+  <SettingsPage
+    title="Keybindings"
+    description="Remap workspace shortcuts. Changes are saved to your local workbench config."
+  >
+    <template #actions>
+      <Button variant="outline" size="sm" @click="resetToDefaults">
+        Reset to defaults
+      </Button>
+      <Button size="sm" :disabled="updateMutation.isPending.value" @click="save">
+        {{ updateMutation.isPending.value ? "Saving…" : "Save" }}
+      </Button>
+    </template>
 
-    <CardContent>
-      <div v-if="hasConflict" class="mb-3 text-xs text-amber-500">
-        Conflict: this chord is also assigned to "{{
-          KEYBINDING_DESCRIPTORS.find((d) => d.action === hasConflict)?.label
-        }}". Both will be saved — last key pressed wins.
-      </div>
+    <div v-if="hasConflict" class="border-b border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm text-amber-600 dark:text-amber-400">
+      Conflict: this chord is also assigned to "{{
+        KEYBINDING_DESCRIPTORS.find((d) => d.action === hasConflict)?.label
+      }}". Both will be saved — last key pressed wins.
+    </div>
 
-      <table class="w-full text-sm">
-      <thead>
-        <tr class="border-b text-xs text-muted-foreground">
-          <th class="pb-2 text-left font-normal">Action</th>
-          <th class="pb-2 text-left font-normal">Description</th>
-          <th class="pb-2 text-left font-normal">Shortcut</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="desc in KEYBINDING_DESCRIPTORS"
-          :key="desc.action"
-          class="border-b last:border-0"
+    <SettingsSection title="Workspace shortcuts">
+      <SettingsRow
+        v-for="desc in KEYBINDING_DESCRIPTORS"
+        :key="desc.action"
+        :label="desc.label"
+        :description="desc.description"
+      >
+        <button
+          type="button"
+          class="inline-flex min-w-[4rem] items-center justify-center rounded-md border border-input bg-muted/50 px-3 py-1.5 text-xs font-mono hover:bg-muted"
+          :class="
+            capturingAction === desc.action
+              ? 'border-foreground ring-1 ring-foreground animate-pulse'
+              : ''
+          "
+          @click="startCapture(desc.action)"
         >
-          <td class="py-2 pr-4 font-medium">{{ desc.label }}</td>
-          <td class="py-2 pr-4 text-muted-foreground text-xs">{{ desc.description }}</td>
-          <td class="py-2">
-            <button
-              class="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-mono"
-              :class="
-                capturingAction === desc.action
-                  ? 'border-foreground bg-muted animate-pulse'
-                  : 'hover:border-foreground/50'
-              "
-              @click="startCapture(desc.action)"
-            >
-              {{
-                capturingAction === desc.action
-                  ? captureDisplay
-                  : chordLabel(draft[desc.action])
-              }}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    </CardContent>
-  </Card>
+          {{
+            capturingAction === desc.action
+              ? captureDisplay
+              : chordLabel(draft[desc.action])
+          }}
+        </button>
+      </SettingsRow>
+    </SettingsSection>
+  </SettingsPage>
+  </div>
 </template>

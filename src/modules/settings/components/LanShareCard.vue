@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import QRCode from "qrcode";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
 
 const props = defineProps<{
   lanUrl: string;
@@ -32,22 +32,23 @@ async function copyUrl() {
 </script>
 
 <template>
-  <Card>
-    <CardHeader>
-      <CardTitle>Connect from another device</CardTitle>
-      <CardDescription>Link expires in 15 minutes · one-time use</CardDescription>
-    </CardHeader>
-    <CardContent class="flex flex-col items-center gap-4">
-      <canvas ref="canvasRef" class="rounded-md border" />
-      <div class="flex w-full gap-2">
-        <code class="min-w-0 flex-1 truncate rounded bg-muted px-2 py-1 text-xs">{{ lanUrl }}</code>
+  <SettingsSection
+    title="Connect from another device"
+    description="Link expires in 15 minutes · one-time use"
+  >
+    <div class="flex flex-col items-start gap-4 py-4">
+      <canvas ref="canvasRef" class="rounded-md border border-border" />
+      <div class="flex w-full max-w-md gap-2">
+        <code class="min-w-0 flex-1 truncate rounded-md bg-muted px-3 py-2 text-xs">
+          {{ lanUrl }}
+        </code>
         <Button type="button" variant="outline" size="sm" @click="copyUrl">
           {{ copied ? "Copied" : "Copy" }}
         </Button>
       </div>
-      <Button type="button" variant="secondary" class="w-full" @click="emit('refresh')">
+      <Button type="button" variant="secondary" size="sm" @click="emit('refresh')">
         Regenerate link
       </Button>
-    </CardContent>
-  </Card>
+    </div>
+  </SettingsSection>
 </template>

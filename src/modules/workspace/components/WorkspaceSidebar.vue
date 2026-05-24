@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useRouter, RouterLink } from "vue-router";
-import { ChevronRightIcon, FolderGit2Icon, FolderOpenIcon, SettingsIcon } from "@lucide/vue";
+import {
+  ChevronRightIcon,
+  FolderGit2Icon,
+  FolderOpenIcon,
+  SettingsIcon,
+} from "@lucide/vue";
 import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
 import ProjectWorktrees from "@/modules/workspace/components/ProjectWorktrees.vue";
 import ThemeToggle from "@/modules/workspace/components/ThemeToggle.vue";
@@ -11,10 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import SidebarMenuButtonChild from "@/components/ui/sidebar/SidebarMenuButtonChild.vue";
 import {
   projectsQueryOptions,
@@ -76,7 +78,7 @@ async function addProject() {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col bg-background">
+  <div class="flex h-full min-h-0 flex-col">
     <div class="flex h-8 items-center justify-end px-3">
       <div class="flex items-center gap-0.5">
         <ThemeToggle />

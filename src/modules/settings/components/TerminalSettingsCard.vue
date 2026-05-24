@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -15,6 +13,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { TerminalSettings } from "@server/schemas/api";
+import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
+import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
+import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 import {
   useAddResumePrefixMutation,
   usePatchTerminalSettingsMutation,
@@ -178,59 +179,52 @@ async function revoke(id: string) {
 </script>
 
 <template>
-  <Card>
-    <CardHeader>
-      <CardTitle>Terminal</CardTitle>
-      <CardDescription>
-        Session restore, agent resume, and scrollback limits for terminal tabs.
-      </CardDescription>
-    </CardHeader>
-    <CardContent class="flex flex-col gap-6">
-      <section class="space-y-4">
-        <div>
-          <h3 class="text-sm font-medium">Agent sessions</h3>
-          <p class="text-sm text-muted-foreground">
-            When a supported CLI exits, store its session id and optionally resume on cold attach.
-            Requires shell integration (OSC 133) in the terminal.
-          </p>
-        </div>
+  <SettingsPage
+    title="General"
+    description="Session restore, agent resume, and scrollback limits for terminal tabs."
+  >
+    <div v-if="error" class="border-b border-destructive/30 bg-destructive/10 px-8 py-3 text-sm text-destructive">
+      {{ error }}
+    </div>
 
-        <div class="flex items-center justify-between gap-4">
-          <div class="space-y-1">
-            <Label for="auto-resume">Auto-resume on cold start</Label>
-            <p class="text-sm text-muted-foreground">
-              Spawn the agent resume command when reconnecting if a session was captured.
-            </p>
-          </div>
-          <Switch
-            id="auto-resume"
-            :checked="autoResume"
-            :disabled="loading || !anyAgentHookEnabled"
-            @update:checked="onAutoResumeChange"
-          />
-        </div>
+    <SettingsSection
+      title="Agent sessions"
+      description="When a supported CLI exits, store its session id and optionally resume on cold attach. Requires shell integration (OSC 133) in the terminal."
+    >
+      <SettingsRow
+        label="Auto-resume on cold start"
+        description="Spawn the agent resume command when reconnecting if a session was captured."
+      >
+        <Switch
+          id="auto-resume"
+          :checked="autoResume"
+          :disabled="loading || !anyAgentHookEnabled"
+          @update:checked="onAutoResumeChange"
+        />
+      </SettingsRow>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            :disabled="loading"
-            @click="enableAllAgentHooks"
-          >
-            Enable all agents
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            :disabled="loading"
-            @click="disableAllAgentHooks"
-          >
-            Disable all agents
-          </Button>
-        </div>
+      <div class="flex flex-wrap items-center gap-2 py-4">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          :disabled="loading"
+          @click="enableAllAgentHooks"
+        >
+          Enable all agents
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          :disabled="loading"
+          @click="disableAllAgentHooks"
+        >
+          Disable all agents
+        </Button>
+      </div>
 
+      <div class="overflow-x-auto py-2">
         <Table>
           <TableHeader>
             <TableRow>
@@ -260,99 +254,86 @@ async function revoke(id: string) {
             </TableRow>
           </TableBody>
         </Table>
-      </section>
+      </div>
+    </SettingsSection>
 
-      <Separator />
+    <SettingsSection
+      title="PTY & scrollback"
+      description="Keep processes alive across browser refresh and tune memory limits."
+    >
+      <SettingsRow
+        label="Persist scrollback on shutdown"
+        description="Best-effort replay when the server restarts and no live PTY exists."
+      >
+        <Switch
+          id="scrollback-persist"
+          :checked="scrollbackPersist"
+          :disabled="loading"
+          @update:checked="onScrollbackPersistChange"
+        />
+      </SettingsRow>
 
-      <section class="space-y-4">
-        <div>
-          <h3 class="text-sm font-medium">PTY &amp; scrollback</h3>
-          <p class="text-sm text-muted-foreground">
-            Keep processes alive across browser refresh and tune memory limits.
-          </p>
-        </div>
+      <SettingsRow
+        label="PTY idle TTL (hours)"
+        description="Kill detached PTYs after this many hours with no clients."
+      >
+        <Input
+          id="pty-idle-ttl"
+          type="number"
+          min="1"
+          class="w-24"
+          :model-value="ptyIdleTtlHours"
+          :disabled="loading"
+          @blur="onPtyIdleBlur"
+        />
+      </SettingsRow>
 
-        <div class="flex items-center justify-between gap-4">
-          <div class="space-y-1">
-            <Label for="scrollback-persist">Persist scrollback on shutdown</Label>
-            <p class="text-sm text-muted-foreground">
-              Best-effort replay when the server restarts and no live PTY exists.
-            </p>
-          </div>
-          <Switch
-            id="scrollback-persist"
-            :checked="scrollbackPersist"
+      <SettingsRow
+        label="Scrollback cap (KB)"
+        description="In-memory ring buffer size per terminal."
+      >
+        <Input
+          id="scrollback-cap"
+          type="number"
+          min="64"
+          class="w-24"
+          :model-value="scrollbackCapKb"
+          :disabled="loading"
+          @blur="onScrollbackCapBlur"
+        />
+      </SettingsRow>
+    </SettingsSection>
+
+    <SettingsSection
+      title="Custom restart commands"
+      description="Approved prefixes for per-tab restart commands (right-click a tab → Set restart command). Takes priority over agent auto-resume when trusted."
+    >
+      <div class="grid gap-4 py-4 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
+        <div class="space-y-2">
+          <Label for="new-prefix">Command prefix</Label>
+          <Input
+            id="new-prefix"
+            v-model="newPrefix"
+            placeholder="tmux attach -t mysession"
             :disabled="loading"
-            @update:checked="onScrollbackPersistChange"
+            @keydown.enter="addApprovedPrefix"
           />
         </div>
-
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="space-y-2">
-            <Label for="pty-idle-ttl">PTY idle TTL (hours)</Label>
-            <Input
-              id="pty-idle-ttl"
-              type="number"
-              min="1"
-              :model-value="ptyIdleTtlHours"
-              :disabled="loading"
-              @blur="onPtyIdleBlur"
-            />
-            <p class="text-sm text-muted-foreground">
-              Kill detached PTYs after this many hours with no clients.
-            </p>
-          </div>
-          <div class="space-y-2">
-            <Label for="scrollback-cap">Scrollback cap (KB)</Label>
-            <Input
-              id="scrollback-cap"
-              type="number"
-              min="64"
-              :model-value="scrollbackCapKb"
-              :disabled="loading"
-              @blur="onScrollbackCapBlur"
-            />
-            <p class="text-sm text-muted-foreground">In-memory ring buffer size per terminal.</p>
-          </div>
+        <div class="space-y-2">
+          <Label for="new-prefix-label">Label (optional)</Label>
+          <Input
+            id="new-prefix-label"
+            v-model="newPrefixLabel"
+            placeholder="work tmux"
+            :disabled="loading"
+            @keydown.enter="addApprovedPrefix"
+          />
         </div>
-      </section>
+        <Button type="button" :disabled="loading" @click="addApprovedPrefix">Add</Button>
+      </div>
 
-      <Separator />
-
-      <section class="space-y-4">
-        <div>
-          <h3 class="text-sm font-medium">Custom restart commands</h3>
-          <p class="text-sm text-muted-foreground">
-            Approved prefixes for per-tab restart commands (right-click a tab → Set restart command).
-            Takes priority over agent auto-resume when trusted.
-          </p>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
-          <div class="space-y-2">
-            <Label for="new-prefix">Command prefix</Label>
-            <Input
-              id="new-prefix"
-              v-model="newPrefix"
-              placeholder="tmux attach -t mysession"
-              :disabled="loading"
-              @keydown.enter="addApprovedPrefix"
-            />
-          </div>
-          <div class="space-y-2">
-            <Label for="new-prefix-label">Label (optional)</Label>
-            <Input
-              id="new-prefix-label"
-              v-model="newPrefixLabel"
-              placeholder="work tmux"
-              :disabled="loading"
-              @keydown.enter="addApprovedPrefix"
-            />
-          </div>
-          <Button type="button" :disabled="loading" @click="addApprovedPrefix">Add</Button>
-        </div>
-
-        <Table v-if="approvedPrefixes.length > 0">
+      <div v-if="approvedPrefixes.length > 0" class="overflow-x-auto py-2">
+        <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Prefix</TableHead>
@@ -382,10 +363,8 @@ async function revoke(id: string) {
             </TableRow>
           </TableBody>
         </Table>
-        <p v-else class="text-sm text-muted-foreground">No approved prefixes yet.</p>
-      </section>
-
-      <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-    </CardContent>
-  </Card>
+      </div>
+      <p v-else class="py-4 text-sm text-muted-foreground">No approved prefixes yet.</p>
+    </SettingsSection>
+  </SettingsPage>
 </template>
