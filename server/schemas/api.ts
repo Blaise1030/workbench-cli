@@ -62,3 +62,34 @@ export type LanToggleBody = z.infer<typeof lanToggleBodySchema>;
 export type LanPublicState = z.infer<typeof lanPublicStateSchema>;
 export type TerminalSettings = z.infer<typeof terminalSettingsSchema>;
 export type ApprovedResumePrefix = z.infer<typeof approvedResumePrefixSchema>;
+
+// ── Keybindings ─────────────────────────────────────────────────────────────
+
+export const KEYBINDING_ACTIONS = [
+  "terminal.newTerminal",
+  "panel.explorer",
+  "panel.git",
+  "terminal.tab.1",
+  "terminal.tab.2",
+  "terminal.tab.3",
+  "terminal.tab.4",
+  "terminal.tab.5",
+  "terminal.tab.6",
+  "terminal.tab.7",
+  "terminal.tab.8",
+  "terminal.tab.9",
+] as const;
+
+export type KeybindingAction = (typeof KEYBINDING_ACTIONS)[number];
+
+export type KeybindingsMap = Record<KeybindingAction, string>;
+
+// Chord format: one or more of "Meta|Ctrl|Alt|Shift" joined by "+", then "+key"
+// e.g. "Meta+n", "Ctrl+Shift+p", "Meta+1"
+const chordPattern = /^(Meta|Ctrl|Alt|Shift)(\+(Meta|Ctrl|Alt|Shift))*\+.+$/;
+
+export const putKeybindingsSchema = z.object(
+  Object.fromEntries(
+    KEYBINDING_ACTIONS.map((a) => [a, z.string().regex(chordPattern)]),
+  ) as Record<KeybindingAction, z.ZodString>,
+);
