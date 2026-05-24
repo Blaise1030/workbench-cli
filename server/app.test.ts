@@ -177,7 +177,12 @@ describe("GET /api/settings/terminal", () => {
     expect(body.ptyIdleTtlHours).toBe(24);
     expect(body.scrollbackCapKb).toBe(4096);
     expect(body.autoResumeAgentSessions).toBe(true);
-    expect(body.agentHooks).toEqual({ claude: true, codex: true });
+    expect(body.agentHooks).toEqual({
+      claude: true,
+      codex: true,
+      cursor: true,
+      gemini: true,
+    });
   });
 });
 

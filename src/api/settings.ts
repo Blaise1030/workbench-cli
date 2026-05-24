@@ -96,6 +96,19 @@ export function usePatchTerminalSettingsMutation() {
   });
 }
 
+export function useAddResumePrefixMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { prefix: string; label?: string; cwd?: string }) => {
+      const res = await apiClient.settings.terminal["resume-commands"].$post({ json: body });
+      return ensureOk<{ prefix: ApprovedResumePrefix }>(res);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.resumePrefixes() });
+    },
+  });
+}
+
 export function useRevokeResumePrefixMutation() {
   const queryClient = useQueryClient();
   return useMutation({

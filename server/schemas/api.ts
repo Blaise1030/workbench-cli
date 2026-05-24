@@ -25,6 +25,8 @@ export const terminalSettingsSchema = z.object({
   agentHooks: z.object({
     claude: z.boolean(),
     codex: z.boolean(),
+    cursor: z.boolean(),
+    gemini: z.boolean(),
   }),
 });
 
@@ -33,6 +35,8 @@ export const patchTerminalSettingsSchema = terminalSettingsSchema.partial().exte
     .object({
       claude: z.boolean().optional(),
       codex: z.boolean().optional(),
+      cursor: z.boolean().optional(),
+      gemini: z.boolean().optional(),
     })
     .optional(),
 });

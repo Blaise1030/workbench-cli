@@ -1,7 +1,17 @@
 import { readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import type { AgentAdapter } from "./types.js";
+import {
+  cursorWorkspaceHash,
+  geminiProjectHash,
+  isGeminiSessionFile,
+  newestByMtime,
+  normalizeCwd,
+  readFirstJsonLine,
+  sessionIdFromGeminiFile,
+  walkFiles,
+} from "./session-utils.js";
 
 function sanitizeClaudeProjectKey(cwd: string): string {
   return cwd.replace(/[^a-zA-Z0-9]/g, "-");
@@ -36,37 +46,8 @@ export const claudeAdapter: AgentAdapter = {
   },
 };
 
-function walkCodexSessions(root: string): string[] {
-  const files: string[] = [];
-  const stack = [root];
-  while (stack.length > 0) {
-    const dir = stack.pop()!;
-    let entries: string[];
-    try {
-      entries = readdirSync(dir);
-    } catch {
-      continue;
-    }
-    for (const name of entries) {
-      const full = join(dir, name);
-      let st;
-      try {
-        st = statSync(full);
-      } catch {
-        continue;
-      }
-      if (st.isDirectory()) {
-        stack.push(full);
-      } else if (name.endsWith(".jsonl")) {
-        files.push(full);
-      }
-    }
-  }
-  return files;
-}
-
 function codexSessionIdFromPath(path: string): string | null {
-  const base = basename(path, ".jsonl");
+  const base = path.split("/").pop()?.replace(/\.jsonl$/, "") ?? "";
   const rollout = base.match(/^rollout-(.+)$/);
   if (rollout) return rollout[1]!;
   const uuid = base.match(
@@ -83,20 +64,116 @@ export const codexAdapter: AgentAdapter = {
   },
   findLatestSessionId(_cwd, home) {
     const root = join(home, ".codex", "sessions");
-    let best: { id: string; mtimeMs: number } | null = null;
-    for (const file of walkCodexSessions(root)) {
-      const id = codexSessionIdFromPath(file);
-      if (!id) continue;
-      const mtimeMs = statSync(file).mtimeMs;
-      if (!best || mtimeMs > best.mtimeMs) {
-        best = { id, mtimeMs };
-      }
-    }
-    return best?.id ?? null;
+    const files = walkFiles(root, (name) => name.endsWith(".jsonl"));
+    const candidates = files
+      .map((file) => {
+        const id = codexSessionIdFromPath(file);
+        if (!id) return null;
+        return { id, mtimeMs: statSync(file).mtimeMs };
+      })
+      .filter((item): item is { id: string; mtimeMs: number } => item !== null);
+    return newestByMtime(candidates)?.id ?? null;
   },
 };
 
-export const AGENT_ADAPTERS: AgentAdapter[] = [claudeAdapter, codexAdapter];
+function findLatestCursorSessionInWorkspace(workspaceDir: string): string | null {
+  let entries: string[];
+  try {
+    entries = readdirSync(workspaceDir);
+  } catch {
+    return null;
+  }
+
+  const candidates = entries
+    .map((chatId) => {
+      const storeDb = join(workspaceDir, chatId, "store.db");
+      try {
+        return { id: chatId, mtimeMs: statSync(storeDb).mtimeMs };
+      } catch {
+        return null;
+      }
+    })
+    .filter((item): item is { id: string; mtimeMs: number } => item !== null);
+
+  return newestByMtime(candidates)?.id ?? null;
+}
+
+export const cursorAdapter: AgentAdapter = {
+  kind: "cursor",
+  binaries: ["agent", "cursor-agent"],
+  resumeArgs(sessionId) {
+    return ["agent", "--resume", sessionId];
+  },
+  findLatestSessionId(cwd, home) {
+    const workspaceDir = join(home, ".cursor", "chats", cursorWorkspaceHash(cwd));
+    const direct = findLatestCursorSessionInWorkspace(workspaceDir);
+    if (direct) return direct;
+
+    const root = join(home, ".cursor", "chats");
+    let workspaces: string[];
+    try {
+      workspaces = readdirSync(root);
+    } catch {
+      return null;
+    }
+
+    const candidates = workspaces
+      .map((workspaceId) => {
+        const chatId = findLatestCursorSessionInWorkspace(join(root, workspaceId));
+        if (!chatId) return null;
+        const storeDb = join(root, workspaceId, chatId, "store.db");
+        try {
+          return { id: chatId, mtimeMs: statSync(storeDb).mtimeMs };
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is { id: string; mtimeMs: number } => item !== null);
+
+    return newestByMtime(candidates)?.id ?? null;
+  },
+};
+
+function geminiSessionsForProject(cwd: string, home: string): string[] {
+  const resolved = normalizeCwd(cwd);
+  const hash = geminiProjectHash(resolved);
+  const directDir = join(home, ".gemini", "tmp", hash, "chats");
+  const direct = walkFiles(directDir, isGeminiSessionFile);
+  if (direct.length > 0) return direct;
+
+  const root = join(home, ".gemini", "tmp");
+  const all = walkFiles(root, isGeminiSessionFile);
+  return all.filter((file) => {
+    const meta = readFirstJsonLine(file);
+    return meta?.projectHash === hash;
+  });
+}
+
+export const geminiAdapter: AgentAdapter = {
+  kind: "gemini",
+  binaries: ["gemini"],
+  resumeArgs(sessionId) {
+    return ["gemini", "--resume", sessionId];
+  },
+  findLatestSessionId(cwd, home) {
+    const files = geminiSessionsForProject(cwd, home);
+    const candidates = files
+      .map((file) => {
+        const id = sessionIdFromGeminiFile(file);
+        if (!id) return null;
+        return { id, mtimeMs: statSync(file).mtimeMs };
+      })
+      .filter((item): item is { id: string; mtimeMs: number } => item !== null);
+    return newestByMtime(candidates)?.id ?? null;
+  },
+};
+
+export const AGENT_ADAPTERS: AgentAdapter[] = [
+  claudeAdapter,
+  codexAdapter,
+  cursorAdapter,
+  geminiAdapter,
+];
 
 export function defaultAgentHome(): string {
   return homedir();

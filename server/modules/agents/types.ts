@@ -1,4 +1,4 @@
-export type AgentKind = "claude" | "codex";
+export type AgentKind = "claude" | "codex" | "cursor" | "gemini";
 
 export interface AgentAdapter {
   kind: AgentKind;

@@ -18,7 +18,12 @@ describe("terminal settings", () => {
     const settings = await getTerminalSettings(store);
     expect(settings.autoResumeAgentSessions).toBe(TERMINAL_SETTINGS_DEFAULTS.autoResumeAgentSessions);
     expect(settings.ptyIdleTtlHours).toBe(TERMINAL_SETTINGS_DEFAULTS.ptyIdleTtlHours);
-    expect(settings.agentHooks).toEqual({ claude: true, codex: true });
+    expect(settings.agentHooks).toEqual({
+      claude: true,
+      codex: true,
+      cursor: true,
+      gemini: true,
+    });
   });
 
   it("patches partial settings", async () => {

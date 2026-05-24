@@ -11,7 +11,12 @@ export const TERMINAL_SETTINGS_KEYS = {
   resumeCommandsApprovedPrefixes: "terminal.resumeCommands.approvedPrefixes",
 } as const;
 
-export const SUPPORTED_AGENT_KINDS = ["claude", "codex"] as const satisfies readonly AgentKind[];
+export const SUPPORTED_AGENT_KINDS = [
+  "claude",
+  "codex",
+  "cursor",
+  "gemini",
+] as const satisfies readonly AgentKind[];
 
 export function agentHookSettingsKey(kind: AgentKind): string {
   return `terminal.agentHooks.${kind}.enabled`;
