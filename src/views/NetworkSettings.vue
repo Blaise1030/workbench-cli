@@ -106,23 +106,24 @@ async function onRefreshInvite() {
         <CardTitle>Network</CardTitle>
         <CardDescription>Control who can reach this terminal on your local network.</CardDescription>
       </CardHeader>
-      <CardContent class="flex items-center justify-between gap-4">
-        <div class="space-y-1">
-          <Label for="lan-switch">Allow LAN access</Label>
-          <p class="text-sm text-muted-foreground">
-            Let other devices on your Wi‑Fi reach this terminal.
-          </p>
+      <CardContent class="flex flex-col gap-4">
+        <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
+        <div class="flex items-center justify-between gap-4">
+          <div class="space-y-1">
+            <Label for="lan-switch">Allow LAN access</Label>
+            <p class="text-sm text-muted-foreground">
+              Let other devices on your Wi‑Fi reach this terminal.
+            </p>
+          </div>
+          <Switch
+            id="lan-switch"
+            :checked="pendingEnable ?? enabled"
+            :disabled="loading"
+            @update:checked="onSwitchChange"
+          />
         </div>
-        <Switch
-          id="lan-switch"
-          :checked="pendingEnable ?? enabled"
-          :disabled="loading"
-          @update:checked="onSwitchChange"
-        />
       </CardContent>
     </Card>
-
-    <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
 
     <LanShareCard
       v-if="enabled && lanUrl"
