@@ -1,0 +1,46 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { getKeybindings, putKeybindings } from "./store.js";
+import { DEFAULT_KEYBINDINGS } from "./store.js";
+
+let tmpDir: string;
+
+beforeEach(async () => {
+  tmpDir = await mkdtemp(join(tmpdir(), "keybindings-test-"));
+});
+
+afterEach(async () => {
+  await rm(tmpDir, { recursive: true, force: true });
+});
+
+describe("getKeybindings", () => {
+  it("returns defaults when file does not exist", async () => {
+    const result = await getKeybindings(join(tmpDir, "missing.json"));
+    expect(result).toEqual(DEFAULT_KEYBINDINGS);
+  });
+
+  it("merges file overrides over defaults", async () => {
+    const filePath = join(tmpDir, "kb.json");
+    await putKeybindings({ ...DEFAULT_KEYBINDINGS, "terminal.newTerminal": "Ctrl+t" }, filePath);
+    const result = await getKeybindings(filePath);
+    expect(result["terminal.newTerminal"]).toBe("Ctrl+t");
+    expect(result["panel.git"]).toBe(DEFAULT_KEYBINDINGS["panel.git"]);
+  });
+});
+
+describe("putKeybindings", () => {
+  it("writes the map and reads it back unchanged", async () => {
+    const filePath = join(tmpDir, "kb.json");
+    const custom = { ...DEFAULT_KEYBINDINGS, "panel.explorer": "Meta+f" };
+    await putKeybindings(custom, filePath);
+    const result = await getKeybindings(filePath);
+    expect(result["panel.explorer"]).toBe("Meta+f");
+  });
+
+  it("creates parent directory if missing", async () => {
+    const filePath = join(tmpDir, "nested", "dir", "kb.json");
+    await expect(putKeybindings(DEFAULT_KEYBINDINGS, filePath)).resolves.not.toThrow();
+  });
+});
