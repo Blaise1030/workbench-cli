@@ -66,9 +66,9 @@ const activeLabel = computed(
       <header class="flex h-10 items-center border-b px-4">
         <span class="text-sm font-medium">{{ activeLabel }}</span>
       </header>
-      <main class="p-6 max-w-lg">
+      <div class="p-6 max-w-lg">
         <RouterView />
-      </main>
+      </div>
     </SidebarInset>
   </SidebarProvider>
 </template>
