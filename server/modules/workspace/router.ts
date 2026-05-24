@@ -38,6 +38,7 @@ import {
   getGitStatusForWorktree,
   GitPanelError,
 } from "./git.js";
+import { FileReadError, listFilesForWorktree, readFileForWorktree } from "./files.js";
 import type { GitDiffScope } from "../git/diff.js";
 import type { PtyRegistry } from "../terminal/pty-registry.js";
 
@@ -149,6 +150,27 @@ export function createWorkspaceRouter(
       const worktree = await getWorktree(db, c.req.param("id"));
       if (!worktree) return c.json({ error: "Worktree not found" }, 404);
       return c.json({ worktree });
+    })
+    .get("/worktrees/:id/files", async (c) => {
+      const worktree = await getWorktree(db, c.req.param("id"));
+      if (!worktree) return c.json({ error: "Worktree not found" }, 404);
+      const paths = await listFilesForWorktree(worktree.path);
+      return c.json({ paths });
+    })
+    .get("/worktrees/:id/files/content", async (c) => {
+      const worktree = await getWorktree(db, c.req.param("id"));
+      if (!worktree) return c.json({ error: "Worktree not found" }, 404);
+      const path = c.req.query("path");
+      if (!path) return c.json({ error: "path query parameter is required" }, 400);
+      try {
+        const file = await readFileForWorktree(worktree.path, path);
+        return c.json(file);
+      } catch (err) {
+        if (err instanceof FileReadError) {
+          return c.json({ error: err.message }, err.status);
+        }
+        throw err;
+      }
     })
     .get("/worktrees/:id/git/status", async (c) => {
       try {

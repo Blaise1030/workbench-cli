@@ -120,6 +120,25 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* @pierre/trees — map shadcn tokens (see https://trees.software/docs#styling-and-theming) */
+.trees-shadcn {
+  --trees-padding-inline-override: 0px;
+  --trees-bg-override: var(--background);
+  --trees-fg-override: var(--sidebar-foreground);
+  --trees-fg-muted-override: var(--muted-foreground);
+  --trees-bg-muted-override: var(--muted);
+  --trees-border-color-override: var(--border);
+  --trees-selected-bg-override: var(--accent);
+  --trees-selected-fg-override: var(--accent-foreground);
+  --trees-search-bg-override: var(--input);
+  --trees-search-fg-override: var(--sidebar-foreground);
+  --trees-focus-ring-color-override: var(--ring);
+  --trees-scrollbar-thumb-override: var(--border);
+  --trees-border-radius-override: var(--radius-sm);
+  height: 100%;
+  min-height: 0;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

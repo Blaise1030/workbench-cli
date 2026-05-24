@@ -73,6 +73,10 @@ export const workspaceKeys = {
     [...workspaceKeys.all, "git-status", worktreeId] as const,
   gitDiff: (worktreeId: string, scope: GitDiffScope, path: string | null) =>
     [...workspaceKeys.all, "git-diff", worktreeId, scope, path] as const,
+  fileTree: (worktreeId: string) =>
+    [...workspaceKeys.all, "file-tree", worktreeId] as const,
+  fileContent: (worktreeId: string, path: string) =>
+    [...workspaceKeys.all, "file-content", worktreeId, path] as const,
 };
 
 export function projectsQueryOptions() {
@@ -303,6 +307,45 @@ export function useUpdateTerminalMutation(worktreeId: MaybeRefOrGetter<string>) 
         queryKey: workspaceKeys.terminals(toValue(worktreeId)),
       });
     },
+  });
+}
+
+export function fileContentQueryOptions(
+  worktreeId: MaybeRefOrGetter<string>,
+  path: MaybeRefOrGetter<string | null>,
+) {
+  return queryOptions({
+    queryKey: computed(() =>
+      workspaceKeys.fileContent(toValue(worktreeId), toValue(path) ?? ""),
+    ),
+    queryFn: async () => {
+      const id = toValue(worktreeId);
+      const filePath = toValue(path);
+      if (!filePath) throw new Error("No file selected");
+      const res = await apiClient.worktrees[":id"].files.content.$get({
+        param: { id },
+        query: { path: filePath },
+      });
+      return ensureOk<{ path: string; content: string; truncated: boolean }>(res);
+    },
+    enabled: computed(() => Boolean(toValue(worktreeId) && toValue(path))),
+    staleTime: 30_000,
+  });
+}
+
+export function fileTreeQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
+  return queryOptions({
+    queryKey: computed(() => workspaceKeys.fileTree(toValue(worktreeId))),
+    queryFn: async () => {
+      const id = toValue(worktreeId);
+      const res = await apiClient.worktrees[":id"].files.$get({
+        param: { id },
+      });
+      const data = await ensureOk<{ paths: string[] }>(res);
+      return data.paths;
+    },
+    enabled: computed(() => Boolean(toValue(worktreeId))),
+    staleTime: Infinity,
   });
 }
 

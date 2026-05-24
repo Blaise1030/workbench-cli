@@ -3,8 +3,9 @@ import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import WorkspaceLayout from "@/layouts/WorkspaceLayout.vue";
 import TerminalWorkspace from "@/components/TerminalWorkspace.vue";
-import { projectsQueryOptions } from "@/api/workspace";
+import { projectsQueryOptions, worktreeQueryOptions } from "@/api/workspace";
 import { useQuery } from "@tanstack/vue-query";
+import { queryClient } from "@/lib/query-client";
 
 const route = useRoute();
 const router = useRouter();
@@ -19,8 +20,12 @@ watch(
     if (id || route.name !== "home") return;
     if (!list?.length) return;
     const last = localStorage.getItem("lastWorktreeId");
-    if (last) {
+    if (!last) return;
+    try {
+      await queryClient.ensureQueryData(worktreeQueryOptions(last));
       await router.replace({ name: "workspace", params: { worktreeId: last } });
+    } catch {
+      localStorage.removeItem("lastWorktreeId");
     }
   },
   { immediate: true },

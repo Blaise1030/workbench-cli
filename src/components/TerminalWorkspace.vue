@@ -94,6 +94,18 @@ watch(
   { immediate: true },
 );
 
+// Bare /w/:id (no child) → open first terminal when available
+watch(
+  [terminals, () => route.name],
+  ([list, name]) => {
+    if (!list?.length || name !== "workspace") return;
+    router.replace({
+      name: "terminal",
+      params: { worktreeId: props.worktreeId, terminalId: list[0].id },
+    });
+  },
+);
+
 // Redirect if current terminal no longer exists
 watch(
   [terminals, () => route.params.terminalId],
