@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { GitBranchIcon, Settings2Icon, Columns2Icon, AlignJustifyIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, AlignLeftIcon, SquareIcon, SlashIcon } from "@lucide/vue";
 import {
   gitDiffQueryOptions,
@@ -23,7 +24,15 @@ const props = defineProps<{
 
 type TabScope = "staged" | "unstaged" | "untracked";
 
-const activeTab = ref<TabScope>("unstaged");
+const route = useRoute();
+const router = useRouter();
+
+const activeTab = computed<TabScope>({
+  get: () => (route.query.tab as TabScope) ?? "staged",
+  set: (val: TabScope) => {
+    router.replace({ query: { tab: val } });
+  },
+});
 
 const showBackgrounds = ref(true);
 const showLineNumbers = ref(true);
