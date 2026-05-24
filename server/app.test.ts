@@ -184,6 +184,35 @@ describe("GET /api/settings/terminal", () => {
       gemini: true,
     });
   });
+
+  it("persists patches across requests", async () => {
+    const { session, app } = makeApp();
+    activateSession(session);
+    const headers = {
+      cookie: `sid=${session.sid}`,
+      "content-type": "application/json",
+    };
+
+    const patchRes = await app.request("/api/settings/terminal", {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({
+        autoResumeAgentSessions: false,
+        ptyIdleTtlHours: 6,
+        agentHooks: { claude: false, gemini: false },
+      }),
+    });
+    expect(patchRes.status).toBe(200);
+
+    const getRes = await app.request("/api/settings/terminal", { headers });
+    expect(getRes.status).toBe(200);
+    const body = await getRes.json();
+    expect(body.autoResumeAgentSessions).toBe(false);
+    expect(body.ptyIdleTtlHours).toBe(6);
+    expect(body.agentHooks.claude).toBe(false);
+    expect(body.agentHooks.gemini).toBe(false);
+    expect(body.agentHooks.codex).toBe(true);
+  });
 });
 
 describe("POST /projects/pick-folder", () => {

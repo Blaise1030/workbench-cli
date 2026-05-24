@@ -1,34 +1,51 @@
 <script setup lang="ts">
 import type { SwitchRootEmits, SwitchRootProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
+import { computed } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import {
   SwitchRoot,
   SwitchThumb,
-  useForwardPropsEmits,
 } from 'reka-ui'
 import { cn } from '@/lib/utils'
 
 const props = withDefaults(defineProps<SwitchRootProps & {
   class?: HTMLAttributes['class']
   size?: 'sm' | 'default'
+  /** shadcn-style alias for modelValue */
+  checked?: boolean
 }>(), {
   size: 'default',
 })
 
-const emits = defineEmits<SwitchRootEmits>()
+const emits = defineEmits<SwitchRootEmits & {
+  'update:checked': [payload: boolean]
+}>()
 
-const delegatedProps = reactiveOmit(props, 'class', 'size')
+const delegatedProps = reactiveOmit(props, 'class', 'size', 'checked', 'modelValue')
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits)
+const switchValue = computed({
+  get(): boolean {
+    if (props.modelValue !== undefined && props.modelValue !== null) {
+      return props.modelValue === (props.trueValue ?? true)
+    }
+    return props.checked ?? false
+  },
+  set(next: boolean) {
+    const value = next ? (props.trueValue ?? true) : (props.falseValue ?? false)
+    emits('update:modelValue', value as boolean)
+    emits('update:checked', next)
+  },
+})
 </script>
 
 <template>
   <SwitchRoot
     v-slot="slotProps"
+    v-model="switchValue"
     data-slot="switch"
     :data-size="size"
-    v-bind="forwarded"
+    v-bind="delegatedProps"
     :class="cn(
       'data-checked:bg-primary data-unchecked:bg-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 dark:data-unchecked:bg-input/80 shrink-0 rounded-full border border-transparent focus-visible:ring-3 aria-invalid:ring-3 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] peer group/switch relative inline-flex items-center transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-50',
       props.class,
