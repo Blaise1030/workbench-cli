@@ -10,11 +10,10 @@ import FileExplorerPanel from "@/components/FileExplorerPanel.vue";
 import { ensureLocalAuth } from "@/api/auth";
 import { lanSettingsQueryOptions } from "@/api/settings";
 import { queryClient } from "@/lib/query-client";
-import { ApiError } from "@/lib/api-error";
+import { ApiError, ensureOk } from "@/lib/api-error";
 import { isLocalHost } from "@/lib/is-local-host";
 import { workspaceKeys } from "@/api/workspace";
 import { apiClient } from "@/lib/api-client";
-import { ensureOk } from "@/lib/api-error";
 import type { TerminalTab } from "@/api/workspace";
 
 const VALID_GIT_TABS = ["staged", "unstaged", "untracked"] as const;
@@ -38,28 +37,26 @@ const router = createRouter({
       name: "workspace",
       component: WorkspaceView,
       beforeEnter: async (to) => {
-        if (to.name === "workspace") {
-          const worktreeId = to.params.worktreeId as string;
-          try {
-            const terminals = await queryClient.ensureQueryData<TerminalTab[]>({
-              queryKey: workspaceKeys.terminals(worktreeId),
-              queryFn: async () => {
-                const res = await apiClient.worktrees[":id"].terminals.$get({
-                  param: { id: worktreeId },
-                });
-                const data = await ensureOk<{ terminals: TerminalTab[] }>(res);
-                return data.terminals;
-              },
-            });
-            if (terminals.length > 0) {
-              return {
-                name: "terminal",
-                params: { worktreeId, terminalId: terminals[0].id },
-              };
-            }
-          } catch {
-            // No terminals — stay on workspace, show empty state
+        const worktreeId = to.params.worktreeId as string;
+        try {
+          const terminals = await queryClient.ensureQueryData<TerminalTab[]>({
+            queryKey: workspaceKeys.terminals(worktreeId),
+            queryFn: async () => {
+              const res = await apiClient.worktrees[":id"].terminals.$get({
+                param: { id: worktreeId },
+              });
+              const data = await ensureOk<{ terminals: TerminalTab[] }>(res);
+              return data.terminals;
+            },
+          });
+          if (terminals.length > 0) {
+            return {
+              name: "terminal",
+              params: { worktreeId, terminalId: terminals[0].id },
+            };
           }
+        } catch {
+          // No terminals — stay on workspace, show empty state
         }
       },
       children: [
@@ -76,7 +73,7 @@ const router = createRouter({
           props: (route) => ({ worktreeId: route.params.worktreeId }),
           beforeEnter: (to) => {
             if (!VALID_GIT_TABS.includes(to.query.tab as typeof VALID_GIT_TABS[number])) {
-              return { ...to, query: { tab: "staged" } };
+              return { name: "git", params: to.params, query: { tab: "staged" } };
             }
           },
         },
