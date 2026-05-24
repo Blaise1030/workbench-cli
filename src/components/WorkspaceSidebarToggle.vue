@@ -15,7 +15,7 @@ const { isCollapsed, toggle } = useWorkspaceSidebar();
   <Button
     variant="ghost"
     size="icon-xs"
-    :class="cn('h-8 w-8 shrink-0 rounded-none', props.class)"
+    :class="cn('h-6 w-6 mx-auto my-auto shrink-0 rounded-none', props.class)"
     :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
     :aria-expanded="!isCollapsed"
     @click="toggle"

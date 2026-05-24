@@ -9,6 +9,24 @@ import { getTerminalWithWorktree, TerminalError } from "../workspace/terminals.j
 import { parseResize } from "./pty.js";
 import { shellIntegrationSpawn } from "./shell-integration.js";
 
+const MAX_SCROLLBACK = 200_000;
+
+interface PtyEntry {
+  process: pty.IPty;
+  scrollback: string;
+  currentWs: WebSocket | null;
+}
+
+const ptyRegistry = new Map<string, PtyEntry>();
+
+export function killPtySession(terminalId: string): void {
+  const entry = ptyRegistry.get(terminalId);
+  if (!entry) return;
+  entry.currentWs?.close();
+  entry.process.kill();
+  ptyRegistry.delete(terminalId);
+}
+
 function parseSid(cookieHeader: string | undefined): string {
   if (!cookieHeader) return "";
   const match = cookieHeader.match(/(?:^|;\s*)sid=([^;]+)/);
@@ -19,51 +37,78 @@ function parseTerminalId(url: URL): string {
   return url.searchParams.get("terminalId")?.trim() ?? "";
 }
 
-function handlePTYConnection(ws: WebSocket, cwd: string): void {
+function handlePTYConnection(ws: WebSocket, cwd: string, terminalId: string): void {
   const shell = process.env.SHELL ?? "/bin/zsh";
-  let ptyProcess: pty.IPty | null = null;
+  const existing = ptyRegistry.get(terminalId);
+
+  if (existing) {
+    existing.currentWs = ws;
+    if (existing.scrollback && ws.readyState === WebSocket.OPEN) {
+      ws.send(existing.scrollback);
+    }
+  }
 
   ws.on("message", (msg: Buffer | string) => {
     const input = typeof msg === "string" ? msg : msg.toString("utf-8");
     const resize = parseResize(input);
 
     if (resize) {
-      if (!ptyProcess) {
+      const entry = ptyRegistry.get(terminalId);
+      if (!entry) {
         const env: Record<string, string> = {};
         for (const [k, v] of Object.entries(process.env)) {
           if (v !== undefined) env[k] = v;
         }
         try {
           const { env: shellEnv, args } = shellIntegrationSpawn(shell, env);
-          ptyProcess = pty.spawn(shell, args, {
+          const ptyProcess = pty.spawn(shell, args, {
             name: "xterm-256color",
             cols: resize.cols,
             rows: resize.rows,
             cwd,
             env: shellEnv,
           });
+          const newEntry: PtyEntry = { process: ptyProcess, scrollback: "", currentWs: ws };
+          ptyRegistry.set(terminalId, newEntry);
+
+          ptyProcess.onData((data) => {
+            const e = ptyRegistry.get(terminalId);
+            if (!e) return;
+            e.scrollback += data;
+            if (e.scrollback.length > MAX_SCROLLBACK) {
+              e.scrollback = e.scrollback.slice(-MAX_SCROLLBACK);
+            }
+            if (e.currentWs?.readyState === WebSocket.OPEN) {
+              e.currentWs.send(data);
+            }
+          });
+
+          ptyProcess.onExit(() => {
+            const e = ptyRegistry.get(terminalId);
+            if (e?.currentWs?.readyState === WebSocket.OPEN) {
+              e.currentWs.close();
+            }
+            ptyRegistry.delete(terminalId);
+          });
         } catch (err) {
           console.error("PTY spawn failed:", err);
           if (ws.readyState === WebSocket.OPEN) ws.close();
           return;
         }
-        ptyProcess.onData((data) => {
-          if (ws.readyState === WebSocket.OPEN) ws.send(data);
-        });
-        ptyProcess.onExit(() => {
-          if (ws.readyState === WebSocket.OPEN) ws.close();
-        });
       } else {
-        ptyProcess.resize(resize.cols, resize.rows);
+        entry.process.resize(resize.cols, resize.rows);
       }
       return;
     }
 
-    ptyProcess?.write(input);
+    ptyRegistry.get(terminalId)?.process.write(input);
   });
 
   ws.on("close", () => {
-    ptyProcess?.kill();
+    const entry = ptyRegistry.get(terminalId);
+    if (entry && entry.currentWs === ws) {
+      entry.currentWs = null;
+    }
   });
 }
 
@@ -104,7 +149,7 @@ export function attachWebSocketUpgrade(
       }
 
       wss.handleUpgrade(req, socket, head, (ws) => {
-        handlePTYConnection(ws, record.worktree.path);
+        handlePTYConnection(ws, record.worktree.path, terminalId);
       });
     } catch (err) {
       if (err instanceof TerminalError) {

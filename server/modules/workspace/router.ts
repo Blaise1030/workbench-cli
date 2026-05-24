@@ -4,6 +4,7 @@ import { requireSession } from "../auth/middleware.js";
 import { isLocalRequest } from "../auth/local.js";
 import type { Session } from "../auth/session.js";
 import type { AppDatabase } from "../../db/index.js";
+import { killPtySession } from "../terminal/handler.js";
 import {
   createWorktreeBodySchema,
   createTerminalBodySchema,
@@ -227,7 +228,9 @@ export function createWorkspaceRouter(session: Session, { db }: AppDatabase) {
     )
     .delete("/terminals/:id", async (c) => {
       try {
-        await deleteTerminal(db, c.req.param("id"));
+        const id = c.req.param("id");
+        killPtySession(id);
+        await deleteTerminal(db, id);
         return c.json({ ok: true as const });
       } catch (err) {
         const e = handleWorkspaceError(err);

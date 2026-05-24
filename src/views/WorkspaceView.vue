@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import { useRoute, useRouter, RouterLink } from "vue-router";
-import { SettingsIcon } from "@lucide/vue";
+import { useRoute, useRouter } from "vue-router";
 import WorkspaceLayout from "@/layouts/WorkspaceLayout.vue";
 import TerminalWorkspace from "@/components/TerminalWorkspace.vue";
-import WorkspaceSidebarToggle from "@/components/WorkspaceSidebarToggle.vue";
-import ThemeToggle from "@/components/ThemeToggle.vue";
-import { Button } from "@/components/ui/button";
 import { projectsQueryOptions } from "@/api/workspace";
 import { useQuery } from "@tanstack/vue-query";
 
@@ -38,15 +34,6 @@ watch(
       :worktree-id="worktreeId"
       class="flex min-h-0 flex-1 flex-col"
     >
-      <template #toolbar-end>
-        <ThemeToggle />
-        <Button variant="ghost" size="icon-xs" as-child>
-          <RouterLink to="/settings" aria-label="Settings">
-            <SettingsIcon />
-            <span class="sr-only">Settings</span>
-          </RouterLink>
-        </Button>
-      </template>
     </TerminalWorkspace>
 
     <div v-else class="flex h-full min-h-0 flex-1 flex-col">

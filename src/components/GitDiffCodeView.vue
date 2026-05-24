@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CodeView, type CodeViewItem } from "@pierre/diffs";
+import { CodeView, type CodeViewItem, type DiffIndicators } from "@pierre/diffs";
 import { useMutationObserver } from "@vueuse/core";
 import {
   computed,
@@ -13,23 +13,47 @@ import { useAppColorMode } from "@/composables/useAppColorMode";
 
 const props = defineProps<{
   items: CodeViewItem[];
+  disableBackground?: boolean;
+  disableLineNumbers?: boolean;
+  wordWrap?: boolean;
+  diffIndicators?: DiffIndicators;
+  diffStyle?: "unified" | "split";
+  allCollapsed?: boolean;
 }>();
 
 const rootRef = ref<HTMLElement | null>(null);
 const viewer = shallowRef<CodeView | null>(null);
 const { colorMode } = useAppColorMode();
+const optionsVersion = ref(0);
 
 const themeType = computed(() =>
   colorMode.value === "dark" ? ("dark" as const) : ("light" as const),
 );
+
+function diffOptions() {
+  return {
+    theme: { dark: "pierre-dark", light: "pierre-light" },
+    themeType: themeType.value,
+    disableBackground: props.disableBackground,
+    disableLineNumbers: props.disableLineNumbers,
+    overflow: props.wordWrap ? ("wrap" as const) : ("scroll" as const),
+    diffIndicators: props.diffIndicators,
+    diffStyle: props.diffStyle ?? "unified",
+  };
+}
+
+function applyCollapsed() {
+  const collapsed = props.allCollapsed;
+  if (collapsed === undefined) return;
+  viewer.value?.setItems(props.items.map((item) => ({ ...item, collapsed })));
+}
 
 function mountViewer() {
   const root = rootRef.value;
   if (!root || viewer.value) return;
 
   const instance = new CodeView({
-    theme: { dark: "pierre-dark", light: "pierre-light" },
-    themeType: themeType.value,
+    ...diffOptions(),
     stickyHeaders: true,
     layout: { paddingTop: 8, paddingBottom: 8, gap: 8 },
   });
@@ -42,12 +66,15 @@ function syncItems() {
   viewer.value?.setItems(props.items);
 }
 
+function syncOptions() {
+  optionsVersion.value++;
+  const v = optionsVersion.value;
+  viewer.value?.setOptions(diffOptions());
+  viewer.value?.setItems(props.items.map((item) => ({ ...item, version: v })));
+}
+
 function syncTheme() {
-  viewer.value?.setOptions({
-    theme: { dark: "pierre-dark", light: "pierre-light" },
-    themeType: themeType.value,
-  });
-  viewer.value?.render(true);
+  syncOptions();
 }
 
 onMounted(() => {
@@ -67,6 +94,16 @@ watch(themeType, () => {
   syncTheme();
 });
 
+watch(
+  () => [props.disableBackground, props.disableLineNumbers, props.wordWrap, props.diffIndicators, props.diffStyle],
+  () => syncOptions(),
+);
+
+watch(
+  () => props.allCollapsed,
+  () => applyCollapsed(),
+);
+
 useMutationObserver(
   rootRef,
   () => {
@@ -84,7 +121,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="rootRef"
-    class="git-diff-code-view min-h-0 flex-1 overflow-auto rounded-md border border-border/60 bg-muted/20"
+    class="git-diff-code-view min-h-0 flex-1 overflow-auto"
   />
 </template>
 
