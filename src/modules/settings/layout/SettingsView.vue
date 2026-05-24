@@ -1,38 +1,74 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRouter, useRoute, RouterView } from "vue-router";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
 
 const router = useRouter();
 const route = useRoute();
+
+const navItems = [
+  { label: "General", name: "settings-general" },
+  { label: "Network", name: "settings-network" },
+];
+
+const activeLabel = computed(
+  () => navItems.find((item) => item.name === route.name)?.label ?? "Settings",
+);
 </script>
 
 <template>
-  <div class="min-h-screen bg-background">
-    <header class="flex items-center gap-3 border-b px-4 py-3">
-      <button class="text-sm hover:underline" @click="router.back()">← Back</button>
-      <h1 class="text-lg font-semibold">Settings</h1>
-    </header>
-    <main class="mx-auto max-w-lg p-4">
-      <div class="flex gap-1 border-b mb-4">
+  <SidebarProvider class="min-h-screen">
+    <Sidebar collapsible="none">
+      <SidebarHeader class="px-4 py-3">
+        <span class="text-base font-semibold">Settings</span>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem v-for="item in navItems" :key="item.name">
+                <SidebarMenuButton
+                  :is-active="route.name === item.name"
+                  @click="router.push({ name: item.name })"
+                >
+                  {{ item.label }}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter class="px-2 py-3">
         <button
-          class="px-3 py-1.5 text-sm transition-colors"
-          :class="route.name === 'settings-general'
-            ? 'border-b-2 border-foreground font-medium text-foreground'
-            : 'text-muted-foreground hover:text-foreground'"
-          @click="router.push({ name: 'settings-general' })"
+          class="text-sm text-muted-foreground hover:text-foreground transition-colors px-2"
+          @click="router.back()"
         >
-          General
+          ← Back
         </button>
-        <button
-          class="px-3 py-1.5 text-sm transition-colors"
-          :class="route.name === 'settings-network'
-            ? 'border-b-2 border-foreground font-medium text-foreground'
-            : 'text-muted-foreground hover:text-foreground'"
-          @click="router.push({ name: 'settings-network' })"
-        >
-          Network
-        </button>
-      </div>
-      <RouterView />
-    </main>
-  </div>
+      </SidebarFooter>
+    </Sidebar>
+
+    <SidebarInset>
+      <header class="flex h-10 items-center border-b px-4">
+        <span class="text-sm font-medium">{{ activeLabel }}</span>
+      </header>
+      <main class="p-6 max-w-lg">
+        <RouterView />
+      </main>
+    </SidebarInset>
+  </SidebarProvider>
 </template>
