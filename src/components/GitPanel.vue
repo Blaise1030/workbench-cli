@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { GitBranchIcon, Settings2Icon, Columns2Icon, AlignJustifyIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, AlignLeftIcon, SquareIcon, SlashIcon } from "@lucide/vue";
 import {
@@ -30,7 +30,7 @@ const router = useRouter();
 const activeTab = computed<TabScope>({
   get: () => (route.query.tab as TabScope) ?? "staged",
   set: (val: TabScope) => {
-    router.replace({ query: { tab: val } });
+    router.replace({ query: { ...route.query, tab: val } });
   },
 });
 
