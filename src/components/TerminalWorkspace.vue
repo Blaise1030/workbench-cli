@@ -21,6 +21,13 @@ import {
   useDeleteTerminalMutation,
   useTerminalsQuery,
 } from "@/api/workspace";
+import TerminalResumeDialog from "@/components/TerminalResumeDialog.vue";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   auxPanelsStateFromClient,
   clientPanelsFromState,
@@ -41,6 +48,8 @@ provide(terminalSessionsKey, sessions);
 
 const activeId = ref("");
 const clientPanels = ref<ClientWorkspacePanel[]>([]);
+const resumeDialogOpen = ref(false);
+const resumeDialogTerminalId = ref("");
 
 const { data: terminals, isLoading } = useTerminalsQuery(
   () => props.worktreeId,
@@ -223,6 +232,15 @@ function tabTitle(tab: { id: string; type: WorkspacePanelType; title: string }) 
   }
   return tab.title;
 }
+
+function terminalRow(id: string) {
+  return terminalTabs.value.find((t) => t.id === id);
+}
+
+function openResumeDialog(terminalId: string) {
+  resumeDialogTerminalId.value = terminalId;
+  resumeDialogOpen.value = true;
+}
 </script>
 
 <template>
@@ -235,32 +253,49 @@ function tabTitle(tab: { id: string; type: WorkspacePanelType; title: string }) 
         class="flex h-8 min-w-0 flex-1 items-stretch overflow-x-auto"
         role="tablist"
       >
-        <button
-          v-for="(tab, index) in allTabs"
-          :key="tab.id"
-          type="button"
-          role="tab"
-          :class="tabTriggerClass(tab.id, index)"
-          :aria-selected="tab.id === activeId"
-          @click="activeId = tab.id"
-        >
-          <component :is="tabIcon(tab.type)" class="size-3.5 shrink-0 opacity-70" />
-          <span class="min-w-0 truncate" :title="tabTitle(tab)">
-            {{
-              tab.type === "terminal"
-                ? sessions.tabLabel(tab.id)
-                : tab.title
-            }}
-          </span>
-          <span
-            role="button"
-            :class="tabCloseClass(tab.id)"
-            :aria-label="`Close ${tab.title}`"
-            @click.stop="closeTab(tab.id)"
-          >
-            <XIcon class="size-3" />
-          </span>
-        </button>
+        <ContextMenu v-for="(tab, index) in allTabs" :key="tab.id">
+          <ContextMenuTrigger as-child>
+            <button
+              type="button"
+              role="tab"
+              :class="tabTriggerClass(tab.id, index)"
+              :aria-selected="tab.id === activeId"
+              @click="activeId = tab.id"
+            >
+              <component :is="tabIcon(tab.type)" class="size-3.5 shrink-0 opacity-70" />
+              <span class="min-w-0 truncate" :title="tabTitle(tab)">
+                {{
+                  tab.type === "terminal"
+                    ? sessions.tabLabel(tab.id)
+                    : tab.title
+                }}
+              </span>
+              <span
+                v-if="tab.type === 'terminal' && terminalRow(tab.id)?.agentSessionId"
+                class="size-1.5 shrink-0 rounded-full bg-emerald-500"
+                :title="`Agent session (${terminalRow(tab.id)?.agentKind})`"
+              />
+              <span
+                v-if="tab.type === 'terminal' && terminalRow(tab.id)?.resumeTrusted"
+                class="size-1.5 shrink-0 rounded-full bg-primary"
+                title="Trusted restart command"
+              />
+              <span
+                role="button"
+                :class="tabCloseClass(tab.id)"
+                :aria-label="`Close ${tab.title}`"
+                @click.stop="closeTab(tab.id)"
+              >
+                <XIcon class="size-3" />
+              </span>
+            </button>
+          </ContextMenuTrigger>
+          <ContextMenuContent v-if="tab.type === 'terminal'">
+            <ContextMenuItem @select="openResumeDialog(tab.id)">
+              Set restart command…
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       </div>
 
       <div class="flex shrink-0 border-s items-center gap-0.5 px-1">
@@ -299,5 +334,14 @@ function tabTitle(tab: { id: string; type: WorkspacePanelType; title: string }) 
         class="absolute inset-0"
       />
     </div>
+
+    <TerminalResumeDialog
+      v-if="resumeDialogTerminalId"
+      v-model:open="resumeDialogOpen"
+      :terminal-id="resumeDialogTerminalId"
+      :worktree-id="worktreeId"
+      :initial-command="terminalRow(resumeDialogTerminalId)?.resumeCommand"
+      :initial-trusted="terminalRow(resumeDialogTerminalId)?.resumeTrusted"
+    />
   </div>
 </template>

@@ -4,14 +4,26 @@ import { createDatabase } from "./db/index.js";
 import { createToken } from "./modules/auth/token.js";
 import { createSession, activateSession } from "./modules/auth/session.js";
 import { LanManager } from "./modules/settings/lan.js";
+import { createSettingsStore } from "./modules/settings/store.js";
+import { createPtyRegistry } from "./modules/terminal/pty-registry.js";
 
 function makeApp() {
   const token = createToken();
   const session = createSession();
   const lan = new LanManager(3000);
   const database = createDatabase(":memory:");
-  const app = createApp(token, session, lan, async () => {}, database);
-  return { token, session, lan, app, database };
+  const settingsStore = createSettingsStore(database.db);
+  const ptyRegistry = createPtyRegistry({ settingsStore });
+  const app = createApp(
+    token,
+    session,
+    lan,
+    async () => {},
+    database,
+    settingsStore,
+    ptyRegistry,
+  );
+  return { token, session, lan, app, database, settingsStore, ptyRegistry };
 }
 
 function loopbackEnv() {
@@ -144,6 +156,28 @@ describe("GET /api/settings/lan", () => {
     const body = await res.json();
     expect(body.enabled).toBe(true);
     expect(body.lanUrl).toMatch(/\?invite=/);
+  });
+});
+
+describe("GET /api/settings/terminal", () => {
+  it("requires session", async () => {
+    const { app } = makeApp();
+    const res = await app.request("/api/settings/terminal");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns defaults when authenticated", async () => {
+    const { session, app } = makeApp();
+    activateSession(session);
+    const res = await app.request("/api/settings/terminal", {
+      headers: { cookie: `sid=${session.sid}` },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ptyIdleTtlHours).toBe(24);
+    expect(body.scrollbackCapKb).toBe(4096);
+    expect(body.autoResumeAgentSessions).toBe(true);
+    expect(body.agentHooks).toEqual({ claude: true, codex: true });
   });
 });
 

@@ -1,13 +1,11 @@
 import type { Server } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
-import * as pty from "node-pty";
 import type { Session } from "../auth/session.js";
 import { validateSession, activateSession } from "../auth/session.js";
 import { isLoopbackAddress } from "../auth/local.js";
 import type { AppDatabase } from "../../db/index.js";
 import { getTerminalWithWorktree, TerminalError } from "../workspace/terminals.js";
-import { parseResize } from "./pty.js";
-import { shellIntegrationSpawn } from "./shell-integration.js";
+import type { PtyRegistry } from "./pty-registry.js";
 
 function parseSid(cookieHeader: string | undefined): string {
   if (!cookieHeader) return "";
@@ -19,51 +17,27 @@ function parseTerminalId(url: URL): string {
   return url.searchParams.get("terminalId")?.trim() ?? "";
 }
 
-function handlePTYConnection(ws: WebSocket, cwd: string): void {
-  const shell = process.env.SHELL ?? "/bin/zsh";
-  let ptyProcess: pty.IPty | null = null;
+function bindTerminalSocket(
+  registry: PtyRegistry,
+  terminalId: string,
+  ws: WebSocket,
+  ctx: {
+    cwd: string;
+    resumeCommand?: string | null;
+    resumeTrusted?: boolean;
+    agentKind?: string | null;
+    agentSessionId?: string | null;
+  },
+): void {
+  void registry.attach(terminalId, ws, ctx);
 
   ws.on("message", (msg: Buffer | string) => {
     const input = typeof msg === "string" ? msg : msg.toString("utf-8");
-    const resize = parseResize(input);
-
-    if (resize) {
-      if (!ptyProcess) {
-        const env: Record<string, string> = {};
-        for (const [k, v] of Object.entries(process.env)) {
-          if (v !== undefined) env[k] = v;
-        }
-        try {
-          const { env: shellEnv, args } = shellIntegrationSpawn(shell, env);
-          ptyProcess = pty.spawn(shell, args, {
-            name: "xterm-256color",
-            cols: resize.cols,
-            rows: resize.rows,
-            cwd,
-            env: shellEnv,
-          });
-        } catch (err) {
-          console.error("PTY spawn failed:", err);
-          if (ws.readyState === WebSocket.OPEN) ws.close();
-          return;
-        }
-        ptyProcess.onData((data) => {
-          if (ws.readyState === WebSocket.OPEN) ws.send(data);
-        });
-        ptyProcess.onExit(() => {
-          if (ws.readyState === WebSocket.OPEN) ws.close();
-        });
-      } else {
-        ptyProcess.resize(resize.cols, resize.rows);
-      }
-      return;
-    }
-
-    ptyProcess?.write(input);
+    void registry.handleMessage(terminalId, ws, input);
   });
 
   ws.on("close", () => {
-    ptyProcess?.kill();
+    registry.detach(terminalId, ws);
   });
 }
 
@@ -72,6 +46,7 @@ export function attachWebSocketUpgrade(
   wss: WebSocketServer,
   session: Session,
   database: AppDatabase,
+  registry: PtyRegistry,
 ): void {
   httpServer.on("upgrade", async (req, socket, head) => {
     const url = new URL(req.url ?? "/", "https://localhost");
@@ -104,7 +79,13 @@ export function attachWebSocketUpgrade(
       }
 
       wss.handleUpgrade(req, socket, head, (ws) => {
-        handlePTYConnection(ws, record.worktree.path);
+        bindTerminalSocket(registry, terminalId, ws, {
+          cwd: record.worktree.path,
+          resumeCommand: record.terminal.resumeCommand,
+          resumeTrusted: record.terminal.resumeTrusted,
+          agentKind: record.terminal.agentKind,
+          agentSessionId: record.terminal.agentSessionId,
+        });
       });
     } catch (err) {
       if (err instanceof TerminalError) {

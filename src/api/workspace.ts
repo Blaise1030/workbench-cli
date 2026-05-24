@@ -31,6 +31,10 @@ export interface TerminalTab {
   worktreeId: string;
   title: string;
   sortOrder: number;
+  resumeCommand: string | null;
+  resumeTrusted: boolean;
+  agentKind: string | null;
+  agentSessionId: string | null;
   createdAt: string;
 }
 
@@ -259,6 +263,36 @@ export function useCreateTerminalMutation(worktreeId: MaybeRefOrGetter<string>) 
       const res = await apiClient.worktrees[":id"].terminals.$post({
         param: { id: toValue(worktreeId) },
         json: title ? { title } : {},
+      });
+      const data = await ensureOk<{ terminal: TerminalTab }>(res);
+      return data.terminal;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.terminals(toValue(worktreeId)),
+      });
+    },
+  });
+}
+
+export function useUpdateTerminalMutation(worktreeId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      terminalId,
+      patch,
+    }: {
+      terminalId: string;
+      patch: {
+        title?: string;
+        sortOrder?: number;
+        resumeCommand?: string | null;
+        resumeTrusted?: boolean;
+      };
+    }) => {
+      const res = await apiClient.terminals[":id"].$patch({
+        param: { id: terminalId },
+        json: patch,
       });
       const data = await ensureOk<{ terminal: TerminalTab }>(res);
       return data.terminal;

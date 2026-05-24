@@ -23,18 +23,30 @@ export interface TerminalOscReport {
   cwd?: string;
   /** Set when OSC 133 reports command finished (shell integration). */
   commandExit?: number;
+  /** Command line from shell integration (OSC 133;C;cmd_b64=…). */
+  commandLine?: string;
 }
 
-function parseOsc133Exit(payload: string): number | undefined {
+function parseOsc133Exit(payload: string): { commandExit?: number; commandLine?: string } {
   const parts = payload.split(";");
-  if (parts[0] !== "C") return undefined;
+  if (parts[0] !== "C") return {};
+  let commandExit: number | undefined;
+  let commandLine: string | undefined;
   for (const part of parts.slice(1)) {
     if (part.startsWith("exit=")) {
       const code = Number.parseInt(part.slice(5), 10);
-      return Number.isNaN(code) ? undefined : code;
+      if (!Number.isNaN(code)) commandExit = code;
+    } else if (part.startsWith("cmd_b64=")) {
+      try {
+        commandLine = Buffer.from(part.slice(8), "base64").toString("utf-8");
+      } catch {
+        // ignore
+      }
+    } else if (part.startsWith("cmd=")) {
+      commandLine = part.slice(4);
     }
   }
-  return undefined;
+  return { commandExit, commandLine };
 }
 
 const OSC_RE = /\x1b\]([0-9]+);([\s\S]*?)(?:\x07|\x1b\\)/g;
@@ -64,8 +76,9 @@ export function parseOscStream(
       const cwd = parseOsc7Path(payload);
       if (cwd) report.cwd = cwd;
     } else if (code === "133") {
-      const commandExit = parseOsc133Exit(payload);
+      const { commandExit, commandLine } = parseOsc133Exit(payload);
       if (commandExit !== undefined) report.commandExit = commandExit;
+      if (commandLine !== undefined) report.commandLine = commandLine;
     }
 
     if (report.title || report.cwd || report.commandExit !== undefined) {

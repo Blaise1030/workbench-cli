@@ -13,10 +13,23 @@ if [[ -z "\${LAN_TERMINAL_INTEGRATION:-}" ]]; then
   elif [[ -f "\${HOME}/.zshrc" ]]; then
     source "\${HOME}/.zshrc"
   fi
+  __lan_terminal_last_cmd=""
+  __lan_terminal_preexec() {
+    __lan_terminal_last_cmd=\$1
+  }
   __lan_terminal_precmd() {
     local ec=\$?
-    printf '\\033]133;C;exit=%s\\033\\\\' "\$ec"
+  local cmd_b64=""
+    if [[ -n "\${__lan_terminal_last_cmd}" ]]; then
+      cmd_b64=\$(printf %s "\${__lan_terminal_last_cmd}" | base64 | tr -d '\\n')
+    fi
+    if [[ -n "\${cmd_b64}" ]]; then
+      printf '\\033]133;C;exit=%s;cmd_b64=%s\\033\\\\' "\$ec" "\$cmd_b64"
+    else
+      printf '\\033]133;C;exit=%s\\033\\\\' "\$ec"
+    fi
   }
+  preexec_functions+=(__lan_terminal_preexec)
   precmd_functions+=(__lan_terminal_precmd)
 fi
 `;
@@ -27,9 +40,23 @@ if [[ -z "\${LAN_TERMINAL_INTEGRATION:-}" ]]; then
   if [[ -f "\${HOME}/.bashrc" ]]; then
     source "\${HOME}/.bashrc"
   fi
+  __lan_terminal_last_cmd=""
+  __lan_terminal_debug_trap() {
+    [[ "\${BASH_COMMAND}" == __lan_terminal_* ]] && return
+    __lan_terminal_last_cmd="\${BASH_COMMAND}"
+  }
+  trap __lan_terminal_debug_trap DEBUG
   __lan_terminal_prompt_command() {
-  local ec=\$?
-    printf '\\033]133;C;exit=%s\\033\\\\' "\$ec"
+    local ec=\$?
+    local cmd_b64=""
+    if [[ -n "\${__lan_terminal_last_cmd}" ]]; then
+      cmd_b64=\$(printf %s "\${__lan_terminal_last_cmd}" | base64 | tr -d '\\n')
+    fi
+    if [[ -n "\${cmd_b64}" ]]; then
+      printf '\\033]133;C;exit=%s;cmd_b64=%s\\033\\\\' "\$ec" "\$cmd_b64"
+    else
+      printf '\\033]133;C;exit=%s\\033\\\\' "\$ec"
+    fi
   }
   PROMPT_COMMAND="__lan_terminal_prompt_command\${PROMPT_COMMAND:+;\$PROMPT_COMMAND}"
 fi
@@ -42,9 +69,9 @@ function shellName(shellPath: string): string {
 export function ensureShellIntegrationFiles(): void {
   mkdirSync(INTEGRATION_DIR, { recursive: true });
   const zshrc = join(INTEGRATION_DIR, ".zshrc");
-  if (!existsSync(zshrc)) writeFileSync(zshrc, ZSH_RC, "utf8");
+  writeFileSync(zshrc, ZSH_RC, "utf8");
   const bashrc = join(INTEGRATION_DIR, "lan-terminal.bashrc");
-  if (!existsSync(bashrc)) writeFileSync(bashrc, BASH_RC, "utf8");
+  writeFileSync(bashrc, BASH_RC, "utf8");
 }
 
 export function bashIntegrationRcPath(): string {

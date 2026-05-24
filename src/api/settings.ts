@@ -4,13 +4,15 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/vue-query";
-import type { LanPublicState } from "@server/schemas/api";
+import type { ApprovedResumePrefix, LanPublicState, TerminalSettings } from "@server/schemas/api";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 
 export const settingsKeys = {
   all: ["settings"] as const,
   lan: () => [...settingsKeys.all, "lan"] as const,
+  terminal: () => [...settingsKeys.all, "terminal"] as const,
+  resumePrefixes: () => [...settingsKeys.all, "terminal", "resume-prefixes"] as const,
 };
 
 export function lanSettingsQueryOptions() {
@@ -23,8 +25,36 @@ export function lanSettingsQueryOptions() {
   });
 }
 
+export function terminalSettingsQueryOptions() {
+  return queryOptions({
+    queryKey: settingsKeys.terminal(),
+    queryFn: async () => {
+      const res = await apiClient.settings.terminal.$get();
+      return ensureOk<TerminalSettings>(res);
+    },
+  });
+}
+
+export function terminalResumePrefixesQueryOptions() {
+  return queryOptions({
+    queryKey: settingsKeys.resumePrefixes(),
+    queryFn: async () => {
+      const res = await apiClient.settings.terminal["resume-commands"].$get();
+      return ensureOk<{ approvedPrefixes: ApprovedResumePrefix[] }>(res);
+    },
+  });
+}
+
 export function useLanSettingsQuery() {
   return useQuery(lanSettingsQueryOptions());
+}
+
+export function useTerminalSettingsQuery() {
+  return useQuery(terminalSettingsQueryOptions());
+}
+
+export function useTerminalResumePrefixesQuery() {
+  return useQuery(terminalResumePrefixesQueryOptions());
 }
 
 export function useSetLanMutation() {
@@ -49,6 +79,34 @@ export function useRefreshInviteMutation() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(settingsKeys.lan(), data);
+    },
+  });
+}
+
+export function usePatchTerminalSettingsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: Partial<TerminalSettings>) => {
+      const res = await apiClient.settings.terminal.$patch({ json: patch });
+      return ensureOk<TerminalSettings>(res);
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(settingsKeys.terminal(), data);
+    },
+  });
+}
+
+export function useRevokeResumePrefixMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.settings.terminal["resume-commands"][":id"].$delete({
+        param: { id },
+      });
+      return ensureOk<{ ok: true }>(res);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.resumePrefixes() });
     },
   });
 }

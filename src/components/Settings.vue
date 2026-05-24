@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import LanShareCard from "@/components/LanShareCard.vue";
+import TerminalSettingsCard from "@/components/TerminalSettingsCard.vue";
 import {
   useLanSettingsQuery,
   useRefreshInviteMutation,
@@ -101,6 +102,8 @@ async function onRefreshInvite() {
 
 <template>
   <div class="flex flex-col gap-4">
+    <TerminalSettingsCard />
+
     <Card>
       <CardHeader>
         <CardTitle>Network</CardTitle>

@@ -39,6 +39,7 @@ import {
   GitPanelError,
 } from "./git.js";
 import type { GitDiffScope } from "../git/diff.js";
+import type { PtyRegistry } from "../terminal/pty-registry.js";
 
 function handleWorkspaceError(err: unknown) {
   if (
@@ -57,7 +58,11 @@ function parseDiffScope(value: string | undefined): GitDiffScope {
   return "all";
 }
 
-export function createWorkspaceRouter(session: Session, { db }: AppDatabase) {
+export function createWorkspaceRouter(
+  session: Session,
+  { db }: AppDatabase,
+  ptyRegistry?: PtyRegistry,
+) {
   return new Hono()
     .use("*", requireSession(session))
     .get("/projects", async (c) => {
@@ -227,7 +232,7 @@ export function createWorkspaceRouter(session: Session, { db }: AppDatabase) {
     )
     .delete("/terminals/:id", async (c) => {
       try {
-        await deleteTerminal(db, c.req.param("id"));
+        await deleteTerminal(db, c.req.param("id"), (id) => ptyRegistry?.kill(id));
         return c.json({ ok: true as const });
       } catch (err) {
         const e = handleWorkspaceError(err);

@@ -18,6 +18,8 @@ export const createTerminalBodySchema = z.object({
 export const updateTerminalBodySchema = z.object({
   title: z.string().min(1).optional(),
   sortOrder: z.number().int().optional(),
+  resumeCommand: z.string().nullable().optional(),
+  resumeTrusted: z.boolean().optional(),
 });
 
 export const projectSchema = z.object({
@@ -43,6 +45,10 @@ export const terminalSchema = z.object({
   worktreeId: z.string(),
   title: z.string(),
   sortOrder: z.number(),
+  resumeCommand: z.string().nullable(),
+  resumeTrusted: z.boolean(),
+  agentKind: z.string().nullable(),
+  agentSessionId: z.string().nullable(),
   createdAt: z.coerce.date(),
 });
 
