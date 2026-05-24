@@ -6,11 +6,16 @@ import {
   TerminalIcon,
   XIcon,
 } from "@lucide/vue";
+import { RouterView, useRoute, useRouter } from "vue-router";
 import WorkspacePanelMenu from "@/components/WorkspacePanelMenu.vue";
-import Terminal from "@/components/Terminal.vue";
-import GitPanel from "@/components/GitPanel.vue";
-import FileExplorerPanel from "@/components/FileExplorerPanel.vue";
 import WorkspaceSidebarToggle from "@/components/WorkspaceSidebarToggle.vue";
+import TerminalResumeDialog from "@/components/TerminalResumeDialog.vue";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import {
   createTerminalSessionsStore,
@@ -21,35 +26,24 @@ import {
   useDeleteTerminalMutation,
   useTerminalsQuery,
 } from "@/api/workspace";
-import TerminalResumeDialog from "@/components/TerminalResumeDialog.vue";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import {
-  auxPanelsStateFromClient,
+  useWorktreePanels,
   clientPanelsFromState,
-  loadAuxPanels,
-  saveAuxPanels,
+  gitPanelId,
+  explorerPanelId,
 } from "@/lib/worktree-panels-storage";
-import type {
-  ClientWorkspacePanel,
-  WorkspacePanelType,
-} from "@/types/workspace-panel";
+import type { WorkspacePanelType } from "@/types/workspace-panel";
 
 const props = defineProps<{
   worktreeId: string;
 }>();
 
+const route = useRoute();
+const router = useRouter();
 const sessions = createTerminalSessionsStore();
 provide(terminalSessionsKey, sessions);
 
-const activeId = ref("");
-const clientPanels = ref<ClientWorkspacePanel[]>([]);
-const resumeDialogOpen = ref(false);
-const resumeDialogTerminalId = ref("");
+const panelsState = useWorktreePanels(() => props.worktreeId);
 
 const { data: terminals, isLoading } = useTerminalsQuery(
   () => props.worktreeId,
@@ -59,6 +53,10 @@ const deleteTerminal = useDeleteTerminalMutation(() => props.worktreeId);
 
 const terminalTabs = computed(() => terminals.value ?? []);
 
+const clientPanels = computed(() =>
+  clientPanelsFromState(props.worktreeId, panelsState.value),
+);
+
 const allTabs = computed(() => [
   ...terminalTabs.value.map((t) => ({
     id: t.id,
@@ -67,135 +65,95 @@ const allTabs = computed(() => [
   })),
   ...clientPanels.value.map((p) => ({
     id: p.id,
-    type: p.type,
+    type: p.type as WorkspacePanelType,
     title: p.title,
   })),
 ]);
 
-const activePanelType = computed((): WorkspacePanelType => {
-  const tab = allTabs.value.find((t) => t.id === activeId.value);
-  return tab?.type ?? "terminal";
+const activeId = computed(() => {
+  if (route.name === "terminal") return route.params.terminalId as string;
+  if (route.name === "git") return gitPanelId(props.worktreeId);
+  if (route.name === "explorer") return explorerPanelId(props.worktreeId);
+  return "";
 });
 
+const resumeDialogOpen = ref(false);
+const resumeDialogTerminalId = ref("");
+
+// Create sessions for loaded terminals
 watch(
   terminals,
   (list) => {
     if (!list) return;
     for (const t of list) {
       if (!sessions.get(t.id)) {
-        sessions.create({
-          id: t.id,
-          terminalId: t.id,
-          title: t.title,
+        sessions.create({ id: t.id, terminalId: t.id, title: t.title });
+      }
+    }
+  },
+  { immediate: true },
+);
+
+// Redirect if current terminal no longer exists
+watch(
+  [terminals, () => route.params.terminalId],
+  ([list, terminalId]) => {
+    if (!list || route.name !== "terminal") return;
+    if (terminalId && !list.some((t) => t.id === terminalId)) {
+      const first = list[0];
+      if (first) {
+        router.replace({
+          name: "terminal",
+          params: { worktreeId: props.worktreeId, terminalId: first.id },
         });
       }
     }
-    syncActiveTab();
   },
-  { immediate: true },
 );
 
-function persistPanelState() {
-  saveAuxPanels(
-    props.worktreeId,
-    auxPanelsStateFromClient(clientPanels.value, activeId.value || null),
-  );
-}
-
-function restoreClientPanels(worktreeId: string) {
-  const stored = loadAuxPanels(worktreeId);
-  clientPanels.value = clientPanelsFromState(worktreeId, stored);
-  activeId.value = stored.activeTabId ?? "";
-}
-
-function syncActiveTab() {
-  const tabs = allTabs.value;
-  if (!tabs.length) {
-    if (!isLoading.value) activeId.value = "";
-    return;
+function navigateTo(tab: { id: string; type: WorkspacePanelType }) {
+  if (tab.type === "terminal") {
+    router.push({ name: "terminal", params: { worktreeId: props.worktreeId, terminalId: tab.id } });
+  } else if (tab.type === "git") {
+    router.push({ name: "git", params: { worktreeId: props.worktreeId } });
+  } else if (tab.type === "explorer") {
+    router.push({ name: "explorer", params: { worktreeId: props.worktreeId } });
   }
-  if (tabs.some((t) => t.id === activeId.value)) return;
-
-  const stored = loadAuxPanels(props.worktreeId).activeTabId;
-  if (stored) {
-    if (tabs.some((t) => t.id === stored)) {
-      activeId.value = stored;
-      return;
-    }
-    if (isLoading.value) {
-      activeId.value = stored;
-      return;
-    }
-  }
-
-  if (isLoading.value) return;
-
-  const firstTerminal = tabs.find((t) => t.type === "terminal");
-  activeId.value = firstTerminal?.id ?? tabs[0]!.id;
 }
-
-watch(clientPanels, () => {
-  persistPanelState();
-  syncActiveTab();
-});
-
-watch(
-  () => props.worktreeId,
-  (worktreeId) => {
-    restoreClientPanels(worktreeId);
-    syncActiveTab();
-  },
-  { immediate: true },
-);
-
-watch(activeId, () => {
-  persistPanelState();
-});
 
 async function addPanel(type: WorkspacePanelType) {
   if (type === "terminal") {
     const terminal = await createTerminal.mutateAsync(undefined);
-    sessions.create({
-      id: terminal.id,
-      terminalId: terminal.id,
-      title: terminal.title,
-    });
-    activeId.value = terminal.id;
+    sessions.create({ id: terminal.id, terminalId: terminal.id, title: terminal.title });
+    router.push({ name: "terminal", params: { worktreeId: props.worktreeId, terminalId: terminal.id } });
     return;
   }
-
-  const existing = clientPanels.value.find((p) => p.type === type);
-  if (existing) {
-    activeId.value = existing.id;
+  if (type === "git") {
+    panelsState.value.git = true;
+    router.push({ name: "git", params: { worktreeId: props.worktreeId } });
     return;
   }
-
-  const restored = clientPanelsFromState(props.worktreeId, {
-    ...auxPanelsStateFromClient(clientPanels.value, activeId.value || null),
-    [type]: true,
-  });
-  clientPanels.value = restored;
-  const panel = restored.find((p) => p.type === type);
-  if (panel) activeId.value = panel.id;
+  if (type === "explorer") {
+    panelsState.value.explorer = true;
+    router.push({ name: "explorer", params: { worktreeId: props.worktreeId } });
+  }
 }
 
 async function closeTab(id: string) {
-  const client = clientPanels.value.find((p) => p.id === id);
-  if (client) {
-    clientPanels.value = clientPanels.value.filter((p) => p.id !== id);
-    persistPanelState();
-    if (activeId.value === id) {
-      const remaining = allTabs.value.filter((t) => t.id !== id);
-      activeId.value = remaining[0]?.id ?? "";
-    }
-    return;
+  const isActive = id === activeId.value;
+  const remaining = allTabs.value.filter((t) => t.id !== id);
+
+  const clientPanel = clientPanels.value.find((p) => p.id === id);
+  if (clientPanel) {
+    if (clientPanel.type === "git") panelsState.value.git = false;
+    else if (clientPanel.type === "explorer") panelsState.value.explorer = false;
+  } else {
+    await deleteTerminal.mutateAsync(id);
+    sessions.remove(id);
   }
 
-  await deleteTerminal.mutateAsync(id);
-  sessions.remove(id);
-  if (activeId.value === id) {
-    const remaining = allTabs.value.filter((t) => t.id !== id);
-    activeId.value = remaining[0]?.id ?? "";
+  if (isActive && remaining[0]) {
+    navigateTo(remaining[0] as { id: string; type: WorkspacePanelType });
   }
 }
 
@@ -260,7 +218,7 @@ function openResumeDialog(terminalId: string) {
               role="tab"
               :class="tabTriggerClass(tab.id, index)"
               :aria-selected="tab.id === activeId"
-              @click="activeId = tab.id"
+              @click="navigateTo(tab)"
             >
               <component :is="tabIcon(tab.type)" class="size-3.5 shrink-0 opacity-70" />
               <span class="min-w-0 truncate" :title="tabTitle(tab)">
@@ -318,21 +276,7 @@ function openResumeDialog(terminalId: string) {
         <p class="text-sm">No panels in this worktree</p>
         <WorkspacePanelMenu @add="addPanel" />
       </div>
-      <Terminal
-        v-else-if="activeId && activePanelType === 'terminal'"
-        :session-id="activeId"
-        class="absolute inset-0"
-      />
-      <GitPanel
-        v-else-if="activeId && activePanelType === 'git'"
-        :worktree-id="worktreeId"
-        class="absolute inset-0"
-      />
-      <FileExplorerPanel
-        v-else-if="activeId && activePanelType === 'explorer'"
-        :worktree-id="worktreeId"
-        class="absolute inset-0"
-      />
+      <RouterView v-else class="absolute inset-0" />
     </div>
 
     <TerminalResumeDialog
