@@ -144,6 +144,7 @@ export function terminalsQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
       return data.terminals;
     },
     enabled: computed(() => Boolean(toValue(worktreeId))),
+    refetchInterval: 4000,
   });
 }
 
