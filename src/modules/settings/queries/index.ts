@@ -1,4 +1,3 @@
-/** @deprecated Import from `@/modules/settings/queries/settings` instead. */
 export {
   settingsKeys,
   lanSettingsQueryOptions,
@@ -12,4 +11,4 @@ export {
   usePatchTerminalSettingsMutation,
   useAddResumePrefixMutation,
   useRevokeResumePrefixMutation,
-} from "@/modules/settings/queries/settings";
+} from "./settings";
