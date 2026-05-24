@@ -12,7 +12,7 @@ import { lanSettingsQueryOptions } from "@/modules/settings/queries/settings";
 import { queryClient } from "@/lib/query-client";
 import { ApiError, ensureOk } from "@/lib/api-error";
 import { isLocalHost } from "@/lib/is-local-host";
-const VALID_GIT_TABS = ["staged", "unstaged", "untracked"] as const;
+const VALID_GIT_TABS = ["staged", "unstaged"] as const;
 
 const router = createRouter({
   history: createWebHistory(),
@@ -45,7 +45,11 @@ const router = createRouter({
           component: GitPanel,
           props: (route) => ({ worktreeId: route.params.worktreeId }),
           beforeEnter: (to) => {
-            if (!VALID_GIT_TABS.includes(to.query.tab as typeof VALID_GIT_TABS[number])) {
+            const tab = to.query.tab;
+            if (tab === "untracked") {
+              return { name: "git", params: to.params, query: { tab: "unstaged" } };
+            }
+            if (!VALID_GIT_TABS.includes(tab as typeof VALID_GIT_TABS[number])) {
               return { name: "git", params: to.params, query: { tab: "staged" } };
             }
           },

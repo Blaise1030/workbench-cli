@@ -1,0 +1,51 @@
+@reference "../../../assets/index.css";
+
+@layer components {
+  [slot="header-prefix"] {
+    @apply inline-flex shrink-0 flex-nowrap items-center;
+  }
+
+  .git-diff-header-prefix {
+    @apply inline-flex shrink-0 flex-nowrap items-center gap-2;
+  }
+
+  .git-diff-select-checkbox-host {
+    @apply inline-flex shrink-0 items-center;
+  }
+
+  /* Button variant=ghost size=icon-xs */
+  .git-diff-collapse-btn {
+    @apply inline-flex size-6 shrink-0 items-center justify-center rounded-[min(var(--radius-md),10px)] border border-transparent bg-transparent text-muted-foreground outline-none transition-all select-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-expanded:text-foreground dark:hover:bg-muted/50;
+  }
+
+  .git-diff-collapse-icon {
+    @apply pointer-events-none size-3 shrink-0;
+  }
+
+  .git-diff-explorer-link {
+    @apply inline-flex max-w-full items-center gap-1 text-inherit no-underline hover:underline;
+  }
+
+  .git-diff-explorer-link-label {
+    @apply min-w-0 truncate;
+  }
+
+  .git-diff-explorer-link-icon {
+    @apply size-3 shrink-0 opacity-55;
+  }
+
+  .git-diff-explorer-link:hover .git-diff-explorer-link-icon {
+    @apply opacity-100;
+  }
+
+  .git-diff-header {
+    @apply cursor-pointer;
+  }
+
+  .git-diff-header .git-diff-explorer-link,
+  .git-diff-header .git-diff-collapse-btn,
+  .git-diff-header .git-diff-select-checkbox-host,
+  .git-diff-header [data-slot="checkbox"] {
+    @apply cursor-pointer;
+  }
+}

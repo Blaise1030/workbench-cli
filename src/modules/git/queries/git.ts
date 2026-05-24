@@ -1,7 +1,12 @@
-import { queryOptions } from "@tanstack/vue-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/vue-query";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
+import type { GitFileAction } from "@/modules/git/lib/git-file-actions";
 import { workspaceKeys } from "@/modules/workspace/queries/keys";
 import type { GitDiffScope, GitStatusEntry } from "./types";
 
@@ -55,5 +60,57 @@ export function gitDiffQueryOptions(
     staleTime: 0,
     refetchInterval: GIT_STATUS_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: false,
+  });
+}
+
+function invalidateGitQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  worktreeId: string,
+) {
+  queryClient.invalidateQueries({
+    queryKey: workspaceKeys.gitStatus(worktreeId),
+  });
+  queryClient.invalidateQueries({
+    queryKey: [...workspaceKeys.all, "git-diff", worktreeId],
+  });
+}
+
+export function useGitFileActionsMutation(worktreeId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      action,
+      paths,
+    }: {
+      action: GitFileAction;
+      paths: string[];
+    }) => {
+      const id = toValue(worktreeId);
+      const res = await apiClient.worktrees[":id"].git.actions.$post({
+        param: { id },
+        json: { action, paths },
+      });
+      return ensureOk<{ ok: true }>(res);
+    },
+    onSuccess: () => {
+      invalidateGitQueries(queryClient, toValue(worktreeId));
+    },
+  });
+}
+
+export function useGitCommitMutation(worktreeId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ message }: { message: string }) => {
+      const id = toValue(worktreeId);
+      const res = await apiClient.worktrees[":id"].git.commit.$post({
+        param: { id },
+        json: { message },
+      });
+      return ensureOk<{ ok: true }>(res);
+    },
+    onSuccess: () => {
+      invalidateGitQueries(queryClient, toValue(worktreeId));
+    },
   });
 }

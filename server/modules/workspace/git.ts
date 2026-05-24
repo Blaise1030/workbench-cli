@@ -1,3 +1,7 @@
+import { applyGitFileAction, type GitFileAction } from "../git/actions.js";
+import { commitStagedChanges } from "../git/commit.js";
+import { commitStagedChanges } from "../git/commit.js";
+import { commitStagedChanges } from "../git/commit.js";
 import { GitError, runGit } from "../git/exec.js";
 import { getWorktreeDiff, type GitDiffScope } from "../git/diff.js";
 import { parseGitStatusPorcelain } from "../git/status.js";
@@ -50,6 +54,41 @@ export async function getGitDiffForWorktree(
   try {
     const patch = getWorktreeDiff(worktree.path, scope, path);
     return { patch, scope, path: path ?? null };
+  } catch (err) {
+    if (err instanceof GitError) {
+      throw new GitPanelError(err.message, 400);
+    }
+    throw err;
+  }
+}
+
+export async function applyGitFileActionsForWorktree(
+  db: AppDatabase["db"],
+  worktreeId: string,
+  action: GitFileAction,
+  paths: string[],
+) {
+  const worktree = await requireLinkedWorktree(db, worktreeId);
+  try {
+    applyGitFileAction(worktree.path, action, paths);
+    return { ok: true as const };
+  } catch (err) {
+    if (err instanceof GitError) {
+      throw new GitPanelError(err.message, 400);
+    }
+    throw err;
+  }
+}
+
+export async function commitGitForWorktree(
+  db: AppDatabase["db"],
+  worktreeId: string,
+  message: string,
+) {
+  const worktree = await requireLinkedWorktree(db, worktreeId);
+  try {
+    commitStagedChanges(worktree.path, message);
+    return { ok: true as const };
   } catch (err) {
     if (err instanceof GitError) {
       throw new GitPanelError(err.message, 400);

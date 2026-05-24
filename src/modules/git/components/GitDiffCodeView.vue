@@ -1,18 +1,45 @@
 <script setup lang="ts">
-import { CodeView, type CodeViewItem, type DiffIndicators } from "@pierre/diffs";
+import {
+  CodeView,
+  type CodeViewItem,
+  type DiffIndicators,
+  type FileDiffMetadata,
+} from "@pierre/diffs";
 import { useDebounceFn, useMutationObserver } from "@vueuse/core";
 import {
   computed,
+  getCurrentInstance,
+  h,
   onBeforeUnmount,
   onMounted,
+  render,
   ref,
   shallowRef,
   watch,
+  type AppContext,
 } from "vue";
+import { useRouter } from "vue-router";
+import { explorerFileRoute } from "@/modules/file-explorer/lib/explorer-file-route";
+import GitDiffSelectCheckbox from "@/modules/git/components/GitDiffSelectCheckbox.vue";
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
+import gitDiffHeaderStyles from "@/modules/git/components/git-diff-header.css?inline";
+
+const DIFFS_HOST_TAG = "diffs-container";
+const EXPLORER_LINK_SELECTOR = "a.git-diff-explorer-link";
+
+/** Tailwind classes on the collapse control (also defined in git-diff-header.css). */
+const HEADER_PREFIX_CLASS =
+  "git-diff-header-prefix inline-flex shrink-0 flex-nowrap items-center gap-2";
+const SELECT_CHECKBOX_HOST_CLASS =
+  "git-diff-select-checkbox-host inline-flex shrink-0 items-center";
+const COLLAPSE_BTN_CLASS =
+  "git-diff-collapse-btn inline-flex size-6 shrink-0 items-center justify-center rounded-[min(var(--radius-md),10px)] border border-transparent bg-transparent text-muted-foreground outline-none transition-all select-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-expanded:text-foreground dark:hover:bg-muted/50";
+const COLLAPSE_ICON_CLASS = "git-diff-collapse-icon size-3 shrink-0 pointer-events-none";
 
 const props = defineProps<{
   items: CodeViewItem[];
+  worktreeId: string;
+  worktreePath?: string;
   collapsedIds?: string[];
   disableBackground?: boolean;
   disableLineNumbers?: boolean;
@@ -20,13 +47,31 @@ const props = defineProps<{
   diffIndicators?: DiffIndicators;
   diffStyle?: "unified" | "split";
   allCollapsed?: boolean;
+  selectedPaths?: string[];
 }>();
+
+const router = useRouter();
+const appContext = getCurrentInstance()?.appContext as AppContext | undefined;
+
+type MountedCheckbox = {
+  host: HTMLElement;
+  filePath: string | undefined;
+};
+
+const mountedCheckboxes: MountedCheckbox[] = [];
 
 const emit = defineEmits<{
   "update:collapsedIds": [ids: string[]];
+  "update:selectedPaths": [paths: string[]];
+  /** Expand a single diff while the collapse-all toolbar mode is active. */
+  "expand-one": [itemId: string];
 }>();
 
-const collapsedIdSet = computed(() => new Set(props.collapsedIds ?? []));
+/** Local collapse state applied before parent props round-trip. */
+const optimisticCollapsedIds = ref<string[] | null>(null);
+const optimisticAllCollapsed = ref<boolean | null>(null);
+/** Pierre only reapplies collapse when item.version changes. */
+const collapseVersionById = ref<Record<string, number>>({});
 
 const rootRef = ref<HTMLElement | null>(null);
 const viewer = shallowRef<CodeView | null>(null);
@@ -37,6 +82,383 @@ const themeType = computed(() =>
   colorMode.value === "dark" ? ("dark" as const) : ("light" as const),
 );
 
+const CHEVRON_PATH_COLLAPSED = "m9 18 6-6-6-6";
+const CHEVRON_PATH_EXPANDED = "m6 9 6 6 6-6";
+
+function resolvedAllCollapsed(): boolean {
+  if (optimisticAllCollapsed.value !== null) {
+    return optimisticAllCollapsed.value;
+  }
+  return props.allCollapsed === true;
+}
+
+function resolvedCollapsedIds(): string[] {
+  return optimisticCollapsedIds.value ?? props.collapsedIds ?? [];
+}
+
+function resolvedCollapsedIdSet(): Set<string> {
+  return new Set(resolvedCollapsedIds());
+}
+
+function isItemCollapsed(itemId: string): boolean {
+  if (resolvedAllCollapsed()) return true;
+  return resolvedCollapsedIdSet().has(itemId);
+}
+
+function bumpCollapseVersions(itemIds: string[]) {
+  if (!itemIds.length) return;
+  const next = { ...collapseVersionById.value };
+  for (const id of itemIds) {
+    next[id] = (next[id] ?? 0) + 1;
+  }
+  collapseVersionById.value = next;
+}
+
+function itemVersionForView(item: CodeViewItem): number | undefined {
+  const bump = collapseVersionById.value[item.id];
+  if (bump == null) return item.version;
+  return (item.version ?? 0) + bump;
+}
+
+function clearOptimisticCollapseState() {
+  optimisticCollapsedIds.value = null;
+  optimisticAllCollapsed.value = null;
+}
+
+function collapsedIdsEqual(a: string[] | undefined, b: string[]): boolean {
+  const left = a ?? [];
+  if (left.length !== b.length) return false;
+  const right = new Set(b);
+  return left.every((id) => right.has(id));
+}
+
+function reconcileOptimisticCollapseState(
+  collapsedIds: string[] | undefined,
+  allCollapsed: boolean | undefined,
+): boolean {
+  const optIds = optimisticCollapsedIds.value;
+  const optAll = optimisticAllCollapsed.value;
+
+  if (optIds !== null) {
+    const allMatches = optAll === null || allCollapsed === optAll;
+    if (!collapsedIdsEqual(collapsedIds, optIds) || !allMatches) {
+      return false;
+    }
+    clearOptimisticCollapseState();
+    return true;
+  }
+
+  if (optAll !== null) {
+    if (allCollapsed !== optAll) return false;
+    clearOptimisticCollapseState();
+    return true;
+  }
+
+  return true;
+}
+
+function findCollapseButton(itemId: string): HTMLButtonElement | null {
+  const root = rootRef.value;
+  if (!root) return null;
+
+  const selector = `.git-diff-collapse-btn[data-git-diff-item-id="${CSS.escape(itemId)}"]`;
+  const fromRoot = root.querySelector<HTMLButtonElement>(selector);
+  if (fromRoot) return fromRoot;
+
+  for (const host of root.querySelectorAll(DIFFS_HOST_TAG)) {
+    if (!(host instanceof HTMLElement) || !host.shadowRoot) continue;
+    const fromShadow = host.shadowRoot.querySelector<HTMLButtonElement>(selector);
+    if (fromShadow) return fromShadow;
+  }
+  return null;
+}
+
+function updateCollapseButtonForItem(itemId: string, collapsed: boolean) {
+  const button = findCollapseButton(itemId);
+  if (button) setCollapseButtonState(button, collapsed);
+}
+
+function toggleItemCollapsed(itemId: string) {
+  if (resolvedAllCollapsed()) {
+    optimisticAllCollapsed.value = false;
+    optimisticCollapsedIds.value = props.items
+      .map((item) => item.id)
+      .filter((id) => id !== itemId);
+    applyViewerItems(props.items.map((item) => item.id));
+    emit("expand-one", itemId);
+    return;
+  }
+
+  const nextIds = new Set(resolvedCollapsedIds());
+  if (nextIds.has(itemId)) nextIds.delete(itemId);
+  else nextIds.add(itemId);
+  optimisticCollapsedIds.value = [...nextIds];
+  applyViewerItems([itemId]);
+  emit("update:collapsedIds", optimisticCollapsedIds.value);
+}
+
+function resolvedSelectedPaths(): Set<string> {
+  return new Set(props.selectedPaths ?? []);
+}
+
+function isPathSelected(filePath: string | undefined): boolean {
+  if (!filePath) return false;
+  return resolvedSelectedPaths().has(filePath);
+}
+
+function setPathSelected(filePath: string | undefined, checked: boolean) {
+  if (!filePath) return;
+  const next = new Set(resolvedSelectedPaths());
+  if (checked) next.add(filePath);
+  else next.delete(filePath);
+  emit("update:selectedPaths", [...next]);
+}
+
+function renderCheckboxMount(mount: MountedCheckbox) {
+  const vnode = h(GitDiffSelectCheckbox, {
+    checked: isPathSelected(mount.filePath),
+    filePath: mount.filePath,
+    disabled: !mount.filePath,
+    "onUpdate:checked": (checked: boolean) => setPathSelected(mount.filePath, checked),
+  });
+  if (appContext) vnode.appContext = appContext;
+  render(vnode, mount.host);
+}
+
+function unmountAllCheckboxes() {
+  for (const mount of mountedCheckboxes) {
+    render(null, mount.host);
+  }
+  mountedCheckboxes.length = 0;
+}
+
+function syncCheckboxMounts() {
+  for (const mount of mountedCheckboxes) {
+    renderCheckboxMount(mount);
+  }
+}
+
+function createSelectCheckbox(filePath: string | undefined): HTMLElement {
+  const host = document.createElement("div");
+  host.className = SELECT_CHECKBOX_HOST_CLASS;
+  if (filePath) host.dataset.gitDiffFilePath = filePath;
+  host.addEventListener("click", (event) => event.stopPropagation());
+
+  const mount: MountedCheckbox = { host, filePath };
+  mountedCheckboxes.push(mount);
+  renderCheckboxMount(mount);
+  return host;
+}
+
+function createChevronIcon(collapsed: boolean): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", COLLAPSE_ICON_CLASS);
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("width", "12");
+  svg.setAttribute("height", "12");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute(
+    "d",
+    collapsed ? CHEVRON_PATH_COLLAPSED : CHEVRON_PATH_EXPANDED,
+  );
+  svg.append(path);
+  return svg;
+}
+
+function setCollapseButtonState(button: HTMLButtonElement, collapsed: boolean) {
+  button.setAttribute("aria-expanded", String(!collapsed));
+  button.setAttribute(
+    "aria-label",
+    collapsed ? "Expand diff" : "Collapse diff",
+  );
+  const path = button.querySelector<SVGPathElement>(
+    ".git-diff-collapse-icon path",
+  );
+  path?.setAttribute(
+    "d",
+    collapsed ? CHEVRON_PATH_COLLAPSED : CHEVRON_PATH_EXPANDED,
+  );
+}
+
+function syncCollapseButtons() {
+  const root = rootRef.value;
+  if (!root) return;
+
+  const updateIn = (container: ParentNode) => {
+    container
+      .querySelectorAll<HTMLButtonElement>(".git-diff-collapse-btn")
+      .forEach((button) => {
+        const itemId = button.dataset.gitDiffItemId;
+        if (!itemId) return;
+        setCollapseButtonState(button, isItemCollapsed(itemId));
+      });
+  };
+
+  updateIn(root);
+  root.querySelectorAll(DIFFS_HOST_TAG).forEach((host) => {
+    if (host instanceof HTMLElement && host.shadowRoot) {
+      updateIn(host.shadowRoot);
+    }
+  });
+}
+
+const scheduleSyncCollapseButtons = useDebounceFn(() => {
+  requestAnimationFrame(() => {
+    syncCollapseButtons();
+    syncCheckboxMounts();
+  });
+}, 32);
+
+function createHeaderPrefix(itemId: string, filePath: string | undefined): HTMLElement {
+  const prefix = document.createElement("div");
+  prefix.className = HEADER_PREFIX_CLASS;
+  prefix.append(createSelectCheckbox(filePath), createCollapseButton(itemId));
+  return prefix;
+}
+
+function createCollapseButton(itemId: string): HTMLButtonElement {
+  const collapsed = isItemCollapsed(itemId);
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = COLLAPSE_BTN_CLASS;
+  button.dataset.gitDiffCollapse = "";
+  button.dataset.gitDiffItemId = itemId;
+  setCollapseButtonState(button, collapsed);
+  button.append(createChevronIcon(collapsed));
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    toggleItemCollapsed(itemId);
+  });
+  return button;
+}
+
+function relativePathForTitle(
+  fileDiff: FileDiffMetadata | undefined,
+  titleIndex: number,
+  titleCount: number,
+  fallbackText: string,
+): string | null {
+  if (fileDiff) {
+    if (fileDiff.prevName != null && titleCount > 1) {
+      return titleIndex === 0 ? fileDiff.prevName : fileDiff.name;
+    }
+    return fileDiff.name;
+  }
+  const trimmed = fallbackText.trim();
+  return trimmed || null;
+}
+
+function createExplorerLinkIcon(): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "git-diff-explorer-link-icon size-3 shrink-0 opacity-55");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("width", "12");
+  svg.setAttribute("height", "12");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+
+  const pathA = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  pathA.setAttribute(
+    "d",
+    "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71",
+  );
+  const pathB = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  pathB.setAttribute(
+    "d",
+    "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+  );
+  svg.append(pathA, pathB);
+  return svg;
+}
+
+function createExplorerLink(relativePath: string): HTMLAnchorElement {
+  const worktreePath = props.worktreePath;
+  if (!worktreePath) {
+    throw new Error("worktreePath is required to build explorer links");
+  }
+
+  const to = explorerFileRoute(props.worktreeId, worktreePath, relativePath);
+  const link = document.createElement("a");
+  link.className =
+    "git-diff-explorer-link inline-flex max-w-full items-center gap-1 text-inherit no-underline hover:underline";
+  link.href = router.resolve(to).href;
+  link.title = `Open ${relativePath} in file explorer`;
+
+  const label = document.createElement("span");
+  label.className = "git-diff-explorer-link-label min-w-0 truncate";
+  label.textContent = relativePath;
+
+  link.append(label, createExplorerLinkIcon());
+  link.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    router.push(to);
+  });
+  return link;
+}
+
+function enhanceHeaderLinksInHost(
+  host: HTMLElement,
+  fileDiff?: FileDiffMetadata,
+) {
+  if (!props.worktreePath) return;
+
+  const shadow = host.shadowRoot;
+  if (!shadow) return;
+
+  const titles = [...shadow.querySelectorAll<HTMLElement>("[data-title] bdi")];
+  titles.forEach((bdi, index) => {
+    if (bdi.querySelector(EXPLORER_LINK_SELECTOR)) return;
+
+    const relativePath = relativePathForTitle(
+      fileDiff,
+      index,
+      titles.length,
+      bdi.textContent ?? "",
+    );
+    if (!relativePath) return;
+
+    bdi.replaceChildren(createExplorerLink(relativePath));
+  });
+}
+
+function enhanceAllHeaderLinks() {
+  const root = rootRef.value;
+  if (!root || !props.worktreePath) return;
+
+  root.querySelectorAll(DIFFS_HOST_TAG).forEach((host) => {
+    if (host instanceof HTMLElement) {
+      enhanceHeaderLinksInHost(host);
+    }
+  });
+}
+
+const scheduleEnhanceAllHeaderLinks = useDebounceFn(() => {
+  requestAnimationFrame(() => enhanceAllHeaderLinks());
+}, 32);
+
 function diffOptions() {
   return {
     theme: { dark: "pierre-dark", light: "pierre-light" },
@@ -46,21 +468,46 @@ function diffOptions() {
     overflow: props.wordWrap ? ("wrap" as const) : ("scroll" as const),
     diffIndicators: props.diffIndicators,
     diffStyle: props.diffStyle ?? "unified",
+    unsafeCSS: gitDiffHeaderStyles,
+    renderHeaderPrefix: (
+      fileDiff: FileDiffMetadata,
+      context: { type: string; item: CodeViewItem },
+    ) => {
+      if (context.type !== "diff" || context.item.type !== "diff") return undefined;
+      const filePath =
+        fileDiff.name ??
+        ("filePath" in context.item
+          ? (context.item.filePath as string | undefined)
+          : undefined);
+      return createHeaderPrefix(context.item.id, filePath);
+    },
+    onPostRender: (
+      host: HTMLElement,
+      _instance: unknown,
+      context: { type: string; item: CodeViewItem },
+    ) => {
+      if (context.type !== "diff" || context.item.type !== "diff") return;
+      enhanceHeaderLinksInHost(host, context.item.fileDiff);
+    },
   };
 }
 
 function itemsForView() {
-  const allCollapsed = props.allCollapsed === true;
-  const collapsedIds = collapsedIdSet.value;
+  const allCollapsed = resolvedAllCollapsed();
+  const collapsedIds = resolvedCollapsedIdSet();
   return props.items.map((item) => ({
     ...item,
     collapsed: allCollapsed || collapsedIds.has(item.id),
+    version: itemVersionForView(item),
   }));
 }
 
-function applyCollapsed() {
-  if (props.allCollapsed === undefined) return;
-  viewer.value?.setItems(itemsForView());
+function applyViewerItems(changedItemIds?: string[]) {
+  if (!viewer.value) return;
+  bumpCollapseVersions(changedItemIds ?? props.items.map((item) => item.id));
+  viewer.value.setItems(itemsForView());
+  scheduleSyncCollapseButtons();
+  scheduleEnhanceAllHeaderLinks();
 }
 
 function mountViewer() {
@@ -75,10 +522,11 @@ function mountViewer() {
   instance.setup(root);
   instance.setItems(itemsForView());
   viewer.value = instance;
+  scheduleEnhanceAllHeaderLinks();
 }
 
 function syncItems() {
-  viewer.value?.setItems(itemsForView());
+  applyViewerItems();
 }
 
 const persistCollapsedIds = useDebounceFn(() => {
@@ -93,11 +541,36 @@ function onRootPointerUp() {
   persistCollapsedIds();
 }
 
+function onRootClick(event: MouseEvent) {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  if (
+    target.closest(EXPLORER_LINK_SELECTOR) ||
+    target.closest(".git-diff-collapse-btn") ||
+    target.closest(`.${SELECT_CHECKBOX_HOST_CLASS}`) ||
+    target.closest('[data-slot="checkbox"]')
+  ) {
+    return;
+  }
+
+  const header = target.closest("[data-diffs-header]");
+  if (!header) return;
+
+  const root = header.getRootNode();
+  if (!(root instanceof ShadowRoot)) return;
+
+  root.querySelector<HTMLButtonElement>(".git-diff-collapse-btn")?.click();
+}
+
 function syncOptions() {
   optionsVersion.value++;
   const v = optionsVersion.value;
   viewer.value?.setOptions(diffOptions());
-  viewer.value?.setItems(props.items.map((item) => ({ ...item, version: v })));
+  viewer.value?.setItems(
+    itemsForView().map((item) => ({ ...item, version: v })),
+  );
+  scheduleEnhanceAllHeaderLinks();
+  scheduleSyncCollapseButtons();
 }
 
 function syncTheme() {
@@ -107,13 +580,30 @@ function syncTheme() {
 onMounted(() => {
   mountViewer();
   rootRef.value?.addEventListener("pointerup", onRootPointerUp);
+  rootRef.value?.addEventListener("click", onRootClick);
 });
 
 watch(
   () => [props.items, props.collapsedIds, props.allCollapsed] as const,
-  () => {
-    if (viewer.value) syncItems();
-    else mountViewer();
+  ([items, collapsedIds, allCollapsed], prev) => {
+    const propsReady = reconcileOptimisticCollapseState(
+      collapsedIds,
+      allCollapsed,
+    );
+    if (!propsReady) return;
+
+    const itemsChanged = items !== prev?.[0];
+    if (itemsChanged) {
+      collapseVersionById.value = {};
+      unmountAllCheckboxes();
+    }
+
+    if (viewer.value) {
+      if (itemsChanged || !prev) applyViewerItems();
+      else syncItems();
+    } else {
+      mountViewer();
+    }
   },
   { deep: true },
 );
@@ -123,25 +613,43 @@ watch(themeType, () => {
 });
 
 watch(
-  () => [props.disableBackground, props.disableLineNumbers, props.wordWrap, props.diffIndicators, props.diffStyle],
+  () => [
+    props.disableBackground,
+    props.disableLineNumbers,
+    props.wordWrap,
+    props.diffIndicators,
+    props.diffStyle,
+  ],
   () => syncOptions(),
 );
 
 watch(
-  () => props.allCollapsed,
-  () => applyCollapsed(),
+  () => props.selectedPaths,
+  () => scheduleSyncCollapseButtons(),
+  { deep: true },
 );
 
 useMutationObserver(
   rootRef,
   () => {
     if (!viewer.value && rootRef.value) mountViewer();
+    else {
+      scheduleEnhanceAllHeaderLinks();
+      scheduleSyncCollapseButtons();
+    }
   },
-  { childList: true },
+  { childList: true, subtree: true },
+);
+
+watch(
+  () => props.worktreePath,
+  () => scheduleEnhanceAllHeaderLinks(),
 );
 
 onBeforeUnmount(() => {
   rootRef.value?.removeEventListener("pointerup", onRootPointerUp);
+  rootRef.value?.removeEventListener("click", onRootClick);
+  unmountAllCheckboxes();
   viewer.value?.cleanUp();
   viewer.value = null;
 });
@@ -155,6 +663,9 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+@import "tailwindcss";
+@source "./git-diff-header.css";
+
 .git-diff-code-view {
   contain: strict;
 }

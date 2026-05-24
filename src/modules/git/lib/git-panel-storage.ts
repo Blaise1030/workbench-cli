@@ -1,18 +1,23 @@
 import { useLocalStorage } from "@vueuse/core";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
-export type GitPanelTabScope = "staged" | "unstaged" | "untracked";
+export type GitPanelTabScope = "staged" | "unstaged";
 
 export const GIT_PANEL_TAB_SCOPES: readonly GitPanelTabScope[] = [
   "staged",
   "unstaged",
-  "untracked",
 ] as const;
 
 export function isGitPanelTabScope(value: unknown): value is GitPanelTabScope {
-  return (
-    value === "staged" || value === "unstaged" || value === "untracked"
-  );
+  return value === "staged" || value === "unstaged";
+}
+
+/** Legacy tab value from older panel versions. */
+export function normalizeGitPanelTabScope(
+  value: unknown,
+): GitPanelTabScope | undefined {
+  if (value === "untracked") return "unstaged";
+  return isGitPanelTabScope(value) ? value : undefined;
 }
 
 export interface GitPanelWorktreeState {

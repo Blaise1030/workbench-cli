@@ -56,3 +56,14 @@ export const branchesResponseSchema = z.object({
   branches: z.array(z.string()),
   defaultBranch: z.string(),
 });
+
+export const gitFileActionSchema = z.enum(["stage", "unstage", "discard"]);
+
+export const gitFileActionsBodySchema = z.object({
+  action: gitFileActionSchema,
+  paths: z.array(z.string().min(1)).min(1),
+});
+
+export const gitCommitBodySchema = z.object({
+  message: z.string().min(1),
+});
