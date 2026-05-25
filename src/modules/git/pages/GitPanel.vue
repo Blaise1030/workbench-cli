@@ -462,6 +462,7 @@ async function submitCommit() {
                     Commit message
                   </Label>
                   <Textarea
+                    data-native-keyboard
                     id="git-commit-message"
                     v-model="commitMessage"
                     placeholder="Describe your changes"

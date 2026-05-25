@@ -43,6 +43,7 @@ async function submit() {
       <CardContent>
         <form class="flex flex-col gap-3" @submit.prevent="submit">
           <Input
+            data-native-keyboard
             v-model="token"
             type="password"
             placeholder="Access token"

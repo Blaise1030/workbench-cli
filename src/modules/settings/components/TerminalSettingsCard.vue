@@ -278,6 +278,7 @@ async function revoke(id: string) {
         description="Kill detached PTYs after this many hours with no clients."
       >
         <Input
+          data-native-keyboard
           id="pty-idle-ttl"
           type="number"
           min="1"
@@ -293,6 +294,7 @@ async function revoke(id: string) {
         description="In-memory ring buffer size per terminal."
       >
         <Input
+          data-native-keyboard
           id="scrollback-cap"
           type="number"
           min="64"
@@ -312,6 +314,7 @@ async function revoke(id: string) {
         <div class="space-y-2">
           <Label for="new-prefix">Command prefix</Label>
           <Input
+            data-native-keyboard
             id="new-prefix"
             v-model="newPrefix"
             placeholder="tmux attach -t mysession"
@@ -322,6 +325,7 @@ async function revoke(id: string) {
         <div class="space-y-2">
           <Label for="new-prefix-label">Label (optional)</Label>
           <Input
+            data-native-keyboard
             id="new-prefix-label"
             v-model="newPrefixLabel"
             placeholder="work tmux"

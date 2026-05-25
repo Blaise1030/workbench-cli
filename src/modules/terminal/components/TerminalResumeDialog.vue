@@ -91,6 +91,7 @@ async function clearCommand() {
         <div class="space-y-2">
           <Label for="resume-command">Command</Label>
           <Input
+            data-native-keyboard
             id="resume-command"
             v-model="command"
             placeholder="tmux attach -t work"

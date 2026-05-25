@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getKeybindings, putKeybindings } from "./store.js";
-import { DEFAULT_KEYBINDINGS } from "./store.js";
+import { KEYBINDING_OPTIONS } from "./store.js";
 
 let tmpDir: string;
 
@@ -16,24 +16,24 @@ afterEach(async () => {
 });
 
 describe("getKeybindings", () => {
-  it("returns defaults when file does not exist", async () => {
+  it("returns built-in options when file does not exist", async () => {
     const result = await getKeybindings(join(tmpDir, "missing.json"));
-    expect(result).toEqual(DEFAULT_KEYBINDINGS);
+    expect(result).toEqual(KEYBINDING_OPTIONS);
   });
 
-  it("merges file overrides over defaults", async () => {
+  it("merges file overrides over built-in options", async () => {
     const filePath = join(tmpDir, "kb.json");
-    await putKeybindings({ ...DEFAULT_KEYBINDINGS, "terminal.newTerminal": "Ctrl+t" }, filePath);
+    await putKeybindings({ ...KEYBINDING_OPTIONS, "terminal.newTerminal": "Ctrl+t" }, filePath);
     const result = await getKeybindings(filePath);
     expect(result["terminal.newTerminal"]).toBe("Ctrl+t");
-    expect(result["panel.git"]).toBe(DEFAULT_KEYBINDINGS["panel.git"]);
+    expect(result["panel.git"]).toBe(KEYBINDING_OPTIONS["panel.git"]);
   });
 });
 
 describe("putKeybindings", () => {
   it("writes the map and reads it back unchanged", async () => {
     const filePath = join(tmpDir, "kb.json");
-    const custom = { ...DEFAULT_KEYBINDINGS, "panel.explorer": "Meta+f" };
+    const custom = { ...KEYBINDING_OPTIONS, "panel.explorer": "Meta+f" };
     await putKeybindings(custom, filePath);
     const result = await getKeybindings(filePath);
     expect(result["panel.explorer"]).toBe("Meta+f");
@@ -41,6 +41,6 @@ describe("putKeybindings", () => {
 
   it("creates parent directory if missing", async () => {
     const filePath = join(tmpDir, "nested", "dir", "kb.json");
-    await expect(putKeybindings(DEFAULT_KEYBINDINGS, filePath)).resolves.not.toThrow();
+    await expect(putKeybindings(KEYBINDING_OPTIONS, filePath)).resolves.not.toThrow();
   });
 });

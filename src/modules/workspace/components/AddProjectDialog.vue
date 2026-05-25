@@ -45,6 +45,7 @@ async function submit() {
         <div class="grid gap-2">
           <Label for="repo-path">Repository path</Label>
           <Input
+            data-native-keyboard
             id="repo-path"
             v-model="repoPath"
             placeholder="/Users/you/Developer/my-app"

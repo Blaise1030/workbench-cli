@@ -117,6 +117,10 @@ function getFullPath(relativePath: string): string {
   return `${base}/${relativePath}`;
 }
 
+function isPreviewableFile(relativePath: string): boolean {
+  return paths.value?.includes(relativePath) ?? false;
+}
+
 function persistLastFile(relativePath: string) {
   explorerState.value = {
     ...explorerState.value,
@@ -175,6 +179,7 @@ function syncSelectionToUrl(selectedPaths: string[]) {
   const selected = selectedPaths[0];
   const currentFile = route.query.file;
   if (selected) {
+    if (!isPreviewableFile(selected)) return;
     persistLastFile(selected);
     const encoded = encodeURIComponent(getFullPath(selected));
     if (currentFile === encoded) return;

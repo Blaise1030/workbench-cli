@@ -38,8 +38,6 @@ import {
   explorerPanelId,
   type WorktreeLastRoute,
 } from "@/modules/workspace/lib/worktree-panels-storage";
-import { useWorkspaceKeybindings } from "@/modules/keyboard/hooks/useWorkspaceKeybindings";
-
 const props = defineProps<{
   worktreeId: string;
 }>();
@@ -220,13 +218,6 @@ function openAuxPanel(type: "git" | "explorer") {
   panelsState.value.explorer = true;
   router.push({ name: "explorer", params: { worktreeId: props.worktreeId } });
 }
-
-useWorkspaceKeybindings({
-  terminalTabItems,
-  navigateToTerminal,
-  addTerminal,
-  openAuxPanel,
-});
 
 async function closeTab(id: string) {
   const isActive = id === activeId.value;

@@ -6,11 +6,14 @@ import TerminalWorkspace from "@/modules/terminal/layout/TerminalWorkspace.vue";
 import { projectsQueryOptions, worktreeQueryOptions } from "@/modules/workspace/queries";
 import { useQuery } from "@tanstack/vue-query";
 import { queryClient } from "@/lib/query-client";
+import { useGlobalWorkspaceKeybindings } from "@/modules/keyboard/hooks/useGlobalWorkspaceKeybindings";
 
 const route = useRoute();
 const router = useRouter();
 
 const worktreeId = computed(() => route.params.worktreeId as string | undefined);
+
+useGlobalWorkspaceKeybindings(worktreeId);
 
 const { data: projects } = useQuery(projectsQueryOptions());
 

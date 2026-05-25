@@ -84,9 +84,9 @@ export type KeybindingAction = (typeof KEYBINDING_ACTIONS)[number];
 
 export type KeybindingsMap = Record<KeybindingAction, string>;
 
-// Chord format: one or more of "Meta|Ctrl|Alt|Shift" joined by "+", then "+key"
-// e.g. "Meta+n", "Ctrl+Shift+p", "Meta+1"
-const chordPattern = /^(Meta|Ctrl|Alt|Shift)(\+(Meta|Ctrl|Alt|Shift))*\+.+$/;
+// Chord format: modifiers joined by "+", then "+key". Option = macOS ⌥ (Alt key).
+// e.g. "Option+Shift+n", "Meta+n", "Ctrl+Shift+p"
+const chordPattern = /^(Meta|Ctrl|Alt|Option|Shift)(\+(Meta|Ctrl|Alt|Option|Shift))*\+.+$/;
 
 export const putKeybindingsSchema = z.object(
   Object.fromEntries(

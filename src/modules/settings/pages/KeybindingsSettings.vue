@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed } from "vue";
 import { KEYBINDING_DESCRIPTORS } from "@/modules/keyboard/types";
-import { DEFAULT_KEYBINDINGS } from "@/modules/keyboard/defaults";
+import { KEYBINDING_OPTIONS } from "@/modules/keyboard/options";
+import {
+  chordLabel,
+  eventToChord,
+  isBrowserReservedChord,
+  normalizeStoredChord,
+} from "@/modules/keyboard/chord";
 import {
   useKeybindingsQuery,
   useUpdateKeybindingsMutation,
@@ -16,7 +22,7 @@ import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 const { data: serverBindings } = useKeybindingsQuery();
 const updateMutation = useUpdateKeybindingsMutation();
 
-const draft = reactive<KeybindingsMap>({ ...DEFAULT_KEYBINDINGS });
+const draft = reactive<KeybindingsMap>({ ...KEYBINDING_OPTIONS });
 
 watch(
   serverBindings,
@@ -29,33 +35,19 @@ watch(
 const capturingAction = ref<KeybindingAction | null>(null);
 const captureDisplay = ref<string>("");
 const hasConflict = ref<KeybindingAction | null>(null);
+const browserReservedChord = ref<string | null>(null);
 
-function chordLabel(chord: string): string {
-  return chord
-    .replace("Meta", "⌘")
-    .replace("Ctrl", "⌃")
-    .replace("Alt", "⌥")
-    .replace("Shift", "⇧")
-    .replace(/\+/g, "");
-}
+const browserReservedInDraft = computed(() =>
+  (Object.keys(draft) as KeybindingAction[]).filter((action) =>
+    isBrowserReservedChord(normalizeStoredChord(draft[action])),
+  ),
+);
 
 function startCapture(action: KeybindingAction) {
   capturingAction.value = action;
   captureDisplay.value = "Press keys…";
   hasConflict.value = null;
-}
-
-function eventToChord(e: KeyboardEvent): string {
-  const parts: string[] = [];
-  if (e.metaKey) parts.push("Meta");
-  if (e.ctrlKey) parts.push("Ctrl");
-  if (e.altKey) parts.push("Alt");
-  if (e.shiftKey) parts.push("Shift");
-  const key = e.key;
-  if (!["Meta", "Control", "Alt", "Shift"].includes(key)) {
-    parts.push(key.length === 1 ? key.toLowerCase() : key);
-  }
-  return parts.join("+");
+  browserReservedChord.value = null;
 }
 
 function onCaptureKeydown(e: KeyboardEvent) {
@@ -72,9 +64,11 @@ function onCaptureKeydown(e: KeyboardEvent) {
   if (!chord.includes("+")) return;
 
   captureDisplay.value = chordLabel(chord);
+  browserReservedChord.value = isBrowserReservedChord(chord) ? chord : null;
 
   const conflict = (Object.keys(draft) as KeybindingAction[]).find(
-    (a) => a !== capturingAction.value && draft[a] === chord,
+    (a) =>
+      a !== capturingAction.value && normalizeStoredChord(draft[a]) === chord,
   );
   hasConflict.value = conflict ?? null;
 
@@ -91,27 +85,51 @@ async function save() {
   }
 }
 
-function resetToDefaults() {
-  Object.assign(draft, DEFAULT_KEYBINDINGS);
+function resetToOptions() {
+  Object.assign(draft, KEYBINDING_OPTIONS);
+  browserReservedChord.value = null;
 }
 </script>
 
 <template>
-  <div tabindex="-1" @keydown="onCaptureKeydown">
+  <div tabindex="-1" @keydown.capture="onCaptureKeydown">
   <SettingsPage
     title="Keybindings"
-    description="Remap workspace shortcuts. Changes are saved to your local workbench config."
+    description="Remap workspace shortcuts. Built-in options use ⌃⇧ (Ctrl+Shift) to avoid browser shortcuts."
   >
     <template #actions>
-      <Button variant="outline" size="sm" @click="resetToDefaults">
-        Reset to defaults
+      <Button variant="outline" size="sm" @click="resetToOptions">
+        Reset to options
       </Button>
       <Button size="sm" :disabled="updateMutation.isPending.value" @click="save">
         {{ updateMutation.isPending.value ? "Saving…" : "Save" }}
       </Button>
     </template>
 
-    <div v-if="hasConflict" class="border-b border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm text-amber-600 dark:text-amber-400">
+    <div
+      v-if="browserReservedChord || browserReservedInDraft.length"
+      class="border-b border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm text-amber-600 dark:text-amber-400"
+    >
+      <template v-if="browserReservedChord">
+        {{ chordLabel(browserReservedChord) }} is usually handled by the browser before this app
+        can use it. Prefer ⌃⇧ (Ctrl+Shift) or another chord.
+      </template>
+      <template v-else>
+        Some shortcuts may not work in the browser:
+        {{
+          browserReservedInDraft
+            .map((a) => KEYBINDING_DESCRIPTORS.find((d) => d.action === a)?.label)
+            .filter(Boolean)
+            .join(", ")
+        }}.
+        Reset to options or remap with Ctrl+Shift.
+      </template>
+    </div>
+
+    <div
+      v-if="hasConflict"
+      class="border-b border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm text-amber-600 dark:text-amber-400"
+    >
       Conflict: this chord is also assigned to "{{
         KEYBINDING_DESCRIPTORS.find((d) => d.action === hasConflict)?.label
       }}". Both will be saved — last key pressed wins.
@@ -124,22 +142,33 @@ function resetToDefaults() {
         :label="desc.label"
         :description="desc.description"
       >
-        <button
-          type="button"
-          class="inline-flex min-w-[4rem] items-center justify-center rounded-md border border-input bg-muted/50 px-3 py-1.5 text-xs font-mono hover:bg-muted"
-          :class="
-            capturingAction === desc.action
-              ? 'border-foreground ring-1 ring-foreground animate-pulse'
-              : ''
-          "
-          @click="startCapture(desc.action)"
-        >
-          {{
-            capturingAction === desc.action
-              ? captureDisplay
-              : chordLabel(draft[desc.action])
-          }}
-        </button>
+        <div class="flex flex-col items-end gap-1">
+          <button
+            type="button"
+            class="inline-flex min-w-[4rem] items-center justify-center rounded-md border border-input bg-muted/50 px-3 py-1.5 text-xs font-mono hover:bg-muted"
+            :class="[
+              capturingAction === desc.action
+                ? 'border-foreground ring-1 ring-foreground animate-pulse'
+                : '',
+              isBrowserReservedChord(normalizeStoredChord(draft[desc.action]))
+                ? 'border-amber-500/50 text-amber-600 dark:text-amber-400'
+                : '',
+            ]"
+            @click="startCapture(desc.action)"
+          >
+            {{
+              capturingAction === desc.action
+                ? captureDisplay
+                : chordLabel(draft[desc.action])
+            }}
+          </button>
+          <span
+            v-if="isBrowserReservedChord(normalizeStoredChord(draft[desc.action]))"
+            class="text-[10px] text-amber-600 dark:text-amber-400"
+          >
+            Browser may intercept
+          </span>
+        </div>
       </SettingsRow>
     </SettingsSection>
   </SettingsPage>

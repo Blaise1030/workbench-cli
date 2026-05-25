@@ -104,7 +104,12 @@ async function submit() {
 
         <div class="grid gap-2">
           <Label>New branch name</Label>
-          <Input v-model="branch" placeholder="feat-my-change" autocomplete="off" />
+          <Input
+            v-model="branch"
+            data-native-keyboard
+            placeholder="feat-my-change"
+            autocomplete="off"
+          />
         </div>
 
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>

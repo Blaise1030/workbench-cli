@@ -2,7 +2,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/v
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 import type { KeybindingsMap } from "../types";
-import { DEFAULT_KEYBINDINGS } from "../defaults";
+import { KEYBINDING_OPTIONS } from "../options";
 
 export const keybindingsKeys = {
   all: ["keybindings"] as const,
@@ -15,7 +15,7 @@ export function keybindingsQueryOptions() {
       const res = await apiClient.keybindings.$get();
       return ensureOk<KeybindingsMap>(res);
     },
-    placeholderData: DEFAULT_KEYBINDINGS,
+    placeholderData: KEYBINDING_OPTIONS,
   });
 }
 
