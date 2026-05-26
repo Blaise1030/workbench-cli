@@ -12,6 +12,7 @@ export const KEYBINDING_DESCRIPTORS: KeybindingDescriptor[] = [
   { action: "terminal.newTerminal", label: "New Terminal", description: "Open a new terminal tab" },
   { action: "panel.explorer", label: "File Explorer", description: "Open the file explorer panel" },
   { action: "panel.git", label: "Git", description: "Open the git panel" },
+  { action: "settings.open", label: "Settings", description: "Open settings" },
   { action: "terminal.tab.1", label: "Switch to Tab 1", description: "Navigate to terminal tab 1" },
   { action: "terminal.tab.2", label: "Switch to Tab 2", description: "Navigate to terminal tab 2" },
   { action: "terminal.tab.3", label: "Switch to Tab 3", description: "Navigate to terminal tab 3" },

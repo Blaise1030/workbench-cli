@@ -95,7 +95,7 @@ function resetToOptions() {
   <div tabindex="-1" @keydown.capture="onCaptureKeydown">
   <SettingsPage
     title="Keybindings"
-    description="Remap workspace shortcuts. Built-in options use ⌃⇧ (Ctrl+Shift) to avoid browser shortcuts."
+    description="Remap workspace shortcuts. Built-in options use ⌃⇧ for panels, settings, and new terminal; ⌥+symbol for tabs."
   >
     <template #actions>
       <Button variant="outline" size="sm" @click="resetToOptions">

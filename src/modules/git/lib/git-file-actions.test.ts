@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { gitActionsForSelection } from "./git-file-actions";
 
 describe("gitActionsForSelection", () => {
+  it("matches files inside an untracked directory entry", () => {
+    const files = [
+      { path: ".playwright-mcp/", staged: null, unstaged: "untracked" },
+    ];
+    expect(
+      gitActionsForSelection([".playwright-mcp/page-2026-01-01T00-00-00-000Z.yml"], files),
+    ).toEqual({ stage: true, unstage: false, discard: true });
+  });
+
   it("enables actions based on selected file status", () => {
     const files = [
       { path: "a.ts", staged: "modified", unstaged: null },

@@ -69,6 +69,75 @@ export function isAbsolutePath(candidate: string): boolean {
   return PATH_LIKE.test(candidate);
 }
 
+/** True when the path is safe to paste into the shell without uploading. */
+/** Normalize path strings so equivalent macOS paths dedupe (e.g. U+202F spaces). */
+export function normalizeDropPathForCompare(path: string): string {
+  return path.normalize("NFC").replace(/\u202f/g, " ");
+}
+
+/** Dedupe paths for one drop; keeps the first spelling (important for odd filename chars). */
+export function dedupeDropPaths(paths: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const path of paths) {
+    const key = normalizeDropPathForCompare(path);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(path);
+  }
+  return out;
+}
+
+export function isUsableDropPath(
+  path: string,
+  options?: DropPathOptions,
+): boolean {
+  if (isAbsolutePath(path)) return true;
+  const root = options?.worktreeRoot;
+  if (root) {
+    if (path.startsWith(root)) return true;
+    if (path.includes("/")) return true;
+  }
+  return false;
+}
+
+export function partitionDroppedFiles(
+  files: Iterable<File>,
+  options?: DropPathOptions,
+): { resolved: string[]; needsUpload: File[] } {
+  const resolved: string[] = [];
+  const needsUpload: File[] = [];
+  const seen = new Set<string>();
+  for (const file of files) {
+    const path = pathFromPickerFile(file, options);
+    if (isUsableDropPath(path, options)) {
+      if (!seen.has(path)) {
+        seen.add(path);
+        resolved.push(path);
+      }
+    } else {
+      needsUpload.push(file);
+    }
+  }
+  return { resolved, needsUpload };
+}
+
+/** Merge `files` from useDropZone and `DataTransfer.files` without duplicates. */
+export function mergeDropFiles(
+  fromDropZone: File[] | null | undefined,
+  dataTransfer: DataTransfer | null | undefined,
+): File[] {
+  const out: File[] = [];
+  const seen = new Set<string>();
+  for (const file of [...(fromDropZone ?? []), ...(dataTransfer?.files ?? [])]) {
+    const key = `${file.name}:${file.size}:${file.lastModified}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(file);
+  }
+  return out;
+}
+
 /** Join a worktree-relative path to the worktree root. */
 export function resolveRelativeToWorktreeRoot(
   relative: string,
@@ -135,6 +204,43 @@ function pathFromFile(file: File): string | null {
   return null;
 }
 
+/** Resolve a picked or dropped File to a path string for the terminal. */
+export function pathFromPickerFile(
+  file: File,
+  options?: DropPathOptions,
+): string {
+  const relative = file.webkitRelativePath?.replace(/\\/g, "/").trim();
+  if (relative && options?.worktreeRoot) {
+    return resolveRelativeToWorktreeRoot(relative, options.worktreeRoot);
+  }
+  if (relative) return relative;
+
+  const absolute = pathFromFile(file);
+  if (absolute) return absolute;
+
+  const root = options?.worktreeRoot;
+  const tree = options?.fileTreePaths;
+  if (root && tree?.length) {
+    const fromTree = resolveBasenameInFileTree(file.name, tree, root);
+    if (fromTree) return fromTree;
+  }
+
+  return file.name;
+}
+
+/** Paths from a file picker or DataTransfer file list (no upload). */
+export function pathsFromFileList(
+  files: Iterable<File>,
+  options?: DropPathOptions,
+): string[] {
+  const paths: string[] = [];
+  const seen = new Set<string>();
+  for (const file of files) {
+    addPath(paths, seen, pathFromPickerFile(file, options));
+  }
+  return paths;
+}
+
 /** Extract local file paths from a browser DataTransfer (best-effort). */
 export function pathsFromDataTransfer(
   dt: DataTransfer,
@@ -153,24 +259,8 @@ export function pathsFromDataTransfer(
   }
 
   if (!paths.length && dt.files?.length) {
-    const root = options?.worktreeRoot;
-    const tree = options?.fileTreePaths;
-    for (let i = 0; i < dt.files.length; i++) {
-      const file = dt.files[i];
-      if (!file) continue;
-      const absolute = pathFromFile(file);
-      if (absolute) {
-        addPath(paths, seen, absolute);
-        continue;
-      }
-      if (root && tree?.length) {
-        const fromTree = resolveBasenameInFileTree(file.name, tree, root);
-        if (fromTree) {
-          addPath(paths, seen, fromTree);
-          continue;
-        }
-      }
-      addPath(paths, seen, file.name);
+    for (const path of pathsFromFileList(dt.files, options)) {
+      addPath(paths, seen, path);
     }
   }
 
@@ -183,7 +273,11 @@ export function plainTextFromDataTransfer(
   options?: DropPathOptions,
 ): string | null {
   if (pathsFromDataTransfer(dt, options).length > 0) return null;
-  const plain = (dt.getData("text/plain") || activeDragPayload?.plain || "").trim();
+  const plain = (
+    dt.getData("text/plain") ||
+    activeDragPayload?.plain ||
+    ""
+  ).trim();
   return plain || null;
 }
 
@@ -191,10 +285,21 @@ export function formatPathsForTerminal(paths: string[]): string {
   return `${paths.map(shellQuotePath).join(" ")} `;
 }
 
-export function hasDroppableData(dt: DataTransfer | null): boolean {
-  if (!dt) return false;
-  if (dt.types.includes("Files")) return true;
-  if (dt.types.includes("text/uri-list")) return true;
-  if (dt.types.includes("text/plain")) return true;
+export function hasDroppableTypes(types: DOMStringList | readonly string[]): boolean {
+  if (types.includes("Files")) return true;
+  if (types.includes("text/uri-list")) return true;
+  if (types.includes("text/plain")) return true;
+  return false;
+}
+
+/** Validate drops via DataTransferItemList (for VueUse `useDropZone` `checkValidity`). */
+export function checkDroppableItems(items: DataTransferItemList): boolean {
+  const list = Array.from(items);
+  if (!list.length) return false;
+  for (const item of list) {
+    if (item.kind === "file") return true;
+    const type = item.type;
+    if (type === "text/plain" || type === "text/uri-list") return true;
+  }
   return false;
 }

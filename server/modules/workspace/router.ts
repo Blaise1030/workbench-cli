@@ -43,6 +43,10 @@ import {
   GitPanelError,
 } from "./git.js";
 import { FileReadError, listFilesForWorktree, readFileForWorktree } from "./files.js";
+import {
+  DropAssetError,
+  saveWorkbenchDropAssets,
+} from "./drop-assets.js";
 import type { GitDiffScope } from "../git/diff.js";
 import type { PtyRegistry } from "../terminal/pty-registry.js";
 
@@ -177,6 +181,27 @@ export function createWorkspaceRouter(
         return c.json(file);
       } catch (err) {
         if (err instanceof FileReadError) {
+          return c.json({ error: err.message }, err.status);
+        }
+        throw err;
+      }
+    })
+    .post("/worktrees/:id/drop-assets", async (c) => {
+      const worktree = await getWorktree(db, c.req.param("id"));
+      if (!worktree) return c.json({ error: "Worktree not found" }, 404);
+      try {
+        const body = await c.req.parseBody({ all: true });
+        const raw = body.files;
+        const fileList = (Array.isArray(raw) ? raw : raw ? [raw] : []).filter(
+          (f): f is File => f instanceof File,
+        );
+        if (!fileList.length) {
+          return c.json({ error: "No files provided" }, 400);
+        }
+        const paths = await saveWorkbenchDropAssets(fileList);
+        return c.json({ paths });
+      } catch (err) {
+        if (err instanceof DropAssetError) {
           return c.json({ error: err.message }, err.status);
         }
         throw err;

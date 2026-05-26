@@ -7,6 +7,18 @@ function statusByPath(entries: GitStatusEntry[]): Map<string, GitStatusEntry> {
   return new Map(entries.map((entry) => [entry.path, entry]));
 }
 
+function findStatusEntry(
+  path: string,
+  byPath: Map<string, GitStatusEntry>,
+): GitStatusEntry | undefined {
+  const exact = byPath.get(path);
+  if (exact) return exact;
+  for (const [entryPath, entry] of byPath) {
+    if (entryPath.endsWith("/") && path.startsWith(entryPath)) return entry;
+  }
+  return undefined;
+}
+
 export function pathsForAction(
   action: GitFileAction,
   paths: string[],
@@ -15,14 +27,11 @@ export function pathsForAction(
   const byPath = statusByPath(entries);
   switch (action) {
     case "stage":
-      return paths.filter((path) => byPath.get(path)?.unstaged != null);
+      return paths.filter((path) => findStatusEntry(path, byPath)?.unstaged != null);
     case "unstage":
-      return paths.filter((path) => byPath.get(path)?.staged != null);
+      return paths.filter((path) => findStatusEntry(path, byPath)?.staged != null);
     case "discard": {
-      return paths.filter((path) => {
-        const entry = byPath.get(path);
-        return entry?.unstaged != null;
-      });
+      return paths.filter((path) => findStatusEntry(path, byPath)?.unstaged != null);
     }
   }
 }

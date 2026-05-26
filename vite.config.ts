@@ -13,6 +13,9 @@ logger.warn = (msg, options) => {
 export default defineConfig({
   customLogger: logger,
   plugins: [vue(), tailwindcss()],
+  worker: {
+    format: "es",
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

@@ -10,8 +10,9 @@ const MAC_OPTION_TAB_CHARS = ["¡", "™", "£", "¢", "∞", "§", "¶", "•",
 
 export const KEYBINDING_OPTIONS: KeybindingsMap = {
   "terminal.newTerminal": "Ctrl+Shift+n",
-  "panel.explorer": "Meta+Shift+e",
-  "panel.git": "Meta+Shift+g",
+  "panel.explorer": "Ctrl+Shift+e",
+  "panel.git": "Ctrl+Shift+g",
+  "settings.open": "Ctrl+Shift+,",
   "terminal.tab.1": `Option+${MAC_OPTION_TAB_CHARS[0]}`,
   "terminal.tab.2": `Option+${MAC_OPTION_TAB_CHARS[1]}`,
   "terminal.tab.3": `Option+${MAC_OPTION_TAB_CHARS[2]}`,

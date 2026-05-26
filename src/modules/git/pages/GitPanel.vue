@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, toValue, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   GitBranchIcon,
@@ -23,13 +23,16 @@ import {
   gitStatusQueryOptions,
   useGitCommitMutation,
   useGitFileActionsMutation,
-  type GitDiffScope,
   type GitFileAction,
 } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import GitDiffCodeView from "@/modules/git/components/GitDiffCodeView.vue";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -53,7 +56,7 @@ import {
   useGitPanelStorage,
   type GitPanelTabScope,
 } from "@/modules/git/lib/git-panel-storage";
-import { useQuery } from "@tanstack/vue-query";
+import { useQueries, useQuery } from "@tanstack/vue-query";
 import type { DiffIndicators } from "@pierre/diffs";
 
 const props = defineProps<{
@@ -65,19 +68,16 @@ const router = useRouter();
 
 const gitState = useGitPanelStorage(() => props.worktreeId);
 
-const activeTab = computed<GitPanelTabScope>({
-  get: () => {
-    const fromRoute = normalizeGitPanelTabScope(route.query.tab);
-    if (fromRoute) return fromRoute;
-    const stored = normalizeGitPanelTabScope(gitState.value.activeTab);
-    if (stored) return stored;
-    return GIT_PANEL_DEFAULT_TAB;
-  },
-  set: (val: GitPanelTabScope) => {
-    gitState.value = { ...gitState.value, activeTab: val };
-    router.replace({ query: { ...route.query, tab: val } });
-  },
-});
+function resolveActiveTab(): GitPanelTabScope {
+  const fromRoute = normalizeGitPanelTabScope(route.query.tab);
+  if (fromRoute) return fromRoute;
+  const stored = normalizeGitPanelTabScope(gitState.value.activeTab);
+  if (stored) return stored;
+  return GIT_PANEL_DEFAULT_TAB;
+}
+
+/** Local tab state updates immediately; route/storage sync without blocking the UI. */
+const activeTab = ref<GitPanelTabScope>(resolveActiveTab());
 
 function collapsedIdsForTab(tab: GitPanelTabScope): string[] {
   return gitState.value.collapsedByTab?.[tab] ?? [];
@@ -101,7 +101,10 @@ watch(
       if (tab !== normalized) {
         router.replace({ query: { ...route.query, tab: normalized } });
       }
-      gitState.value = { ...gitState.value, activeTab: normalized };
+      if (activeTab.value !== normalized) activeTab.value = normalized;
+      if (gitState.value.activeTab !== normalized) {
+        gitState.value = { ...gitState.value, activeTab: normalized };
+      }
       return;
     }
     router.replace({
@@ -115,6 +118,15 @@ watch(
   },
   { immediate: true },
 );
+
+watch(activeTab, (tab) => {
+  if (gitState.value.activeTab !== tab) {
+    gitState.value = { ...gitState.value, activeTab: tab };
+  }
+  if (route.query.tab !== tab) {
+    router.replace({ query: { ...route.query, tab } });
+  }
+});
 
 const showBackgrounds = ref(true);
 const showLineNumbers = ref(true);
@@ -147,10 +159,6 @@ function toggleCollapseAll() {
   allCollapsed.value = true;
 }
 
-const apiScope = computed<GitDiffScope>(() =>
-  activeTab.value === "staged" ? "staged" : "unstaged",
-);
-
 const { data: worktree, isLoading: worktreeLoading } = useQuery(
   worktreeQueryOptions(() => props.worktreeId),
 );
@@ -169,24 +177,45 @@ const {
   enabled: gitEnabled,
 });
 
-const { data: gitDiff, isLoading: diffLoading } = useQuery({
-  ...gitDiffQueryOptions(
-    () => props.worktreeId,
-    () => apiScope.value,
-    () => null,
+const gitDiffQueries = useQueries({
+  queries: computed(() =>
+    GIT_PANEL_TAB_SCOPES.map((scope) => ({
+      ...gitDiffQueryOptions(() => props.worktreeId, scope, () => null),
+      enabled: gitEnabled.value,
+    })),
   ),
-  enabled: gitEnabled,
+});
+
+const gitDiffByScope = computed(() => {
+  const map = new Map<
+    GitPanelTabScope,
+    (typeof gitDiffQueries.value)[number]
+  >();
+  GIT_PANEL_TAB_SCOPES.forEach((scope, index) => {
+    const query = gitDiffQueries.value[index];
+    if (query) map.set(scope, query);
+  });
+  return map;
 });
 
 const changedFiles = computed(() => gitStatus.value?.files ?? []);
 
-const diffItems = computed(() => {
-  const patch = gitDiff.value?.patch ?? "";
-  return patchToCodeViewItems(
-    patch,
-    `${props.worktreeId}-${activeTab.value}`,
-  );
+const diffItemsByTab = computed(() => {
+  const items = {} as Record<GitPanelTabScope, ReturnType<typeof patchToCodeViewItems>>;
+  for (const scope of GIT_PANEL_TAB_SCOPES) {
+    const patch = toValue(gitDiffByScope.value.get(scope)?.data)?.patch ?? "";
+    items[scope] = patchToCodeViewItems(patch, `${props.worktreeId}-${scope}`);
+  }
+  return items;
 });
+
+const diffItems = computed(() => diffItemsByTab.value[activeTab.value]);
+
+function isDiffPending(tab: GitPanelTabScope): boolean {
+  const query = gitDiffByScope.value.get(tab);
+  if (!query) return true;
+  return toValue(query.isPending) ?? true;
+}
 
 watch(allCollapsed, (collapsed) => {
   if (!diffItems.value.length) return;
@@ -217,6 +246,12 @@ const stagedCount = computed(
   () => changedFiles.value.filter((f) => f.staged != null).length,
 );
 
+function tabCount(tab: GitPanelTabScope): number {
+  const items = diffItemsByTab.value[tab];
+  if (!isDiffPending(tab) && items.length > 0) return items.length;
+  return tab === "staged" ? stagedCount.value : unstagedCount.value;
+}
+
 const canCommit = computed(() => stagedCount.value > 0);
 
 const commitDisabled = computed(
@@ -242,10 +277,7 @@ const selectablePaths = computed(() =>
 );
 
 const selectAllCheckboxValue = computed(() => {
-  const state = selectAllPathsState(
-    selectedPaths.value,
-    selectablePaths.value,
-  );
+  const state = selectAllPathsState(selectedPaths.value, selectablePaths.value);
   if (state === "all") return true;
   if (state === "some") return "indeterminate";
   return false;
@@ -303,10 +335,12 @@ async function submitCommit() {
 
     <template v-else-if="worktree">
       <Tabs v-model="activeTab" class="flex min-h-0 flex-1 flex-col gap-0">
-        <header class="shrink-0 flex items-center gap-3 border-b border-border/60 px-3">
+        <header
+          class="shrink-0 flex items-center gap-3 border-b border-border/60 px-3"
+        >
           <label
             v-if="showSelectAllInHeader"
-            class="flex shrink-0 cursor-pointer items-center ps-1"
+            class="relative z-20 flex shrink-0 cursor-pointer items-center ps-1"
           >
             <Checkbox
               :model-value="selectAllCheckboxValue"
@@ -323,15 +357,18 @@ async function submitCommit() {
             <span class="max-w-[12rem] truncate">{{ displayBranch }}</span>
           </div>
 
-          <div v-if="!worktree.isLinked" class="text-xs text-amber-600 dark:text-amber-400">
+          <div
+            v-if="!worktree.isLinked"
+            class="text-xs text-amber-600 dark:text-amber-400"
+          >
             Worktree path is not available on this machine.
           </div>
 
-          <div
-            v-else
-            class="flex min-w-0 items-center gap-2"
-          >
-            <TabsList variant="line" class="shrink-0 rounded-none h-auto p-0 border-none gap-0 z-10">
+          <div v-else class="flex min-w-0 items-center gap-2">
+            <TabsList
+              variant="line"
+              class="shrink-0 rounded-none h-auto p-0 border-none gap-0 z-10"
+            >
               <TabsTrigger
                 v-for="tab in GIT_PANEL_TAB_SCOPES"
                 :key="tab"
@@ -340,9 +377,10 @@ async function submitCommit() {
               >
                 {{ tab === "staged" ? "Staged" : "Unstaged" }}
                 <span
-                  v-if="tab === 'staged' ? stagedCount : unstagedCount"
+                  v-if="tabCount(tab as GitPanelTabScope)"
                   class="tabular-nums text-muted-foreground"
-                >{{ tab === "staged" ? stagedCount : unstagedCount }}</span>
+                  >{{ tabCount(tab as GitPanelTabScope) }}</span
+                >
               </TabsTrigger>
             </TabsList>
 
@@ -361,14 +399,18 @@ async function submitCommit() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" class="w-48">
                 <DropdownMenuItem
-                  :disabled="!selectionActions.stage || gitFileActions.isPending.value"
+                  :disabled="
+                    !selectionActions.stage || gitFileActions.isPending.value
+                  "
                   @select="runGitAction('stage')"
                 >
                   <PlusIcon />
                   Stage changes
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  :disabled="!selectionActions.unstage || gitFileActions.isPending.value"
+                  :disabled="
+                    !selectionActions.unstage || gitFileActions.isPending.value
+                  "
                   @select="runGitAction('unstage')"
                 >
                   <MinusIcon />
@@ -376,7 +418,9 @@ async function submitCommit() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  :disabled="!selectionActions.discard || gitFileActions.isPending.value"
+                  :disabled="
+                    !selectionActions.discard || gitFileActions.isPending.value
+                  "
                   @select="runGitAction('discard')"
                 >
                   <Trash2Icon />
@@ -409,7 +453,11 @@ async function submitCommit() {
             </Button>
             <Popover>
               <PopoverTrigger as-child>
-                <Button variant="ghost" size="icon" class="size-7 text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="size-7 text-muted-foreground hover:text-foreground"
+                >
                   <Settings2Icon class="size-3.5" />
                 </Button>
               </PopoverTrigger>
@@ -448,16 +496,15 @@ async function submitCommit() {
             </Popover>
             <Popover v-if="worktree.isLinked" v-model:open="commitOpen">
               <PopoverTrigger as-child>
-                <Button
-                  variant="default"
-                  size="xs"
-                  :disabled="commitDisabled"
-                >
+                <Button variant="default" size="xs" :disabled="commitDisabled">
                   Commit
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="end" class="w-80 p-3">
-                <form class="flex flex-col gap-2" @submit.prevent="submitCommit">
+                <form
+                  class="flex flex-col gap-2"
+                  @submit.prevent="submitCommit"
+                >
                   <Label for="git-commit-message" class="text-xs font-medium">
                     Commit message
                   </Label>
@@ -488,10 +535,16 @@ async function submitCommit() {
         </header>
 
         <template v-if="worktree.isLinked">
-          <div v-if="statusLoading" class="flex-1 px-3 py-2 text-xs text-muted-foreground">
+          <div
+            v-if="statusLoading"
+            class="flex-1 px-3 py-2 text-xs text-muted-foreground"
+          >
             Loading changes…
           </div>
-          <p v-else-if="statusError" class="flex-1 px-3 py-2 text-xs text-destructive">
+          <p
+            v-else-if="statusError"
+            class="flex-1 px-3 py-2 text-xs text-destructive"
+          >
             {{ statusErrorObj?.message ?? "Failed to load git status" }}
           </p>
 
@@ -503,21 +556,30 @@ async function submitCommit() {
               class="flex min-h-0 flex-1 flex-col mt-0 overflow-hidden"
             >
               <div
-                v-if="diffLoading"
+                v-if="isDiffPending(tab as GitPanelTabScope)"
                 class="flex flex-1 items-center justify-center text-xs text-muted-foreground"
               >
                 Loading diff…
               </div>
               <div
-                v-else-if="!diffItems.length"
-                class="flex flex-1 items-center justify-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground"
+                v-else-if="!diffItemsByTab[tab as GitPanelTabScope].length"
+                class="p-2 flex flex-1"
               >
-                {{ changedFiles.length ? "No diff for this filter" : "Working tree clean" }}
+                <div
+                  class="flex flex-1 items-center justify-center rounded-md border border-dashed text-xs text-muted-foreground"
+                >
+                  {{
+                    changedFiles.length
+                      ? "No diff for this filter"
+                      : "Working tree clean"
+                  }}
+                </div>
               </div>
               <GitDiffCodeView
                 v-else
                 :key="`${worktreeId}-${tab}`"
-                :items="diffItems"
+                :tab-active="activeTab === tab"
+                :items="diffItemsByTab[tab as GitPanelTabScope]"
                 :worktree-id="worktreeId"
                 :worktree-path="worktree.path"
                 :collapsed-ids="collapsedIdsForTab(tab as GitPanelTabScope)"
@@ -528,7 +590,9 @@ async function submitCommit() {
                 :diff-style="diffStyle"
                 :all-collapsed="allCollapsed"
                 v-model:selected-paths="selectedPaths"
-                @update:collapsed-ids="setCollapsedIdsForTab(tab as GitPanelTabScope, $event)"
+                @update:collapsed-ids="
+                  setCollapsedIdsForTab(tab as GitPanelTabScope, $event)
+                "
                 @expand-one="onExpandOneDiff"
               />
             </TabsContent>

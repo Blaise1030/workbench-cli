@@ -1,5 +1,5 @@
 import type { WTerm as WTermInstance } from "@wterm/vue";
-import { notifyCommandSuccess, playTerminalBell } from "@/modules/terminal/lib/terminal-bell";
+import { notifyCommandSuccess } from "@/modules/terminal/lib/terminal-bell";
 import {
   formatTabLabel,
   parseOscStream,
@@ -56,7 +56,7 @@ export class TerminalSession {
     callback(this.tabLabel);
   }
 
-  /** When false, successful commands do not ring the bell (e.g. focused tab). */
+  /** When false, successful commands do not notify in the background (e.g. focused tab). */
   setShouldNotifySuccess(callback: () => boolean) {
     this.shouldNotifySuccess = callback;
   }
@@ -84,7 +84,6 @@ export class TerminalSession {
         changed = true;
       }
       if (report.commandExit === 0 && this.shouldNotifySuccess()) {
-        playTerminalBell();
         notifyCommandSuccess(this.tabLabel);
       }
     }

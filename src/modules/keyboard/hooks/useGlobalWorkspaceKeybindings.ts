@@ -1,6 +1,7 @@
 import { useEventListener } from "@vueuse/core";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { rememberSettingsReturnRoute } from "@/modules/settings/lib/settings-return-route";
 import {
   consumeWorkspaceKeyEvent,
   matchWorkspaceKeyAction,
@@ -15,6 +16,7 @@ import {
 
 /** Workspace shortcuts take priority over terminal and file preview, app-wide in the worktree shell. */
 export function useGlobalWorkspaceKeybindings(worktreeId: MaybeRefOrGetter<string | undefined>) {
+  const route = useRoute();
   const router = useRouter();
   const resolvedWorktreeId = computed(() => toValue(worktreeId) ?? "");
   const { data: bindings } = useKeybindingsQuery();
@@ -30,14 +32,20 @@ export function useGlobalWorkspaceKeybindings(worktreeId: MaybeRefOrGetter<strin
     window,
     "keydown",
     (event: KeyboardEvent) => {
-      const wtId = resolvedWorktreeId.value;
-      if (!wtId) return;
-
       const map = bindings.value ?? KEYBINDING_OPTIONS;
       const matched = matchWorkspaceKeyAction(event, map);
       if (!matched) return;
 
       consumeWorkspaceKeyEvent(event);
+
+      if (matched === "settings.open") {
+        rememberSettingsReturnRoute(route.fullPath);
+        void router.push({ name: "settings-general" });
+        return;
+      }
+
+      const wtId = resolvedWorktreeId.value;
+      if (!wtId) return;
 
       if (matched === "terminal.newTerminal") {
         void createTerminal.mutateAsync(undefined).then((terminal) => {

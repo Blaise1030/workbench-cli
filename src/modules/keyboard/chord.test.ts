@@ -27,6 +27,7 @@ describe("normalizeStoredChord", () => {
 describe("chordLabel", () => {
   it("renders Ctrl+Shift chords", () => {
     expect(chordLabel("Ctrl+Shift+n")).toBe("⌃⇧n");
+    expect(chordLabel("Ctrl+Shift+e")).toBe("⌃⇧e");
     expect(chordLabel("Option+¡")).toBe("⌥¡");
     expect(normalizeStoredChord("Option+1")).toBe("Option+¡");
   });

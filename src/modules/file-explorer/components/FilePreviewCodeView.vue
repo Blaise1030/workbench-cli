@@ -3,6 +3,11 @@ import { CodeView, type CodeViewItem } from "@pierre/diffs";
 import { useMutationObserver } from "@vueuse/core";
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
+import {
+  getPierreWorkerPool,
+  PIERRE_DIFF_THEME,
+  whenPierreWorkerReady,
+} from "@/shared/lib/pierre-diff-worker-pool";
 
 const props = defineProps<{
   filePath: string;
@@ -31,7 +36,7 @@ const items = computed<CodeViewItem[]>(() => [
 
 function viewOptions() {
   return {
-    theme: { dark: "pierre-dark", light: "pierre-light" },
+    theme: PIERRE_DIFF_THEME,
     themeType: themeType.value,
     disableBackground: false,
     disableLineNumbers: false,
@@ -39,39 +44,50 @@ function viewOptions() {
   };
 }
 
-function mountViewer() {
+async function mountViewer() {
   const root = rootRef.value;
   if (!root || viewer.value) return;
 
-  const instance = new CodeView({
-    ...viewOptions(),
-    disableFileHeader: true,
-    stickyHeaders: false,
-    layout: { paddingTop: 8, paddingBottom: 8, gap: 0 },
-  });
+  await whenPierreWorkerReady();
+
+  const instance = new CodeView(
+    {
+      ...viewOptions(),
+      disableFileHeader: true,
+      stickyHeaders: false,
+      layout: { paddingTop: 8, paddingBottom: 8, gap: 0 },
+    },
+    getPierreWorkerPool(),
+  );
   instance.setup(root);
   instance.setItems(items.value);
   viewer.value = instance;
 }
 
-function syncViewer() {
+async function syncViewer() {
   if (!viewer.value) {
-    mountViewer();
+    await mountViewer();
     return;
   }
   viewer.value.setOptions(viewOptions());
   viewer.value.setItems(items.value);
 }
 
-onMounted(() => mountViewer());
+onMounted(() => {
+  void mountViewer();
+});
 
-watch(items, () => syncViewer(), { deep: true });
-watch(themeType, () => syncViewer());
+watch(items, () => {
+  void syncViewer();
+}, { deep: true });
+watch(themeType, () => {
+  void syncViewer();
+});
 
 useMutationObserver(
   rootRef,
   () => {
-    if (!viewer.value && rootRef.value) mountViewer();
+    if (!viewer.value && rootRef.value) void mountViewer();
   },
   { childList: true },
 );

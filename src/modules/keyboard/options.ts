@@ -28,7 +28,8 @@ function optionTabChords(): Pick<
 /** Built-in shortcuts; merged under user overrides in ~/.workbench/keybindings.json */
 export const KEYBINDING_OPTIONS: KeybindingsMap = {
   "terminal.newTerminal": "Ctrl+Shift+n",
-  "panel.explorer": "Meta+Shift+e",
-  "panel.git": "Meta+Shift+g",
+  "panel.explorer": "Ctrl+Shift+e",
+  "panel.git": "Ctrl+Shift+g",
+  "settings.open": "Ctrl+Shift+,",
   ...optionTabChords(),
 };

@@ -1,10 +1,16 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  checkDroppableItems,
   clearDragPayload,
+  dedupeDropPaths,
   fileUrlToPath,
   formatPathsForTerminal,
+  isUsableDropPath,
+  normalizeDropPathForCompare,
+  partitionDroppedFiles,
   pathFromDropLine,
   pathsFromDataTransfer,
+  pathsFromFileList,
   resolveBasenameInFileTree,
   resolveRelativeToWorktreeRoot,
   shellQuotePath,
@@ -69,6 +75,28 @@ describe("resolveBasenameInFileTree", () => {
         "/Users/me/project",
       ),
     ).toBeNull();
+  });
+});
+
+describe("checkDroppableItems", () => {
+  it("accepts file items", () => {
+    const items = [{ kind: "file", type: "image/png" }] as DataTransferItem[];
+    expect(checkDroppableItems(items as unknown as DataTransferItemList)).toBe(
+      true,
+    );
+  });
+
+  it("accepts text/plain string items", () => {
+    const items = [{ kind: "string", type: "text/plain" }] as DataTransferItem[];
+    expect(checkDroppableItems(items as unknown as DataTransferItemList)).toBe(
+      true,
+    );
+  });
+
+  it("rejects empty lists", () => {
+    expect(checkDroppableItems([] as unknown as DataTransferItemList)).toBe(
+      false,
+    );
   });
 });
 
@@ -153,6 +181,66 @@ describe("pathsFromDataTransfer", () => {
 
 afterEach(() => {
   clearDragPayload();
+});
+
+describe("dedupeDropPaths", () => {
+  it("treats narrow no-break space and regular space as the same path", () => {
+    const a =
+      "/var/folders/tmp/Screenshot 2026-05-25 at 11.36.49\u202fPM.png";
+    const b =
+      "/var/folders/tmp/Screenshot 2026-05-25 at 11.36.49 PM.png";
+    expect(normalizeDropPathForCompare(a)).toBe(normalizeDropPathForCompare(b));
+    expect(dedupeDropPaths([a, b])).toEqual([a]);
+  });
+});
+
+describe("isUsableDropPath", () => {
+  it("accepts absolute paths", () => {
+    expect(isUsableDropPath("/tmp/a.txt")).toBe(true);
+  });
+
+  it("rejects bare filenames", () => {
+    expect(isUsableDropPath("photo.png")).toBe(false);
+  });
+
+  it("accepts worktree-relative paths with slashes", () => {
+    expect(
+      isUsableDropPath("src/a.ts", { worktreeRoot: "/repo" }),
+    ).toBe(true);
+  });
+});
+
+describe("partitionDroppedFiles", () => {
+  it("sends bare names to upload", () => {
+    const file = { name: "photo.png" } as File;
+    const { resolved, needsUpload } = partitionDroppedFiles([file]);
+    expect(resolved).toEqual([]);
+    expect(needsUpload).toEqual([file]);
+  });
+
+  it("keeps resolved paths from File.path", () => {
+    const file = { name: "photo.png", path: "/Users/me/photo.png" } as File;
+    const { resolved, needsUpload } = partitionDroppedFiles([file]);
+    expect(resolved).toEqual(["/Users/me/photo.png"]);
+    expect(needsUpload).toEqual([]);
+  });
+});
+
+describe("pathsFromFileList", () => {
+  it("uses File.path when available", () => {
+    const file = { name: "readme.md", path: "/Users/me/readme.md" } as File;
+    expect(pathsFromFileList([file])).toEqual(["/Users/me/readme.md"]);
+  });
+
+  it("resolves webkitRelativePath against worktree root", () => {
+    const file = {
+      name: "index.ts",
+      webkitRelativePath: "src/index.ts",
+    } as File;
+    expect(
+      pathsFromFileList([file], { worktreeRoot: "/Users/me/project" }),
+    ).toEqual(["/Users/me/project/src/index.ts"]);
+  });
 });
 
 describe("formatPathsForTerminal", () => {

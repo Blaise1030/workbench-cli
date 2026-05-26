@@ -8,20 +8,20 @@ import {
 import { useDebounceFn, useMutationObserver } from "@vueuse/core";
 import {
   computed,
-  getCurrentInstance,
-  h,
   onBeforeUnmount,
   onMounted,
-  render,
   ref,
   shallowRef,
   watch,
-  type AppContext,
 } from "vue";
 import { useRouter } from "vue-router";
 import { explorerFileRoute } from "@/modules/file-explorer/lib/explorer-file-route";
-import GitDiffSelectCheckbox from "@/modules/git/components/GitDiffSelectCheckbox.vue";
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
+import {
+  getPierreWorkerPool,
+  PIERRE_DIFF_THEME,
+  whenPierreWorkerReady,
+} from "@/shared/lib/pierre-diff-worker-pool";
 import gitDiffHeaderStyles from "@/modules/git/components/git-diff-header.css?inline";
 
 const DIFFS_HOST_TAG = "diffs-container";
@@ -30,8 +30,8 @@ const EXPLORER_LINK_SELECTOR = "a.git-diff-explorer-link";
 /** Tailwind classes on the collapse control (also defined in git-diff-header.css). */
 const HEADER_PREFIX_CLASS =
   "git-diff-header-prefix inline-flex shrink-0 flex-nowrap items-center gap-2";
-const SELECT_CHECKBOX_HOST_CLASS =
-  "git-diff-select-checkbox-host inline-flex shrink-0 items-center";
+const SELECT_CHECKBOX_HOST_CLASS = "git-diff-select-checkbox-host";
+const SELECT_CHECKBOX_CLASS = "git-diff-select-checkbox";
 const COLLAPSE_BTN_CLASS =
   "git-diff-collapse-btn inline-flex size-6 shrink-0 items-center justify-center rounded-[min(var(--radius-md),10px)] border border-transparent bg-transparent text-muted-foreground outline-none transition-all select-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-expanded:text-foreground dark:hover:bg-muted/50";
 const COLLAPSE_ICON_CLASS = "git-diff-collapse-icon size-3 shrink-0 pointer-events-none";
@@ -48,17 +48,15 @@ const props = defineProps<{
   diffStyle?: "unified" | "split";
   allCollapsed?: boolean;
   selectedPaths?: string[];
+  /** True when this pane's git tab is selected (re-syncs header checkboxes on activate). */
+  tabActive?: boolean;
 }>();
 
 const router = useRouter();
-const appContext = getCurrentInstance()?.appContext as AppContext | undefined;
 
-type MountedCheckbox = {
-  host: HTMLElement;
-  filePath: string | undefined;
-};
-
-const mountedCheckboxes: MountedCheckbox[] = [];
+const selectedPathSet = computed(
+  () => new Set(props.selectedPaths ?? []),
+);
 
 const emit = defineEmits<{
   "update:collapsedIds": [ids: string[]];
@@ -103,6 +101,36 @@ function resolvedCollapsedIdSet(): Set<string> {
 function isItemCollapsed(itemId: string): boolean {
   if (resolvedAllCollapsed()) return true;
   return resolvedCollapsedIdSet().has(itemId);
+}
+
+function wasItemCollapsed(
+  itemId: string,
+  allCollapsed: boolean | undefined,
+  collapsedIds: string[] | undefined,
+): boolean {
+  if (allCollapsed === true) return true;
+  return new Set(collapsedIds ?? []).has(itemId);
+}
+
+/** Item ids whose collapsed state changed (for targeted CodeView version bumps). */
+function itemIdsWithCollapsedChange(
+  prevCollapsedIds: string[] | undefined,
+  prevAllCollapsed: boolean | undefined,
+): string[] {
+  const nextAll = resolvedAllCollapsed();
+  const prevAll = prevAllCollapsed === true;
+  if (prevAll !== nextAll) {
+    return props.items.map((item) => item.id);
+  }
+
+  const nextSet = resolvedCollapsedIdSet();
+  const changed: string[] = [];
+  for (const item of props.items) {
+    const was = wasItemCollapsed(item.id, prevAllCollapsed, prevCollapsedIds);
+    const now = nextAll || nextSet.has(item.id);
+    if (was !== now) changed.push(item.id);
+  }
+  return changed;
 }
 
 function bumpCollapseVersions(itemIds: string[]) {
@@ -197,56 +225,65 @@ function toggleItemCollapsed(itemId: string) {
   emit("update:collapsedIds", optimisticCollapsedIds.value);
 }
 
-function resolvedSelectedPaths(): Set<string> {
-  return new Set(props.selectedPaths ?? []);
-}
-
 function isPathSelected(filePath: string | undefined): boolean {
   if (!filePath) return false;
-  return resolvedSelectedPaths().has(filePath);
+  return selectedPathSet.value.has(filePath);
 }
 
-function setPathSelected(filePath: string | undefined, checked: boolean) {
-  if (!filePath) return;
-  const next = new Set(resolvedSelectedPaths());
+function setPathSelected(filePath: string, checked: boolean) {
+  const next = new Set(selectedPathSet.value);
   if (checked) next.add(filePath);
   else next.delete(filePath);
   emit("update:selectedPaths", [...next]);
 }
 
-function renderCheckboxMount(mount: MountedCheckbox) {
-  const vnode = h(GitDiffSelectCheckbox, {
-    checked: isPathSelected(mount.filePath),
-    filePath: mount.filePath,
-    disabled: !mount.filePath,
-    "onUpdate:checked": (checked: boolean) => setPathSelected(mount.filePath, checked),
+function forEachDiffContainer(run: (container: ParentNode) => void) {
+  const root = rootRef.value;
+  if (!root) return;
+  run(root);
+  for (const host of root.querySelectorAll(DIFFS_HOST_TAG)) {
+    if (host instanceof HTMLElement && host.shadowRoot) {
+      run(host.shadowRoot);
+    }
+  }
+}
+
+function syncCheckboxInputsFromDom() {
+  const selected = selectedPathSet.value;
+  forEachDiffContainer((container) => {
+    container
+      .querySelectorAll<HTMLInputElement>(`input.${SELECT_CHECKBOX_CLASS}`)
+      .forEach((input) => {
+        const filePath = input.dataset.gitDiffFilePath;
+        if (!filePath) return;
+        const checked = selected.has(filePath);
+        if (input.checked !== checked) input.checked = checked;
+      });
   });
-  if (appContext) vnode.appContext = appContext;
-  render(vnode, mount.host);
 }
 
-function unmountAllCheckboxes() {
-  for (const mount of mountedCheckboxes) {
-    render(null, mount.host);
-  }
-  mountedCheckboxes.length = 0;
-}
-
-function syncCheckboxMounts() {
-  for (const mount of mountedCheckboxes) {
-    renderCheckboxMount(mount);
-  }
-}
+const scheduleSyncCheckboxInputs = useDebounceFn(() => {
+  requestAnimationFrame(syncCheckboxInputsFromDom);
+}, 32);
 
 function createSelectCheckbox(filePath: string | undefined): HTMLElement {
   const host = document.createElement("div");
   host.className = SELECT_CHECKBOX_HOST_CLASS;
-  if (filePath) host.dataset.gitDiffFilePath = filePath;
-  host.addEventListener("click", (event) => event.stopPropagation());
 
-  const mount: MountedCheckbox = { host, filePath };
-  mountedCheckboxes.push(mount);
-  renderCheckboxMount(mount);
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.className = SELECT_CHECKBOX_CLASS;
+  input.disabled = !filePath;
+  if (filePath) {
+    input.dataset.gitDiffFilePath = filePath;
+    input.checked = isPathSelected(filePath);
+  }
+  input.setAttribute(
+    "aria-label",
+    filePath ? `Select ${filePath}` : "Select file",
+  );
+
+  host.append(input);
   return host;
 }
 
@@ -310,13 +347,13 @@ function syncCollapseButtons() {
 }
 
 const scheduleSyncCollapseButtons = useDebounceFn(() => {
-  requestAnimationFrame(() => {
-    syncCollapseButtons();
-    syncCheckboxMounts();
-  });
+  requestAnimationFrame(syncCollapseButtons);
 }, 32);
 
-function createHeaderPrefix(itemId: string, filePath: string | undefined): HTMLElement {
+function createHeaderPrefix(
+  itemId: string,
+  filePath: string | undefined,
+): HTMLElement {
   const prefix = document.createElement("div");
   prefix.className = HEADER_PREFIX_CLASS;
   prefix.append(createSelectCheckbox(filePath), createCollapseButton(itemId));
@@ -461,7 +498,7 @@ const scheduleEnhanceAllHeaderLinks = useDebounceFn(() => {
 
 function diffOptions() {
   return {
-    theme: { dark: "pierre-dark", light: "pierre-light" },
+    theme: PIERRE_DIFF_THEME,
     themeType: themeType.value,
     disableBackground: props.disableBackground,
     disableLineNumbers: props.disableLineNumbers,
@@ -502,31 +539,43 @@ function itemsForView() {
   }));
 }
 
+/** Full refresh when diff items change (rebuilds list + header slots). */
 function applyViewerItems(changedItemIds?: string[]) {
   if (!viewer.value) return;
   bumpCollapseVersions(changedItemIds ?? props.items.map((item) => item.id));
   viewer.value.setItems(itemsForView());
   scheduleSyncCollapseButtons();
+  scheduleSyncCheckboxInputs();
   scheduleEnhanceAllHeaderLinks();
 }
 
-function mountViewer() {
+/** Collapse-only updates — bump version only for affected items (Pierre CodeView pattern). */
+function applyCollapseUpdates(changedItemIds: string[]) {
+  if (!viewer.value || changedItemIds.length === 0) return;
+  bumpCollapseVersions(changedItemIds);
+  viewer.value.setItems(itemsForView());
+  scheduleSyncCollapseButtons();
+}
+
+async function mountViewer() {
   const root = rootRef.value;
   if (!root || viewer.value) return;
 
-  const instance = new CodeView({
-    ...diffOptions(),
-    stickyHeaders: true,
-    layout: { paddingTop: 8, paddingBottom: 8, gap: 8 },
-  });
+  await whenPierreWorkerReady();
+
+  const instance = new CodeView(
+    {
+      ...diffOptions(),
+      stickyHeaders: true,
+      layout: { paddingTop: 8, paddingBottom: 8, gap: 8 },
+    },
+    getPierreWorkerPool(),
+  );
   instance.setup(root);
   instance.setItems(itemsForView());
   viewer.value = instance;
   scheduleEnhanceAllHeaderLinks();
-}
-
-function syncItems() {
-  applyViewerItems();
+  scheduleSyncCheckboxInputs();
 }
 
 const persistCollapsedIds = useDebounceFn(() => {
@@ -541,14 +590,26 @@ function onRootPointerUp() {
   persistCollapsedIds();
 }
 
+function onRootCheckboxChange(event: Event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  if (!target.classList.contains(SELECT_CHECKBOX_CLASS)) return;
+  const filePath = target.dataset.gitDiffFilePath;
+  if (!filePath) return;
+  setPathSelected(filePath, target.checked);
+}
+
 function onRootClick(event: MouseEvent) {
   const target = event.target;
   if (!(target instanceof Element)) return;
+  if (target instanceof HTMLInputElement && target.classList.contains(SELECT_CHECKBOX_CLASS)) {
+    event.stopPropagation();
+    return;
+  }
   if (
     target.closest(EXPLORER_LINK_SELECTOR) ||
     target.closest(".git-diff-collapse-btn") ||
-    target.closest(`.${SELECT_CHECKBOX_HOST_CLASS}`) ||
-    target.closest('[data-slot="checkbox"]')
+    target.closest(`.${SELECT_CHECKBOX_HOST_CLASS}`)
   ) {
     return;
   }
@@ -571,6 +632,7 @@ function syncOptions() {
   );
   scheduleEnhanceAllHeaderLinks();
   scheduleSyncCollapseButtons();
+  scheduleSyncCheckboxInputs();
 }
 
 function syncTheme() {
@@ -578,9 +640,11 @@ function syncTheme() {
 }
 
 onMounted(() => {
-  mountViewer();
-  rootRef.value?.addEventListener("pointerup", onRootPointerUp);
-  rootRef.value?.addEventListener("click", onRootClick);
+  void mountViewer();
+  const root = rootRef.value;
+  root?.addEventListener("pointerup", onRootPointerUp);
+  root?.addEventListener("click", onRootClick);
+  root?.addEventListener("change", onRootCheckboxChange);
 });
 
 watch(
@@ -593,16 +657,24 @@ watch(
     if (!propsReady) return;
 
     const itemsChanged = items !== prev?.[0];
+    const collapseChanged =
+      allCollapsed !== prev?.[2] ||
+      !collapsedIdsEqual(prev?.[1], collapsedIds ?? []);
+
     if (itemsChanged) {
       collapseVersionById.value = {};
-      unmountAllCheckboxes();
     }
 
     if (viewer.value) {
-      if (itemsChanged || !prev) applyViewerItems();
-      else syncItems();
+      if (itemsChanged || !prev) {
+        applyViewerItems();
+      } else if (collapseChanged) {
+        applyCollapseUpdates(
+          itemIdsWithCollapsedChange(prev?.[1], prev?.[2]),
+        );
+      }
     } else {
-      mountViewer();
+      void mountViewer();
     }
   },
   { deep: true },
@@ -623,22 +695,23 @@ watch(
   () => syncOptions(),
 );
 
+watch(selectedPathSet, () => scheduleSyncCheckboxInputs());
+
 watch(
-  () => props.selectedPaths,
-  () => scheduleSyncCollapseButtons(),
-  { deep: true },
+  () => props.tabActive,
+  (active) => {
+    if (!active || !viewer.value) return;
+    scheduleSyncCollapseButtons();
+    scheduleSyncCheckboxInputs();
+  },
 );
 
 useMutationObserver(
   rootRef,
   () => {
-    if (!viewer.value && rootRef.value) mountViewer();
-    else {
-      scheduleEnhanceAllHeaderLinks();
-      scheduleSyncCollapseButtons();
-    }
+    if (!viewer.value && rootRef.value) void mountViewer();
   },
-  { childList: true, subtree: true },
+  { childList: true },
 );
 
 watch(
@@ -647,9 +720,10 @@ watch(
 );
 
 onBeforeUnmount(() => {
-  rootRef.value?.removeEventListener("pointerup", onRootPointerUp);
-  rootRef.value?.removeEventListener("click", onRootClick);
-  unmountAllCheckboxes();
+  const root = rootRef.value;
+  root?.removeEventListener("pointerup", onRootPointerUp);
+  root?.removeEventListener("click", onRootClick);
+  root?.removeEventListener("change", onRootCheckboxChange);
   viewer.value?.cleanUp();
   viewer.value = null;
 });
@@ -667,6 +741,6 @@ onBeforeUnmount(() => {
 @source "./git-diff-header.css";
 
 .git-diff-code-view {
-  contain: strict;
+  contain: layout style;
 }
 </style>

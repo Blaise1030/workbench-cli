@@ -37,7 +37,42 @@
   color: var(--background);
 }
 
+@keyframes terminal-drop-zone-inset {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--ring) 35%, transparent),
+      inset 0 0 18px 0 color-mix(in oklch, var(--ring) 6%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklch, var(--ring) 60%, transparent),
+      inset 0 0 40px 8px color-mix(in oklch, var(--primary) 14%, transparent);
+  }
+}
+
+.terminal-drop-zone {
+  --terminal-drop-inset-duration: 1.6s;
+  --terminal-drop-fade-duration: 0.3s;
+  transition: box-shadow var(--terminal-drop-fade-duration) ease-out;
+}
+
+.terminal-drop-zone--active {
+  animation: terminal-drop-zone-inset var(--terminal-drop-inset-duration) ease-in-out
+    infinite;
+}
+
 .terminal-drop-zone--active .wterm.theme-app {
   outline: 2px dashed color-mix(in oklch, var(--ring) 70%, transparent);
   outline-offset: -2px;
+  transition: outline-color var(--terminal-drop-fade-duration) ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-drop-zone--active {
+    animation: none;
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklch, var(--ring) 55%, transparent),
+      inset 0 0 24px 4px color-mix(in oklch, var(--ring) 10%, transparent);
+  }
 }

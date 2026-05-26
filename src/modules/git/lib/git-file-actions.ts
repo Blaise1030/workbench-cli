@@ -7,7 +7,12 @@ export function gitActionsForSelection(
   files: GitStatusEntry[],
 ): Record<GitFileAction, boolean> {
   const selected = new Set(selectedPaths);
-  const entries = files.filter((file) => selected.has(file.path));
+  const entries = files.filter(
+    (file) =>
+      selected.has(file.path) ||
+      (file.path.endsWith("/") &&
+        [...selected].some((p) => p.startsWith(file.path))),
+  );
 
   return {
     stage: entries.some((file) => file.unstaged != null),

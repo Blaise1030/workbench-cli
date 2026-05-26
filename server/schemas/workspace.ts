@@ -67,3 +67,7 @@ export const gitFileActionsBodySchema = z.object({
 export const gitCommitBodySchema = z.object({
   message: z.string().min(1),
 });
+
+export const dropAssetsResponseSchema = z.object({
+  paths: z.array(z.string()),
+});
