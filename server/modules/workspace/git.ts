@@ -1,7 +1,5 @@
 import { applyGitFileAction, type GitFileAction } from "../git/actions.js";
 import { commitStagedChanges } from "../git/commit.js";
-import { commitStagedChanges } from "../git/commit.js";
-import { commitStagedChanges } from "../git/commit.js";
 import { GitError, runGit } from "../git/exec.js";
 import { getWorktreeDiff, type GitDiffScope } from "../git/diff.js";
 import { parseGitStatusPorcelain } from "../git/status.js";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toValue, watch } from "vue";
+import { computed, inject, ref, toValue, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   GitBranchIcon,
@@ -58,6 +58,7 @@ import {
 } from "@/modules/git/lib/git-panel-storage";
 import { useQueries, useQuery } from "@tanstack/vue-query";
 import type { DiffIndicators } from "@pierre/diffs";
+import { contextQueueGitItemIdsKey } from "@/modules/context-queue/lib/context-queue-keys";
 
 const props = defineProps<{
   worktreeId: string;
@@ -210,6 +211,17 @@ const diffItemsByTab = computed(() => {
 });
 
 const diffItems = computed(() => diffItemsByTab.value[activeTab.value]);
+
+const gitItemIdsRef = inject(contextQueueGitItemIdsKey, null);
+watch(
+  diffItems,
+  (items) => {
+    if (gitItemIdsRef) {
+      gitItemIdsRef.value = items.map((item) => item.id);
+    }
+  },
+  { immediate: true },
+);
 
 function isDiffPending(tab: GitPanelTabScope): boolean {
   const query = gitDiffByScope.value.get(tab);

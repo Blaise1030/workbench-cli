@@ -69,6 +69,7 @@ export const KEYBINDING_ACTIONS = [
   "terminal.newTerminal",
   "panel.explorer",
   "panel.git",
+  "contextQueue.invoke",
   "settings.open",
   "terminal.tab.1",
   "terminal.tab.2",

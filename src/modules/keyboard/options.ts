@@ -30,6 +30,7 @@ export const KEYBINDING_OPTIONS: KeybindingsMap = {
   "terminal.newTerminal": "Ctrl+Shift+n",
   "panel.explorer": "Ctrl+Shift+e",
   "panel.git": "Ctrl+Shift+g",
+  "contextQueue.invoke": "Ctrl+l",
   "settings.open": "Ctrl+Shift+,",
   ...optionTabChords(),
 };

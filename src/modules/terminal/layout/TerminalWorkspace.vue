@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, ref, watch } from "vue";
+import { useQuery } from "@tanstack/vue-query";
 import {
   FolderTreeIcon,
   GitBranchIcon,
@@ -38,6 +39,11 @@ import {
   explorerPanelId,
   type WorktreeLastRoute,
 } from "@/modules/workspace/lib/worktree-panels-storage";
+import { worktreeQueryOptions } from "@/modules/workspace/queries";
+import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
+import { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
+import { useContextQueueKeybinding } from "@/modules/context-queue/hooks/use-context-queue-keybinding";
+import { contextQueueGitItemIdsKey } from "@/modules/context-queue/lib/context-queue-keys";
 const props = defineProps<{
   worktreeId: string;
 }>();
@@ -49,6 +55,19 @@ provide(terminalSessionsKey, sessions);
 
 const panelsState = useWorktreePanels(() => props.worktreeId);
 const gitPanelState = useGitPanelStorage(() => props.worktreeId);
+const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
+const contextQueue = useContextQueue(() => props.worktreeId);
+const gitItemIdsRef = ref<string[]>([]);
+provide(contextQueueGitItemIdsKey, gitItemIdsRef);
+
+useContextQueueKeybinding({
+  routeName: () => route.name,
+  worktreePath: () => worktree.value?.path,
+  fileQuery: () =>
+    typeof route.query.file === "string" ? route.query.file : undefined,
+  gitItemIds: () => gitItemIdsRef.value,
+  queue: contextQueue,
+});
 
 const { data: terminals, isLoading } = useTerminalsQuery(
   () => props.worktreeId,
@@ -258,10 +277,7 @@ function toggleAuxPanel(type: "git" | "explorer") {
 }
 
 function auxIconClass(active: boolean) {
-  return cn(
-    "h-6 w-6 shrink-0 rounded-none",
-    active && "bg-muted text-foreground",
-  );
+  return cn("h-6 w-6 shrink-0", active && "bg-muted text-foreground");
 }
 
 function tabTriggerClass(tabId: string, index: number) {
@@ -354,6 +370,7 @@ function openResumeDialog(terminalId: string) {
 
       <div class="flex shrink-0 border-s items-center gap-0.5 px-1">
         <WorkspacePanelMenu @add="addTerminal" />
+        <ContextQueuePopover :queue="contextQueue" />
         <Button
           variant="ghost"
           size="icon-xs"
