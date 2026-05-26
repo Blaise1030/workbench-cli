@@ -7,7 +7,7 @@
 
 Add a **context queue** — a worktree-scoped scratch buffer in the top-right of the workspace header. Users append highlighted code (and optional file references) from Git and Files panels, compose a note in one textarea, then **explicitly** send the combined block to the active terminal prompt for an agent or shell to read.
 
-Nothing is pasted into the terminal until the user clicks **Send** (or confirms with a shortcut inside the popover). **`Ctrl+L`** appends on Git/Files; on the terminal tab, **`Ctrl+L`** only opens the queue popover (does not append, avoiding conflict with the terminal’s clear-screen binding).
+Nothing is sent to the terminal until the user clicks the **Send to terminal** button inside the queue popover. There is no keyboard shortcut to send; no automatic or background injection. **`Ctrl+L`** appends on Git/Files; on the terminal tab, **`Ctrl+L`** only opens the queue popover (does not append, avoiding conflict with the terminal’s clear-screen binding).
 
 ---
 
@@ -15,7 +15,7 @@ Nothing is pasted into the terminal until the user clicks **Send** (or confirms 
 
 - Collect multiple snippets and file paths while reviewing diffs or file tabs.
 - Prefix each append with `# relative/path` plus selection text (format B).
-- Paste the full queue to the terminal prompt in one action when ready.
+- Deliver the full queue to the terminal prompt in one action when the user clicks **Send to terminal** in the popover.
 - Stay on Git/Files while building the queue; sending does not require switching tabs.
 
 ## Non-goals (v1)
@@ -55,7 +55,7 @@ Nothing is pasted into the terminal until the user clicks **Send** (or confirms 
 
 1. User opens the queue (header button or **`Ctrl+L`** on terminal).
 2. User edits the textarea if needed (free-form notes between blocks).
-3. User clicks **Send to terminal** (or **`Ctrl+Enter`** while focus is in the queue textarea).
+3. User clicks the **Send to terminal** button in the popover (the only way to send).
 4. App calls `sendInput` on the resolved target terminal with queue text + trailing newline.
 5. Optional (default on): clear queue after successful send. Optional (default off): focus terminal after send.
 
@@ -73,9 +73,9 @@ Nothing is pasted into the terminal until the user clicks **Send** (or confirms 
 | Control | Behavior |
 |---------|----------|
 | Textarea | Editable queue body; persisted per worktree |
-| **Send to terminal** | Primary; disabled when empty or no terminal exists |
+| **Send to terminal** | Primary and **only** send action; disabled when empty or no terminal exists |
 | **Clear** | Wipes queue and storage |
-| Footer hint | `Ctrl+L` append (Git/Files) · `Ctrl+Enter` send |
+| Footer hint | `Ctrl+L` append on Git/Files · open queue on terminal |
 
 ### Feedback
 
@@ -103,7 +103,7 @@ Both map to `Ctrl+l` in defaults; Settings shows one row per action or one row w
 
 **Input guard:** Skip when `event.target` is `<input>`, `<textarea>`, or `[contenteditable]` (commit message, queue textarea, etc.).
 
-**`Ctrl+Enter` in popover:** Not a global keybinding; handled on the queue textarea to send.
+**No send shortcut:** Sending is button-only. Do not bind `Ctrl+Enter` or any other chord to send.
 
 ---
 
@@ -200,7 +200,7 @@ No new WebSocket protocol.
 
 | Decision | Choice |
 |----------|--------|
-| Send timing | Explicit only (button / `Ctrl+Enter` in popover) |
+| Send timing | Explicit only (**Send to terminal** button in popover) |
 | Append format | `# relative/path` + selection (format B) |
 | Append chord | `Ctrl+l` on Git/Files |
 | Terminal + `Ctrl+l` | Open popover only (B) |
