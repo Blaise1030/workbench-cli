@@ -6,6 +6,8 @@ export interface FileExplorerWorktreeState {
   treeSize?: number;
   /** Path relative to the worktree root. */
   lastFilePath?: string;
+  /** Open file tabs (relative paths), in tab order. Scoped per worktree. */
+  openFiles?: string[];
   /** Folder paths expanded in the file tree sidebar. */
   expandedPaths?: string[];
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted } from "vue";
+import { computed, nextTick, ref, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useDebounceFn } from "@vueuse/core";
 import { FileIcon, FolderTreeIcon } from "@lucide/vue";
@@ -12,12 +12,21 @@ import {
 import { gitStatusQueryOptions, type GitStatusEntry } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import FilePreviewCodeView from "@/modules/file-explorer/components/FilePreviewCodeView.vue";
+import FileTabList from "@/modules/file-explorer/components/FileTabList.vue";
+import {
+  adjacentFileAfterClose,
+  closeFileTab,
+  openFileTab,
+  pruneOpenFiles,
+  seedOpenFiles,
+} from "@/modules/file-explorer/lib/file-tabs";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import {
+  ancestorDirectoryPaths,
   clampFileExplorerTreeSize,
   FILE_EXPLORER_DEFAULT_TREE_SIZE,
   FILE_EXPLORER_MAX_TREE_SIZE,
@@ -37,6 +46,8 @@ const explorerState = useFileExplorerStorage(() => props.worktreeId);
 
 const treeEl = ref<HTMLElement | null>(null);
 const selectionReady = ref(false);
+/** Suppress tree → URL sync while applying URL → tree selection. */
+const syncingTreeSelection = ref(false);
 let tree: InstanceType<typeof FileTree> | null = null;
 let treeSubscription: (() => void) | null = null;
 
@@ -75,6 +86,53 @@ const selectedRelativePath = computed(() => {
   if (!fullPath.startsWith(prefix)) return null;
   return fullPath.slice(prefix.length);
 });
+
+const openFileTabs = computed(() =>
+  seedOpenFiles(explorerState.value.openFiles, explorerState.value.lastFilePath),
+);
+
+function persistOpenFiles(nextOpenFiles: string[], lastFilePath?: string) {
+  explorerState.value = {
+    ...explorerState.value,
+    openFiles: nextOpenFiles,
+    ...(lastFilePath !== undefined ? { lastFilePath } : {}),
+  };
+}
+
+function navigateToFile(relativePath: string) {
+  if (!worktree.value?.path) return;
+  router.replace({
+    query: {
+      ...route.query,
+      file: encodeURIComponent(getFullPath(relativePath)),
+    },
+  });
+}
+
+function openFileInTab(relativePath: string) {
+  if (!isPreviewableFile(relativePath)) return;
+  const next = openFileTab(explorerState.value.openFiles, relativePath);
+  persistOpenFiles(next, relativePath);
+  persistLastFile(relativePath);
+  navigateToFile(relativePath);
+}
+
+function closeFileTabHandler(relativePath: string) {
+  const current = openFileTabs.value;
+  const next = closeFileTab(explorerState.value.openFiles, relativePath);
+  persistOpenFiles(next);
+
+  if (selectedRelativePath.value !== relativePath) return;
+
+  const fallback = adjacentFileAfterClose(current, relativePath);
+  if (fallback) {
+    openFileInTab(fallback);
+    return;
+  }
+  const query = { ...route.query };
+  delete query.file;
+  router.replace({ query });
+}
 
 const {
   data: fileContent,
@@ -122,9 +180,11 @@ function isPreviewableFile(relativePath: string): boolean {
 }
 
 function persistLastFile(relativePath: string) {
+  const openFiles = openFileTab(explorerState.value.openFiles, relativePath);
   explorerState.value = {
     ...explorerState.value,
     lastFilePath: relativePath,
+    openFiles,
     expandedPaths: mergeExpandedPaths(
       explorerState.value.expandedPaths,
       relativePath,
@@ -166,24 +226,21 @@ function restoreLastFileFromStorage() {
   if (!relativePath || route.query.file || !worktree.value?.path) return;
   const pathSet = paths.value;
   if (pathSet && !pathSet.includes(relativePath)) return;
-  router.replace({
-    query: {
-      ...route.query,
-      file: encodeURIComponent(getFullPath(relativePath)),
-    },
-  });
+  if (!explorerState.value.openFiles?.length) {
+    persistOpenFiles(seedOpenFiles(undefined, relativePath), relativePath);
+  }
+  navigateToFile(relativePath);
 }
 
 function syncSelectionToUrl(selectedPaths: string[]) {
-  if (!selectionReady.value) return;
+  if (!selectionReady.value || syncingTreeSelection.value) return;
   const selected = selectedPaths[0];
   const currentFile = route.query.file;
   if (selected) {
     if (!isPreviewableFile(selected)) return;
-    persistLastFile(selected);
     const encoded = encodeURIComponent(getFullPath(selected));
     if (currentFile === encoded) return;
-    router.replace({ query: { ...route.query, file: encoded } });
+    openFileInTab(selected);
   } else if (currentFile !== undefined) {
     const query = { ...route.query };
     delete query.file;
@@ -191,11 +248,44 @@ function syncSelectionToUrl(selectedPaths: string[]) {
   }
 }
 
-function restoreSelectionFromUrl() {
+function expandAncestorsInTree(relativePath: string) {
   if (!tree) return;
-  const relativePath = selectedRelativePath.value;
-  if (!relativePath) return;
-  tree.getItem(relativePath)?.select();
+  for (const ancestor of ancestorDirectoryPaths(relativePath)) {
+    const item = tree.getItem(ancestor);
+    if (item?.isDirectory() && !item.isExpanded()) {
+      item.expand();
+    }
+  }
+}
+
+async function revealActiveFileInTree() {
+  if (!tree) return;
+  syncingTreeSelection.value = true;
+  try {
+    const relativePath = selectedRelativePath.value;
+    for (const path of [...tree.getSelectedPaths()]) {
+      if (path !== relativePath) {
+        tree.getItem(path)?.deselect();
+      }
+    }
+    if (!relativePath) return;
+
+    const expandedPaths = mergeExpandedPaths(
+      explorerState.value.expandedPaths,
+      relativePath,
+    );
+    expandAncestorsInTree(relativePath);
+    explorerState.value = {
+      ...explorerState.value,
+      expandedPaths,
+    };
+
+    await nextTick();
+    tree.getItem(relativePath)?.select();
+    tree.scrollToPath(relativePath, { offset: "nearest" });
+  } finally {
+    syncingTreeSelection.value = false;
+  }
 }
 
 function teardownTree() {
@@ -231,7 +321,7 @@ function mountTree(newPaths: string[]) {
     tree.setGitStatus(toPierreGitStatusEntries(gitStatus.value.files));
   }
 
-  restoreSelectionFromUrl();
+  revealActiveFileInTree();
   selectionReady.value = true;
 }
 
@@ -259,8 +349,19 @@ watch(
 
 watch(selectedRelativePath, (path) => {
   if (path) persistLastFile(path);
-  restoreSelectionFromUrl();
+  revealActiveFileInTree();
 });
+
+watch(
+  [openFileTabs, selectedRelativePath, () => paths.value],
+  ([tabs, active]) => {
+    if (tabs.length === 0 || active) return;
+    const preferred = explorerState.value.lastFilePath ?? tabs[0];
+    if (!preferred || !paths.value?.includes(preferred)) return;
+    navigateToFile(preferred);
+  },
+  { immediate: true },
+);
 
 watch(
   () => [worktree.value?.path, paths.value, route.query.file] as const,
@@ -275,6 +376,23 @@ watch(
   (newId, oldId) => {
     if (!oldId || newId === oldId) return;
     teardownTree();
+  },
+);
+
+watch(
+  () => paths.value,
+  (pathList) => {
+    if (!pathList) return;
+    const pruned = pruneOpenFiles(explorerState.value.openFiles, new Set(pathList));
+    if (pruned.length !== (explorerState.value.openFiles?.length ?? 0)) {
+      persistOpenFiles(pruned);
+    }
+    if (
+      selectedRelativePath.value &&
+      !pathList.includes(selectedRelativePath.value)
+    ) {
+      closeFileTabHandler(selectedRelativePath.value);
+    }
   },
 );
 
@@ -307,6 +425,12 @@ onUnmounted(() => {
         :min-size="45"
       >
         <div class="flex h-full min-h-0 flex-col">
+          <FileTabList
+            :tabs="openFileTabs"
+            :active-path="selectedRelativePath"
+            @select="openFileInTab"
+            @close="closeFileTabHandler"
+          />
           <div v-if="!selectedRelativePath" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
             <FileIcon class="size-8 opacity-40" />
             <p class="text-sm">Select a file to preview</p>
