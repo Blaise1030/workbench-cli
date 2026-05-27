@@ -79,7 +79,7 @@ export default defineConfig({
       },
       {
         find: "@server",
-        replacement: fileURLToPath(new URL("./server", import.meta.url)),
+        replacement: fileURLToPath(new URL("../server", import.meta.url)),
       },
     ],
   },

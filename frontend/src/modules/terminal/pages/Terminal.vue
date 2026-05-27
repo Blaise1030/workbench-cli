@@ -40,6 +40,7 @@ const initError = ref<string | null>(null);
 let terminal: Terminal | null = null;
 let fitAddon: FitAddon | null = null;
 let resizeObserver: ResizeObserver | null = null;
+let fitInterval: ReturnType<typeof setInterval> | null = null;
 
 const worktreeId = computed(() => route.params.worktreeId as string);
 const { data: worktree } = useQuery(worktreeQueryOptions(worktreeId));
@@ -81,9 +82,11 @@ function buildTheme() {
   };
 }
 
-onMounted(() => {
+onMounted(async () => {
   const el = terminalElRef.value;
   if (!el) return;
+
+  await document.fonts.ready;
 
   try {
     const s = getComputedStyle(document.documentElement);
@@ -113,6 +116,8 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(() => fitAddon?.fit());
     resizeObserver.observe(el);
 
+    fitInterval = setInterval(() => fitAddon?.fit(), 2_000);
+
     sessions.attach(props.sessionId, terminal);
     initError.value = null;
   } catch (err) {
@@ -124,6 +129,8 @@ onMounted(() => {
 onUnmounted(() => {
   resizeObserver?.disconnect();
   resizeObserver = null;
+  if (fitInterval) clearInterval(fitInterval);
+  fitInterval = null;
   terminal?.dispose();
   terminal = null;
   fitAddon = null;
