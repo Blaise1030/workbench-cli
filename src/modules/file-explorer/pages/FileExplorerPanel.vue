@@ -11,7 +11,7 @@ import {
 } from "@/modules/file-explorer/queries";
 import { gitStatusQueryOptions, type GitStatusEntry } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
-import FilePreviewCodeView from "@/modules/file-explorer/components/FilePreviewCodeView.vue";
+import CodeMirrorEditor from "@/modules/file-explorer/components/CodeMirrorEditor.vue";
 import FileTabList from "@/modules/file-explorer/components/FileTabList.vue";
 import {
   adjacentFileAfterClose,
@@ -34,6 +34,17 @@ import {
   mergeExpandedPaths,
   useFileExplorerStorage,
 } from "@/modules/file-explorer/lib/file-explorer-storage";
+import { useFileEditorSave } from "@/modules/file-explorer/hooks/use-file-editor-save";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const props = defineProps<{
   worktreeId: string;
@@ -43,13 +54,20 @@ const route = useRoute();
 const router = useRouter();
 
 const explorerState = useFileExplorerStorage(() => props.worktreeId);
+const { save, isSaving } = useFileEditorSave(() => props.worktreeId);
 
 const treeEl = ref<HTMLElement | null>(null);
 const selectionReady = ref(false);
-/** Suppress tree → URL sync while applying URL → tree selection. */
 const syncingTreeSelection = ref(false);
 let tree: InstanceType<typeof FileTree> | null = null;
 let treeSubscription: (() => void) | null = null;
+
+// Dirty state: set of relative paths with unsaved changes
+const dirtyPaths = ref<Set<string>>(new Set());
+
+// Discard dialog state
+const discardDialogOpen = ref(false);
+let pendingNavigatePath: string | null = null;
 
 const treeDefaultSize = computed(() =>
   clampFileExplorerTreeSize(
@@ -109,7 +127,7 @@ function navigateToFile(relativePath: string) {
   });
 }
 
-function openFileInTab(relativePath: string) {
+function doOpenFileInTab(relativePath: string) {
   if (!isPreviewableFile(relativePath)) return;
   const next = openFileTab(explorerState.value.openFiles, relativePath);
   persistOpenFiles(next, relativePath);
@@ -117,21 +135,47 @@ function openFileInTab(relativePath: string) {
   navigateToFile(relativePath);
 }
 
+function openFileInTab(relativePath: string) {
+  const active = selectedRelativePath.value;
+  if (active && active !== relativePath && dirtyPaths.value.has(active)) {
+    pendingNavigatePath = relativePath;
+    discardDialogOpen.value = true;
+    return;
+  }
+  doOpenFileInTab(relativePath);
+}
+
 function closeFileTabHandler(relativePath: string) {
   const current = openFileTabs.value;
   const next = closeFileTab(explorerState.value.openFiles, relativePath);
   persistOpenFiles(next);
+  dirtyPaths.value.delete(relativePath);
 
   if (selectedRelativePath.value !== relativePath) return;
 
   const fallback = adjacentFileAfterClose(current, relativePath);
   if (fallback) {
-    openFileInTab(fallback);
+    doOpenFileInTab(fallback);
     return;
   }
   const query = { ...route.query };
   delete query.file;
   router.replace({ query });
+}
+
+function onDiscardConfirm() {
+  const active = selectedRelativePath.value;
+  if (active) dirtyPaths.value.delete(active);
+  discardDialogOpen.value = false;
+  if (pendingNavigatePath) {
+    doOpenFileInTab(pendingNavigatePath);
+    pendingNavigatePath = null;
+  }
+}
+
+function onDiscardCancel() {
+  discardDialogOpen.value = false;
+  pendingNavigatePath = null;
 }
 
 const {
@@ -376,6 +420,7 @@ watch(
   (newId, oldId) => {
     if (!oldId || newId === oldId) return;
     teardownTree();
+    dirtyPaths.value.clear();
   },
 );
 
@@ -399,6 +444,19 @@ watch(
 onUnmounted(() => {
   teardownTree();
 });
+
+async function handleEditorSave(filePath: string, content: string) {
+  const ok = await save(filePath, content);
+  if (ok) {
+    dirtyPaths.value.delete(filePath);
+  }
+}
+
+function handleEditorChange() {
+  const path = selectedRelativePath.value;
+  if (!path) return;
+  dirtyPaths.value.add(path);
+}
 </script>
 
 <template>
@@ -428,6 +486,7 @@ onUnmounted(() => {
           <FileTabList
             :tabs="openFileTabs"
             :active-path="selectedRelativePath"
+            :dirty-paths="dirtyPaths"
             @select="openFileInTab"
             @close="closeFileTabHandler"
           />
@@ -457,12 +516,28 @@ onUnmounted(() => {
             >
               Preview truncated — file exceeds size limit.
             </p>
-            <FilePreviewCodeView
+            <CodeMirrorEditor
+              v-else
               :file-path="fileContent.path"
               :content="fileContent.content"
               class="min-h-0 flex-1"
+              @save="handleEditorSave"
+              @change="handleEditorChange"
             />
+            <div
+              v-if="fileContent.truncated"
+              class="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground"
+            >
+              Editing disabled for truncated files.
+            </div>
           </template>
+
+          <div
+            v-if="isSaving"
+            class="absolute bottom-2 right-2 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
+          >
+            Saving…
+          </div>
         </div>
       </ResizablePanel>
 
@@ -483,5 +558,20 @@ onUnmounted(() => {
         />
       </ResizablePanel>
     </ResizablePanelGroup>
+
+    <AlertDialog :open="discardDialogOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved changes. Discard them and switch files?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="onDiscardCancel">Cancel</AlertDialogCancel>
+          <AlertDialogAction @click="onDiscardConfirm">Discard</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
