@@ -1,5 +1,6 @@
 import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
+import path from "node:path";
 import type { Server, IncomingMessage, ServerResponse } from "node:http";
 import { getRequestListener } from "@hono/node-server";
 import { WebSocketServer } from "ws";
@@ -103,6 +104,7 @@ async function listen(
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
+      configFile: path.resolve(process.cwd(), "frontend/vite.config.ts"),
       server: { middlewareMode: true, hmr: { server: httpServer as any } },
       appType: "spa",
     });
