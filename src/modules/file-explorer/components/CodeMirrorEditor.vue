@@ -52,10 +52,15 @@ const languageCompartment = new Compartment();
 /** Set to true during programmatic document resets to suppress the "change" emit. */
 let resetting = false;
 
+const fontTheme = EditorView.theme({
+  ".cm-content, .cm-gutters": { fontFamily: "var(--font-app-mono)", fontSize: "12px" },
+  ".cm-lineNumbers .cm-gutterElement": { fontFamily: "var(--font-app-mono)", fontSize: "12px" },
+});
+
 const lightTheme = EditorView.theme(
   {
     "&": { background: "transparent", color: "var(--foreground)" },
-    ".cm-content": { caretColor: "var(--foreground)", fontFamily: "var(--font-app-mono)", fontSize: "12px" },
+    ".cm-content": { caretColor: "var(--foreground)" },
     ".cm-cursor": { borderLeftColor: "var(--foreground)" },
     ".cm-gutters": { background: "transparent", borderRight: "1px solid var(--border)", color: "var(--muted-foreground)" },
     ".cm-activeLineGutter": { background: "var(--muted)" },
@@ -101,6 +106,7 @@ function createState(content: string): EditorState {
         ...historyKeymap,
         ...foldKeymap,
       ]),
+      fontTheme,
       themeCompartment.of(buildThemeExtension(dark)),
       languageCompartment.of(buildLanguageExtension(props.filePath)),
       EditorView.updateListener.of((update) => {
