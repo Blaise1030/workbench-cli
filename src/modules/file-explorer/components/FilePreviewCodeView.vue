@@ -14,6 +14,7 @@ import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import {
   getPierreWorkerPool,
   PIERRE_DIFF_THEME,
+  PIERRE_DIFF_RENDER_OPTIONS,
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
 import contextQueueAnnotationShadowStyles from "@/modules/context-queue/lib/context-queue-annotations-shadow.css?inline";
@@ -69,6 +70,7 @@ function viewOptions() {
   return {
     theme: PIERRE_DIFF_THEME,
     themeType: themeType.value,
+    ...PIERRE_DIFF_RENDER_OPTIONS,
     disableBackground: false,
     disableLineNumbers: false,
     overflow: "scroll" as const,

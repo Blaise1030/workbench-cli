@@ -1,5 +1,5 @@
-import "@fontsource-variable/geist";
-import "@fontsource-variable/geist-mono";
+import "@/assets/fonts/geist-latin.css";
+import "@/assets/fonts/geist-mono-latin.css";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { createApp } from "vue";
 import App from "./App.vue";

@@ -21,6 +21,7 @@ import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import {
   getPierreWorkerPool,
   PIERRE_DIFF_THEME,
+  PIERRE_DIFF_RENDER_OPTIONS,
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
 import gitDiffHeaderStyles from "@/modules/git/components/git-diff-header.css?inline";
@@ -523,6 +524,7 @@ function diffOptions() {
   return {
     theme: PIERRE_DIFF_THEME,
     themeType: themeType.value,
+    ...PIERRE_DIFF_RENDER_OPTIONS,
     disableBackground: props.disableBackground,
     disableLineNumbers: props.disableLineNumbers,
     overflow: props.wordWrap ? ("wrap" as const) : ("scroll" as const),

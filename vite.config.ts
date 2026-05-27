@@ -2,6 +2,32 @@ import { defineConfig, createLogger } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
+import { isAllowedShikiLang } from "./src/shared/lib/pierre-shiki-langs";
+
+const shikiShim = fileURLToPath(new URL("./src/shims/shiki.ts", import.meta.url));
+const shikiWasmShim = fileURLToPath(new URL("./src/shims/shiki-wasm.ts", import.meta.url));
+
+const shikiLangImport = /[/\\]@shikijs[/\\]langs[/\\]([^/\\]+?)(?:\.mjs)?$/;
+
+/** Only allowlisted @shikijs/langs/* may be bundled (see pierre-shiki-langs.ts). */
+function allowlistShikiLanguageBundles() {
+  return {
+    name: "allowlist-shiki-language-bundles",
+    enforce: "pre" as const,
+    resolveId(id: string) {
+      const match = id.match(shikiLangImport);
+      if (!match) return null;
+      if (isAllowedShikiLang(match[1]!)) return null;
+      return "\0shiki-lang-excluded";
+    },
+    load(id: string) {
+      if (id === "\0shiki-lang-excluded") {
+        return "export default { name: \"text\", scopeName: \"source.text\", patterns: [] };";
+      }
+      return null;
+    },
+  };
+}
 
 const logger = createLogger();
 const originalWarn = logger.warn.bind(logger);
@@ -29,15 +55,33 @@ function excludeTestFilesFromBuild() {
 
 export default defineConfig({
   customLogger: logger,
-  plugins: [excludeTestFilesFromBuild(), vue(), tailwindcss()],
+  plugins: [excludeTestFilesFromBuild(), allowlistShikiLanguageBundles(), vue(), tailwindcss()],
   worker: {
     format: "es",
+    plugins: () => [allowlistShikiLanguageBundles()],
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("@pierre/diffs/worker") || id.includes("pierre/diffs/worker")) {
+            return "pierre-worker";
+          }
+        },
+      },
+    },
   },
   resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@server": fileURLToPath(new URL("./server", import.meta.url)),
-    },
+    alias: [
+      { find: "shiki/wasm", replacement: shikiWasmShim },
+      { find: /^shiki$/, replacement: shikiShim },
+      {
+        find: "@",
+        replacement: fileURLToPath(new URL("./src", import.meta.url)),
+      },
+      {
+        find: "@server",
+        replacement: fileURLToPath(new URL("./server", import.meta.url)),
+      },
+    ],
   },
   build: {
     outDir: "dist/public",

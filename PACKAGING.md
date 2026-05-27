@@ -7,9 +7,10 @@
 | Artifact | Approx. size |
 |----------|----------------|
 | Herdr binary | ~10 MB |
-| workbench-cli `dist/` (UI + server bundle) | ~13 MB |
+| workbench-cli `dist/public/` (UI + allowlisted Shiki) | ~4.4 MB |
+| workbench-cli `dist/` (UI + server bundle) | ~3.2 MB |
 | Runtime native deps only (`better-sqlite3`, `node-pty`, `ws`) | ~76 MB |
-| **Release folder** (dist + natives) | **~89 MB** |
+| **Release folder** (dist + natives) | **~80 MB** |
 | **Release + embedded Node 20** | **~140 MB** |
 | `npm install -g` after dep split | ~89 MB (not ~550 MB) |
 

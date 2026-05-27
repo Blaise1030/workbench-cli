@@ -1,36 +1,18 @@
-import type { SupportedLanguages, ThemesType } from "@pierre/diffs";
-import {
-  getOrCreateWorkerPoolSingleton,
-  type WorkerPoolManager,
-} from "@pierre/diffs/worker";
+import type { WorkerPoolManager } from "@pierre/diffs/worker";
+import { getOrCreateWorkerPoolSingleton } from "@pierre/diffs/worker";
 import WorkerUrl from "@pierre/diffs/worker/worker.js?worker&url";
+import {
+  PIERRE_DIFF_RENDER_OPTIONS,
+  PIERRE_DIFF_THEME,
+} from "@/shared/lib/pierre-config";
+import { PIERRE_SHIKI_LANGS } from "@/shared/lib/pierre-shiki-langs";
 
-/** Matches CodeView `theme` option in git + file preview. */
-export const PIERRE_DIFF_THEME: ThemesType = {
-  dark: "pierre-dark",
-  light: "pierre-light",
-};
-
-/** Preload common repo languages; unknown extensions resolve at render time. */
-const PRELOAD_LANGS: SupportedLanguages[] = [
-  "typescript",
-  "tsx",
-  "javascript",
-  "json",
-  "markdown",
-  "css",
-  "html",
-  "python",
-  "go",
-  "rust",
-  "shell",
-  "yaml",
-  "toml",
-];
+export { PIERRE_DIFF_RENDER_OPTIONS, PIERRE_DIFF_THEME };
 
 let pool: WorkerPoolManager | null = null;
 let initPromise: Promise<void> | null = null;
 
+/** Pierre diff worker pool with allowlisted Shiki grammars (see pierre-shiki-langs.ts). */
 export function getPierreWorkerPool(): WorkerPoolManager {
   if (!pool) {
     pool = getOrCreateWorkerPoolSingleton({
@@ -40,12 +22,12 @@ export function getPierreWorkerPool(): WorkerPoolManager {
       },
       highlighterOptions: {
         theme: PIERRE_DIFF_THEME,
-        preferredHighlighter: "shiki-wasm",
-        useTokenTransformer: true,
-        langs: PRELOAD_LANGS,
+        preferredHighlighter: "shiki-js",
+        langs: PIERRE_SHIKI_LANGS,
+        ...PIERRE_DIFF_RENDER_OPTIONS,
       },
     });
-    initPromise = pool.initialize(PRELOAD_LANGS).catch((error: unknown) => {
+    initPromise = pool.initialize(PIERRE_SHIKI_LANGS).catch((error: unknown) => {
       initPromise = null;
       console.error("[pierre] worker pool failed to initialize", error);
       throw error;
