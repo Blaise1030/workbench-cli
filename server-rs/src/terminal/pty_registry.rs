@@ -54,6 +54,7 @@ struct PtyProcess {
     child: Arc<Mutex<Box<dyn Child + Send + Sync>>>,
     read_task: JoinHandle<()>,
     wait_task: JoinHandle<()>,
+    pump_task: JoinHandle<()>,
 }
 
 struct PtyEntry {
@@ -314,29 +315,44 @@ impl PtyRegistry {
             entry.osc_carry.clear();
 
             let registry = Arc::clone(self);
-            let terminal_id_read = terminal_id.to_string();
+
+            // Channel decouples blocking PTY I/O from the async registry lock.
+            let (data_tx, mut data_rx) = mpsc::unbounded_channel::<String>();
+
+            // Pure I/O thread: reads PTY bytes and forwards to channel, never touches entries.
             let read_task = tokio::task::spawn_blocking(move || {
                 let mut buf = [0u8; 8192];
                 loop {
                     match reader.read(&mut buf) {
-                        Ok(0) => break,
+                        Ok(0) | Err(_) => break,
                         Ok(n) => {
                             let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
-                            let mut entries = registry.entries.lock();
-                            let Some(entry) = entries.get_mut(&terminal_id_read) else {
+                            if data_tx.send(chunk).is_err() {
                                 break;
-                            };
-                            entry.last_activity = now_ms();
-                            registry.handle_osc_reports(&terminal_id_read, entry, &chunk);
-                            entry.ring.append(chunk.as_bytes());
-                            PtyRegistry::broadcast(entry, &chunk);
+                            }
                         }
-                        Err(_) => break,
                     }
                 }
             });
 
-            let registry_wait = Arc::clone(self);
+            // Async pump: holds parking_lot mutex only for brief CPU work — no blocking I/O inside.
+            let registry_pump = Arc::clone(&registry);
+            let terminal_id_pump = terminal_id.to_string();
+            let pump_task = tokio::spawn(async move {
+                while let Some(chunk) = data_rx.recv().await {
+                    let mut entries = registry_pump.entries.lock();
+                    let Some(entry) = entries.get_mut(&terminal_id_pump) else {
+                        // Entry was removed (killed) while pump was still draining; remaining chunks discarded.
+                        break;
+                    };
+                    entry.last_activity = now_ms();
+                    registry_pump.handle_osc_reports(&terminal_id_pump, entry, &chunk);
+                    entry.ring.append(chunk.as_bytes());
+                    PtyRegistry::broadcast(entry, &chunk);
+                }
+            });
+
+            let registry_wait = Arc::clone(&registry);
             let terminal_id_wait = terminal_id.to_string();
             let child_wait = Arc::clone(&child_shared);
             let wait_task = tokio::task::spawn_blocking(move || {
@@ -368,6 +384,7 @@ impl PtyRegistry {
                 child: child_shared,
                 read_task,
                 wait_task,
+                pump_task,
             });
         }
 
@@ -509,6 +526,7 @@ impl PtyRegistry {
         if let Some(pty) = entry.pty.take() {
             let _ = pty.child.lock().kill();
             pty.read_task.abort();
+            pty.pump_task.abort();
             pty.wait_task.abort();
         }
         delete_scrollback(terminal_id);
