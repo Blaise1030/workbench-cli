@@ -52,6 +52,7 @@ await esbuild.build({
   platform: "node",
   target: "node20",
   format: "cjs",
+  tsconfig: "tsconfig.build.json",
   minify: true,
   minifyWhitespace: true,
   minifyIdentifiers: true,

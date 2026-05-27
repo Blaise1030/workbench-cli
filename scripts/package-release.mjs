@@ -153,7 +153,7 @@ async function main() {
     name: "workbench-cli-runtime",
     private: true,
     type: "module",
-    dependencies: JSON.parse(readFileSync(join(root, "package.json"), "utf8")).dependencies,
+    dependencies: JSON.parse(readFileSync(join(root, "server", "package.json"), "utf8")).dependencies,
   };
   writeFileSync(join(staging, "package.json"), JSON.stringify(runtimePkg, null, 2));
   execFileSync("npm", ["install", "--omit=dev", "--no-audit", "--no-fund"], {
