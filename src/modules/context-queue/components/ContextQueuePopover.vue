@@ -53,7 +53,7 @@ const hasContent = computed(() => Boolean(props.queue.text.value.trim()));
         <div>
           <p class="text-sm font-medium">Context queue</p>
           <p class="text-xs text-muted-foreground">
-            Ctrl+L append on Git/Files · open queue on terminal
+            Files: path:from:to · diffs: path:old:from:to or path:new:from:to (one side) · optional “Include code”
           </p>
         </div>
         <Textarea

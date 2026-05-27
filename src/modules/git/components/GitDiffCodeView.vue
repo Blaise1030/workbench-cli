@@ -8,6 +8,7 @@ import {
 import { useDebounceFn, useMutationObserver } from "@vueuse/core";
 import {
   computed,
+  inject,
   onBeforeUnmount,
   onMounted,
   ref,
@@ -23,6 +24,12 @@ import {
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
 import gitDiffHeaderStyles from "@/modules/git/components/git-diff-header.css?inline";
+import contextQueueAnnotationStyles from "@/modules/context-queue/lib/context-queue-annotations.css?inline";
+import {
+  contextQueueAnnotationsKey,
+  contextQueueKey,
+} from "@/modules/context-queue/lib/context-queue-keys";
+import { usePierreContextQueueAnnotations } from "@/modules/context-queue/hooks/use-pierre-context-queue-annotations";
 
 const DIFFS_HOST_TAG = "diffs-container";
 const EXPLORER_LINK_SELECTOR = "a.git-diff-explorer-link";
@@ -53,6 +60,9 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const contextQueue = inject(contextQueueKey, null);
+const annotationState = inject(contextQueueAnnotationsKey, null);
+const rootRef = ref<HTMLElement | null>(null);
 
 const selectedPathSet = computed(
   () => new Set(props.selectedPaths ?? []),
@@ -71,7 +81,20 @@ const optimisticAllCollapsed = ref<boolean | null>(null);
 /** Pierre only reapplies collapse when item.version changes. */
 const collapseVersionById = ref<Record<string, number>>({});
 
-const rootRef = ref<HTMLElement | null>(null);
+const itemsRef = computed(() => props.items);
+
+const {
+  pierreContextQueueOptions,
+  pierreCodeViewOptions,
+  mergeAnnotations,
+  mountAnnotationSlots,
+  addFromCurrentSelection,
+} = usePierreContextQueueAnnotations({
+  items: itemsRef,
+  contextQueue,
+  annotationState,
+  onAnnotationsChange: () => applyViewerItems(),
+});
 const viewer = shallowRef<CodeView | null>(null);
 const { colorMode } = useAppColorMode();
 const optionsVersion = ref(0);
@@ -505,7 +528,8 @@ function diffOptions() {
     overflow: props.wordWrap ? ("wrap" as const) : ("scroll" as const),
     diffIndicators: props.diffIndicators,
     diffStyle: props.diffStyle ?? "unified",
-    unsafeCSS: gitDiffHeaderStyles,
+    unsafeCSS: `${gitDiffHeaderStyles}\n${contextQueueAnnotationStyles}`,
+    ...pierreContextQueueOptions,
     renderHeaderPrefix: (
       fileDiff: FileDiffMetadata,
       context: { type: string; item: CodeViewItem },
@@ -525,6 +549,10 @@ function diffOptions() {
     ) => {
       if (context.type !== "diff" || context.item.type !== "diff") return;
       enhanceHeaderLinksInHost(host, context.item.fileDiff);
+      const merged = mergeAnnotations([context.item])[0];
+      if (merged?.annotations?.length) {
+        mountAnnotationSlots(host, merged);
+      }
     },
   };
 }
@@ -532,14 +560,31 @@ function diffOptions() {
 function itemsForView() {
   const allCollapsed = resolvedAllCollapsed();
   const collapsedIds = resolvedCollapsedIdSet();
-  return props.items.map((item) => ({
-    ...item,
-    collapsed: allCollapsed || collapsedIds.has(item.id),
-    version: itemVersionForView(item),
-  }));
+  return mergeAnnotations(
+    props.items.map((item) => ({
+      ...item,
+      collapsed: allCollapsed || collapsedIds.has(item.id),
+      version: itemVersionForView(item),
+    })),
+  );
 }
 
 /** Full refresh when diff items change (rebuilds list + header slots). */
+function scheduleMountAnnotationSlots() {
+  requestAnimationFrame(() => {
+    const root = rootRef.value;
+    if (!root) return;
+    const hosts = root.querySelectorAll("diffs-container");
+    const merged = itemsForView();
+    hosts.forEach((host, index) => {
+      const item = merged[index];
+      if (item?.annotations?.length) {
+        mountAnnotationSlots(host as HTMLElement, item);
+      }
+    });
+  });
+}
+
 function applyViewerItems(changedItemIds?: string[]) {
   if (!viewer.value) return;
   bumpCollapseVersions(changedItemIds ?? props.items.map((item) => item.id));
@@ -547,6 +592,7 @@ function applyViewerItems(changedItemIds?: string[]) {
   scheduleSyncCollapseButtons();
   scheduleSyncCheckboxInputs();
   scheduleEnhanceAllHeaderLinks();
+  scheduleMountAnnotationSlots();
 }
 
 /** Collapse-only updates — bump version only for affected items (Pierre CodeView pattern). */
@@ -566,8 +612,9 @@ async function mountViewer() {
   const instance = new CodeView(
     {
       ...diffOptions(),
+      ...pierreCodeViewOptions,
       stickyHeaders: true,
-      layout: { paddingTop: 8, paddingBottom: 8, gap: 8 },
+      layout: { paddingTop: 8, paddingBottom: 8, gap: 12 },
     },
     getPierreWorkerPool(),
   );
@@ -626,7 +673,7 @@ function onRootClick(event: MouseEvent) {
 function syncOptions() {
   optionsVersion.value++;
   const v = optionsVersion.value;
-  viewer.value?.setOptions(diffOptions());
+  viewer.value?.setOptions({ ...diffOptions(), ...pierreCodeViewOptions });
   viewer.value?.setItems(
     itemsForView().map((item) => ({ ...item, version: v })),
   );
@@ -640,6 +687,9 @@ function syncTheme() {
 }
 
 onMounted(() => {
+  annotationState?.setGitBridge(() =>
+    addFromCurrentSelection(props.items),
+  );
   void mountViewer();
   const root = rootRef.value;
   root?.addEventListener("pointerup", onRootPointerUp);
@@ -720,6 +770,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  annotationState?.setGitBridge(null);
   const root = rootRef.value;
   root?.removeEventListener("pointerup", onRootPointerUp);
   root?.removeEventListener("click", onRootClick);
@@ -730,17 +781,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div
-    ref="rootRef"
-    class="git-diff-code-view min-h-0 flex-1 overflow-auto"
-  />
+  <div class="relative flex min-h-0 flex-1 flex-col">
+    <div
+      ref="rootRef"
+      class="git-diff-code-view min-h-0 flex-1 overflow-auto"
+    />
+  </div>
 </template>
 
 <style>
 @import "tailwindcss";
 @source "./git-diff-header.css";
+@source "../../context-queue/lib/context-queue-annotations.css";
 
 .git-diff-code-view {
   contain: layout style;
+}
+
+/* Light DOM: Pierre stacks one diffs-container per file with flex gap on the sticky row. */
+.git-diff-code-view diffs-container:not(:last-child) {
+  @apply block border-b border-border;
 }
 </style>

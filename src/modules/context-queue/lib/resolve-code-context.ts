@@ -1,6 +1,22 @@
 const DIFFS_HOST = "diffs-container";
 const GIT_CHECKBOX = "git-diff-select-checkbox";
 
+function nodeInRoot(root: HTMLElement, node: Node | null): boolean {
+  let current: Node | null = node;
+  while (current) {
+    if (current === root) return true;
+    if (current instanceof HTMLElement) {
+      const rootNode = current.getRootNode();
+      if (rootNode instanceof ShadowRoot) {
+        current = rootNode.host;
+        continue;
+      }
+    }
+    current = current.parentNode;
+  }
+  return false;
+}
+
 /** Text selected inside a code view root (empty if none or outside root). */
 export function selectionTextInRoot(root: HTMLElement | null): string {
   if (!root) return "";
@@ -9,7 +25,7 @@ export function selectionTextInRoot(root: HTMLElement | null): string {
   const anchor = sel.anchorNode;
   const focus = sel.focusNode;
   if (!anchor || !focus) return "";
-  if (!root.contains(anchor) && !root.contains(focus)) return "";
+  if (!nodeInRoot(root, anchor) || !nodeInRoot(root, focus)) return "";
   return sel.toString();
 }
 

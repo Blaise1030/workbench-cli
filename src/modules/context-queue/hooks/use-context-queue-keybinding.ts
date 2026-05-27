@@ -11,6 +11,7 @@ import {
   resolveGitContext,
 } from "@/modules/context-queue/lib/resolve-code-context";
 import type { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
+import type { ContextQueueAnnotationsState } from "@/modules/context-queue/lib/context-queue-annotations-state";
 
 export function useContextQueueKeybinding(opts: {
   routeName: MaybeRefOrGetter<string | symbol | null | undefined>;
@@ -18,6 +19,7 @@ export function useContextQueueKeybinding(opts: {
   fileQuery: MaybeRefOrGetter<string | undefined>;
   gitItemIds: MaybeRefOrGetter<readonly string[]>;
   queue: ReturnType<typeof useContextQueue>;
+  annotations: ContextQueueAnnotationsState | null;
 }) {
   const { data: bindings } = useKeybindingsQuery();
 
@@ -35,6 +37,7 @@ export function useContextQueueKeybinding(opts: {
         return;
       }
       if (name === "git") {
+        if (opts.annotations?.invokeGitBridge()) return;
         const root = document.querySelector<HTMLElement>(".git-diff-code-view");
         if (!root) return;
         const ctx = resolveGitContext({
@@ -45,6 +48,7 @@ export function useContextQueueKeybinding(opts: {
         return;
       }
       if (name === "explorer") {
+        if (opts.annotations?.invokeExplorerBridge()) return;
         const root = document.querySelector<HTMLElement>(
           ".file-preview-code-view",
         );

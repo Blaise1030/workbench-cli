@@ -1,14 +1,17 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from "vue";
 import { toast } from "vue-sonner";
-import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
+import type { TerminalSessionsStore } from "@/modules/terminal/hooks/terminal-sessions";
 import { useTerminalsQuery } from "@/modules/terminal/queries";
 import { useWorktreePanels } from "@/modules/workspace/lib/worktree-panels-storage";
 import { useContextQueueStorage } from "@/modules/context-queue/lib/context-queue-storage";
+import type { SelectedLineRange } from "@pierre/diffs";
 import { formatQueueAppend } from "@/modules/context-queue/lib/format-queue-append";
 
-export function useContextQueue(worktreeId: MaybeRefOrGetter<string>) {
+export function useContextQueue(
+  worktreeId: MaybeRefOrGetter<string>,
+  sessions: TerminalSessionsStore,
+) {
   const storage = useContextQueueStorage(worktreeId);
-  const sessions = useTerminalSessions();
   const panelsState = useWorktreePanels(worktreeId);
   const { data: terminals } = useTerminalsQuery(worktreeId);
   const popoverOpen = ref(false);
@@ -39,21 +42,43 @@ export function useContextQueue(worktreeId: MaybeRefOrGetter<string>) {
 
   function appendFromContext(ctx: {
     relativePath?: string;
-    selection: string;
+    selection?: string;
+    lineRange?: SelectedLineRange;
+    diff?: boolean;
+    note?: string;
+    includeSnippet?: boolean;
   }) {
-    const selection = ctx.selection.trim();
-    if (ctx.relativePath) {
+    const path = ctx.relativePath?.trim();
+    const selection = ctx.selection?.trim();
+    const note = ctx.note?.trim();
+    const includeSnippet =
+      ctx.includeSnippet ?? (ctx.lineRange == null && Boolean(selection));
+
+    if (path) {
+      if (!note && !selection && !ctx.lineRange) {
+        toast.error("Nothing to append");
+        return;
+      }
       appendBlock(
         formatQueueAppend({
-          relativePath: ctx.relativePath,
-          selection: selection || undefined,
+          relativePath: path,
+          lineRange: ctx.lineRange,
+          diff: ctx.diff,
+          note,
+          selection,
+          includeSnippet,
         }).trimEnd(),
       );
+      if (ctx.lineRange && !includeSnippet && selection) {
+        toast.message("Queued file reference (lines only)", {
+          description: "Turn on “Include code” on the comment to paste the snippet.",
+        });
+      }
       return;
     }
-    if (selection) {
-      appendBlock(selection);
-      toast.warning("Path unknown — appended selection only");
+    if (selection || note) {
+      appendBlock(selection || note || "");
+      toast.warning("Path unknown — appended text only");
       return;
     }
     toast.error("Nothing to append");

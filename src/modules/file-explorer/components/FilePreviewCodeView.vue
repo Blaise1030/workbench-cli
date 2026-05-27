@@ -1,19 +1,35 @@
 <script setup lang="ts">
 import { CodeView, type CodeViewItem } from "@pierre/diffs";
 import { useMutationObserver } from "@vueuse/core";
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
+import {
+  computed,
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+} from "vue";
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import {
   getPierreWorkerPool,
   PIERRE_DIFF_THEME,
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
+import contextQueueAnnotationStyles from "@/modules/context-queue/lib/context-queue-annotations.css?inline";
+import {
+  contextQueueAnnotationsKey,
+  contextQueueKey,
+} from "@/modules/context-queue/lib/context-queue-keys";
+import { usePierreContextQueueAnnotations } from "@/modules/context-queue/hooks/use-pierre-context-queue-annotations";
 
 const props = defineProps<{
   filePath: string;
   content: string;
 }>();
 
+const contextQueue = inject(contextQueueKey, null);
+const annotationState = inject(contextQueueAnnotationsKey, null);
 const rootRef = ref<HTMLElement | null>(null);
 const viewer = shallowRef<CodeView | null>(null);
 const { colorMode } = useAppColorMode();
@@ -34,6 +50,21 @@ const items = computed<CodeViewItem[]>(() => [
   },
 ]);
 
+const {
+  pierreContextQueueOptions,
+  pierreCodeViewOptions,
+  mergeAnnotations,
+  mountAnnotationSlots,
+  addFromCurrentSelection,
+} = usePierreContextQueueAnnotations({
+  items,
+  contextQueue,
+  annotationState,
+  onAnnotationsChange: () => {
+    void syncViewer();
+  },
+});
+
 function viewOptions() {
   return {
     theme: PIERRE_DIFF_THEME,
@@ -41,6 +72,19 @@ function viewOptions() {
     disableBackground: false,
     disableLineNumbers: false,
     overflow: "scroll" as const,
+    unsafeCSS: contextQueueAnnotationStyles,
+    ...pierreContextQueueOptions,
+    ...pierreCodeViewOptions,
+    onPostRender: (
+      host: HTMLElement,
+      _instance: unknown,
+      context: { type: string; item: CodeViewItem },
+    ) => {
+      const merged = mergeAnnotations([context.item])[0];
+      if (merged?.annotations?.length) {
+        mountAnnotationSlots(host, merged);
+      }
+    },
   };
 }
 
@@ -60,8 +104,20 @@ async function mountViewer() {
     getPierreWorkerPool(),
   );
   instance.setup(root);
-  instance.setItems(items.value);
+  instance.setItems(mergeAnnotations(items.value));
   viewer.value = instance;
+}
+
+function scheduleMountAnnotationSlots() {
+  requestAnimationFrame(() => {
+    const root = rootRef.value;
+    if (!root) return;
+    const host = root.querySelector("diffs-container");
+    const item = mergeAnnotations(items.value)[0];
+    if (host && item?.annotations?.length) {
+      mountAnnotationSlots(host as HTMLElement, item);
+    }
+  });
 }
 
 async function syncViewer() {
@@ -70,12 +126,21 @@ async function syncViewer() {
     return;
   }
   viewer.value.setOptions(viewOptions());
-  viewer.value.setItems(items.value);
+  viewer.value.setItems(mergeAnnotations(items.value));
+  scheduleMountAnnotationSlots();
 }
 
 onMounted(() => {
+  annotationState?.setExplorerBridge(() => addFromCurrentSelection(items.value));
   void mountViewer();
 });
+
+watch(
+  () => props.filePath,
+  () => {
+    void syncViewer();
+  },
+);
 
 watch(items, () => {
   void syncViewer();
@@ -93,16 +158,25 @@ useMutationObserver(
 );
 
 onBeforeUnmount(() => {
+  annotationState?.setExplorerBridge(null);
   viewer.value?.cleanUp();
   viewer.value = null;
 });
 </script>
 
 <template>
-  <div ref="rootRef" class="file-preview-code-view min-h-0 flex-1 overflow-auto" />
+  <div class="relative flex min-h-0 flex-1 flex-col">
+    <div
+      ref="rootRef"
+      class="file-preview-code-view min-h-0 flex-1 overflow-auto"
+    />
+  </div>
 </template>
 
 <style>
+@import "tailwindcss";
+@source "../../context-queue/lib/context-queue-annotations.css";
+
 .file-preview-code-view {
   contain: strict;
 }

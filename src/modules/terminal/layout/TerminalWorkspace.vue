@@ -43,7 +43,12 @@ import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
 import { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
 import { useContextQueueKeybinding } from "@/modules/context-queue/hooks/use-context-queue-keybinding";
-import { contextQueueGitItemIdsKey } from "@/modules/context-queue/lib/context-queue-keys";
+import { createContextQueueAnnotationsState } from "@/modules/context-queue/lib/context-queue-annotations-state";
+import {
+  contextQueueAnnotationsKey,
+  contextQueueGitItemIdsKey,
+  contextQueueKey,
+} from "@/modules/context-queue/lib/context-queue-keys";
 const props = defineProps<{
   worktreeId: string;
 }>();
@@ -56,7 +61,10 @@ provide(terminalSessionsKey, sessions);
 const panelsState = useWorktreePanels(() => props.worktreeId);
 const gitPanelState = useGitPanelStorage(() => props.worktreeId);
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
-const contextQueue = useContextQueue(() => props.worktreeId);
+const contextQueue = useContextQueue(() => props.worktreeId, sessions);
+provide(contextQueueKey, contextQueue);
+const contextQueueAnnotations = createContextQueueAnnotationsState();
+provide(contextQueueAnnotationsKey, contextQueueAnnotations);
 const gitItemIdsRef = ref<string[]>([]);
 provide(contextQueueGitItemIdsKey, gitItemIdsRef);
 
@@ -67,6 +75,7 @@ useContextQueueKeybinding({
     typeof route.query.file === "string" ? route.query.file : undefined,
   gitItemIds: () => gitItemIdsRef.value,
   queue: contextQueue,
+  annotations: contextQueueAnnotations,
 });
 
 const { data: terminals, isLoading } = useTerminalsQuery(
