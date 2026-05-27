@@ -68,6 +68,7 @@ const dirtyPaths = ref<Set<string>>(new Set());
 // Discard dialog state
 const discardDialogOpen = ref(false);
 let pendingNavigatePath: string | null = null;
+let pendingCloseTabPath: string | null = null;
 
 const treeDefaultSize = computed(() =>
   clampFileExplorerTreeSize(
@@ -137,7 +138,7 @@ function doOpenFileInTab(relativePath: string) {
 
 function openFileInTab(relativePath: string) {
   const active = selectedRelativePath.value;
-  if (active && active !== relativePath && dirtyPaths.value.has(active)) {
+  if (active && active !== relativePath && dirtyPaths.value.has(active) && !isSaving.value) {
     pendingNavigatePath = relativePath;
     discardDialogOpen.value = true;
     return;
@@ -145,11 +146,13 @@ function openFileInTab(relativePath: string) {
   doOpenFileInTab(relativePath);
 }
 
-function closeFileTabHandler(relativePath: string) {
+function doCloseTab(relativePath: string) {
   const current = openFileTabs.value;
   const next = closeFileTab(explorerState.value.openFiles, relativePath);
   persistOpenFiles(next);
-  dirtyPaths.value.delete(relativePath);
+  const newDirty = new Set(dirtyPaths.value);
+  newDirty.delete(relativePath);
+  dirtyPaths.value = newDirty;
 
   if (selectedRelativePath.value !== relativePath) return;
 
@@ -163,11 +166,32 @@ function closeFileTabHandler(relativePath: string) {
   router.replace({ query });
 }
 
+function closeFileTabHandler(relativePath: string) {
+  if (dirtyPaths.value.has(relativePath)) {
+    pendingCloseTabPath = relativePath;
+    discardDialogOpen.value = true;
+    return;
+  }
+  doCloseTab(relativePath);
+}
+
 function onDiscardConfirm() {
-  const active = selectedRelativePath.value;
-  if (active) dirtyPaths.value.delete(active);
   discardDialogOpen.value = false;
+
+  if (pendingCloseTabPath) {
+    const pathToClose = pendingCloseTabPath;
+    pendingCloseTabPath = null;
+    doCloseTab(pathToClose);
+    return;
+  }
+
   if (pendingNavigatePath) {
+    const active = selectedRelativePath.value;
+    if (active) {
+      const next = new Set(dirtyPaths.value);
+      next.delete(active);
+      dirtyPaths.value = next;
+    }
     doOpenFileInTab(pendingNavigatePath);
     pendingNavigatePath = null;
   }
@@ -176,6 +200,7 @@ function onDiscardConfirm() {
 function onDiscardCancel() {
   discardDialogOpen.value = false;
   pendingNavigatePath = null;
+  pendingCloseTabPath = null;
 }
 
 const {
@@ -420,7 +445,7 @@ watch(
   (newId, oldId) => {
     if (!oldId || newId === oldId) return;
     teardownTree();
-    dirtyPaths.value.clear();
+    dirtyPaths.value = new Set();
   },
 );
 
@@ -448,14 +473,16 @@ onUnmounted(() => {
 async function handleEditorSave(filePath: string, content: string) {
   const ok = await save(filePath, content);
   if (ok) {
-    dirtyPaths.value.delete(filePath);
+    const next = new Set(dirtyPaths.value);
+    next.delete(filePath);
+    dirtyPaths.value = next;
   }
 }
 
 function handleEditorChange() {
   const path = selectedRelativePath.value;
   if (!path) return;
-  dirtyPaths.value.add(path);
+  dirtyPaths.value = new Set([...dirtyPaths.value, path]);
 }
 </script>
 
