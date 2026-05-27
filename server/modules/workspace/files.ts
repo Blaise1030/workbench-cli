@@ -111,12 +111,17 @@ export async function writeFileForWorktree(
   try {
     fileStat = await stat(absolutePath);
   } catch {
-    throw new FileReadError("File not found", 404);
+    throw new FileReadError("File not found", 400);
   }
 
   if (!fileStat.isFile()) {
     throw new FileReadError("Not a file", 400);
   }
 
-  await writeFile(absolutePath, content, "utf-8");
+  try {
+    await writeFile(absolutePath, content, "utf-8");
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Write failed";
+    throw new FileReadError(`Failed to write file: ${msg}`, 400);
+  }
 }
