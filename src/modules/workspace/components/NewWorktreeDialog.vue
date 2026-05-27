@@ -10,9 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  SidebarMenuSubButton,
-} from "@/components/ui/sidebar";
+import { SidebarMenuSubButton } from "@/components/ui/sidebar";
 import BranchCombobox from "@/modules/workspace/components/BranchCombobox.vue";
 import {
   branchesQueryOptions,
@@ -78,7 +76,10 @@ async function submit() {
     });
     open.value = false;
     localStorage.setItem("lastWorktreeId", worktree.id);
-    await router.push({ name: "workspace", params: { worktreeId: worktree.id } });
+    await router.push({
+      name: "workspace",
+      params: { worktreeId: worktree.id },
+    });
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to create worktree";
   }
@@ -88,8 +89,13 @@ async function submit() {
 <template>
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <SidebarMenuSubButton as="button" type="button" size="sm" class="text-muted-foreground">
-        <PlusIcon />
+      <SidebarMenuSubButton
+        as="button"
+        type="button"
+        size="sm"
+        class="text-muted-foreground"
+      >
+        <PlusIcon class="stroke-muted-foreground" />
         <span>New worktree</span>
       </SidebarMenuSubButton>
     </PopoverTrigger>
@@ -99,7 +105,11 @@ async function submit() {
 
         <div class="grid gap-2">
           <Label>Create from branch</Label>
-          <BranchCombobox v-model="baseBranch" :branches="branches" placeholder="Select base branch" />
+          <BranchCombobox
+            v-model="baseBranch"
+            :branches="branches"
+            placeholder="Select base branch"
+          />
         </div>
 
         <div class="grid gap-2">
@@ -115,10 +125,19 @@ async function submit() {
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
 
         <div class="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" @click="open = false">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            @click="open = false"
+          >
             Cancel
           </Button>
-          <Button type="submit" size="sm" :disabled="createWorktree.isPending.value">
+          <Button
+            type="submit"
+            size="sm"
+            :disabled="createWorktree.isPending.value"
+          >
             Create
           </Button>
         </div>

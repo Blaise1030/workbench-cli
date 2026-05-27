@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, onUnmounted } from "vue";
+import { computed, inject, nextTick, ref, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useDebounceFn } from "@vueuse/core";
 import { FileIcon, FolderTreeIcon } from "@lucide/vue";
@@ -35,6 +35,11 @@ import {
   useFileExplorerStorage,
 } from "@/modules/file-explorer/lib/file-explorer-storage";
 import { useFileEditorSave } from "@/modules/file-explorer/hooks/use-file-editor-save";
+import { useExplorerContextQueueBridge } from "@/modules/file-explorer/hooks/use-explorer-context-queue-bridge";
+import {
+  contextQueueAnnotationsKey,
+  contextQueueKey,
+} from "@/modules/context-queue/lib/context-queue-keys";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +54,9 @@ import {
 const props = defineProps<{
   worktreeId: string;
 }>();
+
+const contextQueue = inject(contextQueueKey, null);
+const annotationState = inject(contextQueueAnnotationsKey, null);
 
 const route = useRoute();
 const router = useRouter();
@@ -107,6 +115,15 @@ const selectedRelativePath = computed(() => {
   const prefix = worktreePath.endsWith("/") ? worktreePath : `${worktreePath}/`;
   if (!fullPath.startsWith(prefix)) return null;
   return fullPath.slice(prefix.length);
+});
+
+useExplorerContextQueueBridge({
+  annotationState,
+  contextQueue,
+  relativePath: selectedRelativePath,
+  worktreePath: () => worktree.value?.path,
+  fileQuery: () =>
+    typeof route.query.file === "string" ? route.query.file : undefined,
 });
 
 const openFileTabs = computed(() =>

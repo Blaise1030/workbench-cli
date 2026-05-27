@@ -16,12 +16,22 @@ export function createApp(
   database: AppDatabase,
   settingsStore: SettingsStore,
   ptyRegistry: PtyRegistry,
+  cookieSecure = true,
 ): Hono {
   const app = new Hono();
 
   app.route(
     "/api",
-    createApiRouter(token, session, lan, onLanToggle, database, settingsStore, ptyRegistry),
+    createApiRouter(
+      token,
+      session,
+      lan,
+      onLanToggle,
+      database,
+      settingsStore,
+      ptyRegistry,
+      cookieSecure,
+    ),
   );
 
   app.use("/*", serveStatic({ root: "./dist/public" }));

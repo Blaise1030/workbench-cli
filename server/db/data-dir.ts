@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 export function getDataDir(): string {
-  return join(homedir(), ".lan-terminal");
+  return join(homedir(), ".workbench");
 }
 
 export function getDbPath(): string {

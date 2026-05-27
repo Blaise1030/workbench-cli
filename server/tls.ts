@@ -35,6 +35,13 @@ export function isMkcertInstalled(): boolean {
   }
 }
 
+export interface EnsureTlsOptions {
+  /** When false, fail immediately if mkcert is not on PATH. */
+  autoInstall?: boolean;
+  /** When mkcert is missing, ask before running installMkcert. */
+  confirmInstall?: () => Promise<boolean>;
+}
+
 function installMkcert(): void {
   const os = platform();
   if (os === "darwin") {
@@ -45,24 +52,45 @@ function installMkcert(): void {
     execSync("sudo apt-get install -y mkcert", { stdio: "inherit" });
   } else {
     throw new Error(
-      "mkcert not found. Install it manually: https://github.com/FiloSottile/mkcert#installation"
+      "mkcert not found. Install it manually: https://github.com/FiloSottile/mkcert#installation",
     );
   }
 }
 
-export async function ensureTLS(...hosts: string[]): Promise<TLSCredentials> {
+export async function ensureTLS(
+  hosts: string[],
+  options: EnsureTlsOptions = {},
+): Promise<TLSCredentials> {
   if (hosts.length === 0) {
     throw new Error("ensureTLS requires at least one host");
   }
 
+  const autoInstall = options.autoInstall ?? true;
+
   if (!isMkcertInstalled()) {
+    if (!autoInstall) {
+      throw new Error(
+        "mkcert not found. Install it manually: https://github.com/FiloSottile/mkcert#installation",
+      );
+    }
+
+    const approved = options.confirmInstall
+      ? await options.confirmInstall()
+      : false;
+
+    if (!approved) {
+      throw new Error(
+        "mkcert is not installed. Install it manually: https://github.com/FiloSottile/mkcert#installation",
+      );
+    }
+
     installMkcert();
   }
 
   // Install local CA (idempotent)
   execSync("mkcert -install", { stdio: "inherit" });
 
-  const cacheDir = join(homedir(), ".lan-terminal", "certs");
+  const cacheDir = join(homedir(), ".workbench", "certs");
   mkdirSync(cacheDir, { recursive: true });
 
   const { certFile, keyFile } = parseCertPaths(cacheDir, ...hosts);

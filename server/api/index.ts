@@ -18,9 +18,10 @@ export function createApiRouter(
   database: AppDatabase,
   settingsStore: SettingsStore,
   ptyRegistry: PtyRegistry,
+  cookieSecure = true,
 ) {
   return new Hono()
-    .route("/auth", createAuthRouter(token, session, lan))
+    .route("/auth", createAuthRouter(token, session, lan, cookieSecure))
     .route("/settings", createSettingsRouter(session, lan, onLanToggle, settingsStore))
     .route("/keybindings", createKeybindingsRouter(session))
     .route("/", createWorkspaceRouter(session, database, ptyRegistry));

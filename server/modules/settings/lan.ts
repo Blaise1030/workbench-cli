@@ -1,5 +1,6 @@
 import { createInvite, type InviteToken } from "../auth/invite.js";
 import type { LanPublicState } from "../../schemas/api.js";
+import type { TransportScheme } from "../../transport.js";
 
 export type BindMode = "localhost" | "lan";
 export type { LanPublicState };
@@ -8,8 +9,13 @@ export class LanManager {
   mode: BindMode = "localhost";
   private invite: InviteToken | null = null;
   private lanIP: string | null = null;
+  private urlScheme: TransportScheme = "https";
 
   constructor(private readonly port: number) {}
+
+  setUrlScheme(scheme: TransportScheme): void {
+    this.urlScheme = scheme;
+  }
 
   enable(lanIP: string): void {
     this.mode = "lan";
@@ -51,7 +57,7 @@ export class LanManager {
     }
     return {
       enabled: true,
-      lanUrl: `https://${this.lanIP}:${this.port}/?invite=${this.invite.value}`,
+      lanUrl: `${this.urlScheme}://${this.lanIP}:${this.port}/?invite=${this.invite.value}`,
       inviteExpiresAt: this.invite.expiresAt,
     };
   }

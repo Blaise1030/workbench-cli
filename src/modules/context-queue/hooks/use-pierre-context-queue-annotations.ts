@@ -280,7 +280,7 @@ export function usePierreContextQueueAnnotations(opts: {
 
   const pierreCodeViewOptions = {
     onSelectedLinesChange(selection: CodeViewLineSelection | null) {
-      lastSelection.value = selection;
+      if (selection !== null) lastSelection.value = selection;
     },
   };
 

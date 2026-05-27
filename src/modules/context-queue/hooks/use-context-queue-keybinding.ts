@@ -7,6 +7,11 @@ import {
 } from "@/modules/keyboard/lib/workspace-key-event";
 import { useKeybindingsQuery } from "@/modules/keyboard/queries/keybindings";
 import {
+  findCodeMirrorEditorView,
+  resolveCodeMirrorExplorerContext,
+} from "@/modules/context-queue/lib/codemirror-selection-context";
+import { addCodeMirrorAnnotationToView } from "@/modules/context-queue/lib/codemirror-inline-annotation";
+import {
   resolveExplorerContext,
   resolveGitContext,
 } from "@/modules/context-queue/lib/resolve-code-context";
@@ -48,18 +53,37 @@ export function useContextQueueKeybinding(opts: {
         return;
       }
       if (name === "explorer") {
-        if (opts.annotations?.invokeExplorerBridge()) return;
-        const root = document.querySelector<HTMLElement>(
-          ".file-preview-code-view",
-        );
         const wt = toValue(opts.worktreePath);
+        const fileQuery = toValue(opts.fileQuery);
+        const view = findCodeMirrorEditorView();
+        if (view) {
+          const ctx = resolveCodeMirrorExplorerContext({ worktreePath: wt, fileQueryEncoded: fileQuery });
+          if (ctx.relativePath && ctx.lineRange) {
+            addCodeMirrorAnnotationToView(
+              view,
+              { relativePath: ctx.relativePath, lineRange: ctx.lineRange, selection: ctx.selection },
+              opts.queue,
+            );
+            return;
+          }
+        }
+        if (opts.annotations?.invokeExplorerBridge()) {
+          opts.queue.openPopover();
+          return;
+        }
+        const root = document.querySelector<HTMLElement>(
+          ".code-mirror-editor, .file-preview-code-view",
+        );
         if (!root || !wt) return;
         const ctx = resolveExplorerContext({
           root,
           worktreePath: wt,
-          fileQueryEncoded: toValue(opts.fileQuery),
+          fileQueryEncoded: fileQuery,
         });
         opts.queue.appendFromContext(ctx);
+        if (ctx.relativePath && ctx.selection) {
+          opts.queue.openPopover();
+        }
       }
     },
     { capture: true },

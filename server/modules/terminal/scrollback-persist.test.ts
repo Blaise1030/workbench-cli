@@ -14,7 +14,7 @@ describe("scrollback-persist", () => {
   let tempRoot: string;
 
   beforeEach(() => {
-    tempRoot = mkdtempSync(join(tmpdir(), "lan-terminal-scrollback-"));
+    tempRoot = mkdtempSync(join(tmpdir(), "workbench-scrollback-"));
     vi.spyOn(dataDir, "getDataDir").mockReturnValue(tempRoot);
   });
 

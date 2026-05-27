@@ -1,4 +1,5 @@
-import { createServer } from "node:https";
+import { createServer as createHttpServer } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
 import type { Server, IncomingMessage, ServerResponse } from "node:http";
 import { getRequestListener } from "@hono/node-server";
 import { WebSocketServer } from "ws";
@@ -8,8 +9,6 @@ import { createToken } from "./modules/auth/token.js";
 import { createSession } from "./modules/auth/session.js";
 import type { Session } from "./modules/auth/session.js";
 import { createApp } from "./app.js";
-import { ensureTLS } from "./tls.js";
-import type { TLSCredentials } from "./tls.js";
 import { LanManager } from "./modules/settings/lan.js";
 import { getLanIP } from "./modules/settings/network.js";
 import { createDatabase } from "./db/index.js";
@@ -20,8 +19,19 @@ import { attachWebSocketUpgrade } from "./modules/terminal/handler.js";
 import { createPtyRegistry } from "./modules/terminal/pty-registry.js";
 import { handleAgentCommandComplete } from "./modules/agents/handle-command.js";
 import type { PtyRegistry } from "./modules/terminal/pty-registry.js";
+import {
+  formatOrigin,
+  resolveTransport,
+  type ServerTransport,
+} from "./transport.js";
 
 export { getLanIP } from "./modules/settings/network.js";
+export { LAN_REQUIRES_TLS_MESSAGE } from "./transport.js";
+
+export interface StartServerOptions {
+  forceHttp?: boolean;
+  confirmMkcertInstall?: () => Promise<boolean>;
+}
 
 interface ServerRuntime {
   httpServer: Server;
@@ -30,6 +40,7 @@ interface ServerRuntime {
   database: AppDatabase;
   settingsStore: SettingsStore;
   ptyRegistry: PtyRegistry;
+  transport: ServerTransport;
 }
 
 let runtime: ServerRuntime | null = null;
@@ -58,7 +69,7 @@ function registerShutdownHooks(): void {
 
 async function listen(
   app: Hono,
-  tls: TLSCredentials,
+  transport: ServerTransport,
   port: number,
   hostname: string,
   session: Session,
@@ -73,20 +84,19 @@ async function listen(
 
   let viteMiddlewares: ViteDevServer["middlewares"] | null = null;
 
-  const httpServer = createServer(
-    tls,
-    (req: IncomingMessage, res: ServerResponse) => {
-      const url = req.url ?? "/";
-      if (viteMiddlewares && !url.startsWith("/api")) {
-        viteMiddlewares(req, res, () => honoHandler(req, res));
-      } else {
-        honoHandler(req, res);
-      }
-    },
-  ) as unknown as Server;
+  const onRequest = (req: IncomingMessage, res: ServerResponse) => {
+    const url = req.url ?? "/";
+    if (viteMiddlewares && !url.startsWith("/api")) {
+      viteMiddlewares(req, res, () => honoHandler(req, res));
+    } else {
+      honoHandler(req, res);
+    }
+  };
 
-  // Register PTY upgrade handler BEFORE Vite attaches its HMR listener,
-  // so our /ws handler runs first and non-/ws paths fall through to Vite.
+  const httpServer = transport.tls
+    ? createHttpsServer(transport.tls, onRequest)
+    : createHttpServer(onRequest);
+
   attachWebSocketUpgrade(httpServer, wss, session, database, ptyRegistry);
 
   if (process.env.NODE_ENV !== "production") {
@@ -98,11 +108,27 @@ async function listen(
     viteMiddlewares = vite.middlewares;
   }
 
-  (httpServer as any).listen(port, hostname);
-  runtime = { httpServer, wss, session, database, settingsStore, ptyRegistry };
+  await new Promise<void>((resolve, reject) => {
+    httpServer.once("error", reject);
+    httpServer.listen(port, hostname, () => resolve());
+  });
+
+  runtime = {
+    httpServer,
+    wss,
+    session,
+    database,
+    settingsStore,
+    ptyRegistry,
+    transport,
+  };
 }
 
-export async function startServer(port = 3000): Promise<void> {
+export async function startServer(
+  port = 3000,
+  options: StartServerOptions = {},
+): Promise<void> {
+  const { forceHttp = false, confirmMkcertInstall } = options;
   const sessionToken = createToken();
   const session = createSession();
   const database = createDatabase();
@@ -123,55 +149,66 @@ export async function startServer(port = 3000): Promise<void> {
   });
   const lan = new LanManager(port);
 
+  async function bindTransport(): Promise<ServerTransport> {
+    return resolveTransport({
+      hosts: lan.getTlsHosts(),
+      requireTls: lan.mode === "lan",
+      forceHttp: lan.mode === "localhost" && forceHttp,
+      confirmMkcertInstall,
+    });
+  }
+
+  async function restartWithTransport(transport: ServerTransport): Promise<void> {
+    lan.setUrlScheme(transport.scheme);
+    const cookieSecure = transport.scheme === "https";
+    const app = createApp(
+      sessionToken,
+      session,
+      lan,
+      onLanToggle,
+      database,
+      settingsStore,
+      ptyRegistry,
+      cookieSecure,
+    );
+    await listen(
+      app,
+      transport,
+      port,
+      lan.getHostname(),
+      session,
+      database,
+      settingsStore,
+      ptyRegistry,
+    );
+  }
+
   async function onLanToggle(enabled: boolean): Promise<void> {
     if (enabled) {
       const ip = getLanIP();
       if (ip === "127.0.0.1") {
         throw new Error("No network interface found");
       }
+      const transport = await resolveTransport({
+        hosts: ["localhost", ip],
+        requireTls: true,
+        confirmMkcertInstall,
+      });
       lan.enable(ip);
-      const tls = await ensureTLS(...lan.getTlsHosts());
-      const app = createApp(
-        sessionToken,
-        session,
-        lan,
-        onLanToggle,
-        database,
-        settingsStore,
-        ptyRegistry,
-      );
-      await listen(app, tls, port, lan.getHostname(), session, database, settingsStore, ptyRegistry);
-    } else {
-      lan.disable();
-      const tls = await ensureTLS("localhost");
-      const app = createApp(
-        sessionToken,
-        session,
-        lan,
-        onLanToggle,
-        database,
-        settingsStore,
-        ptyRegistry,
-      );
-      await listen(app, tls, port, lan.getHostname(), session, database, settingsStore, ptyRegistry);
+      await restartWithTransport(transport);
+      return;
     }
+
+    lan.disable();
+    await restartWithTransport(await bindTransport());
   }
 
-  const tls = await ensureTLS("localhost");
-  const app = createApp(
-    sessionToken,
-    session,
-    lan,
-    onLanToggle,
-    database,
-    settingsStore,
-    ptyRegistry,
-  );
-  await listen(app, tls, port, lan.getHostname(), session, database, settingsStore, ptyRegistry);
+  const transport = await bindTransport();
+  await restartWithTransport(transport);
   registerShutdownHooks();
 
   console.log(`\n  Access token: ${sessionToken.value}`);
-  console.log(`  Open: https://localhost:${port}/\n`);
+  console.log(`  Open: ${formatOrigin(transport.scheme, "localhost", port)}\n`);
 }
 
 // Direct run (dev mode via tsx)

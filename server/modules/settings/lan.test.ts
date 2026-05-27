@@ -17,6 +17,13 @@ describe("LanManager", () => {
     expect(state.inviteExpiresAt).toBeGreaterThan(Date.now());
   });
 
+  it("uses url scheme from transport", () => {
+    const lan = new LanManager(3000);
+    lan.setUrlScheme("http");
+    lan.enable("192.168.1.10");
+    expect(lan.getPublicState().lanUrl).toMatch(/^http:\/\//);
+  });
+
   it("disable clears invite and mode", () => {
     const lan = new LanManager(3000);
     lan.enable("192.168.1.10");

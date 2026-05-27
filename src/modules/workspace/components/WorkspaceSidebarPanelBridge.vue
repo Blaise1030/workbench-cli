@@ -6,7 +6,7 @@ import {
   type WorkspaceSidebarPanelApi,
 } from "@/modules/workspace/hooks/workspace-sidebar";
 
-const STORAGE_KEY_COLLAPSED = "lan-terminal:workspace-sidebar-collapsed";
+const STORAGE_KEY_COLLAPSED = "workbench:workspace-sidebar-collapsed";
 
 const props = defineProps<WorkspaceSidebarPanelApi & { isCollapsed: boolean }>();
 

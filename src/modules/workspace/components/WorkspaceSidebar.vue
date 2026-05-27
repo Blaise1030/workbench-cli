@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { useLocalStorage } from "@vueuse/core";
 import { ref, watch } from "vue";
 import { useRouter, RouterLink } from "vue-router";
 import {
   ChevronRightIcon,
   FolderGit2Icon,
-  FolderOpenIcon,
+  FolderPlusIcon,
   SettingsIcon,
 } from "@lucide/vue";
 import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
@@ -31,10 +32,15 @@ defineProps<{
   activeWorktreeId?: string;
 }>();
 
+const STORAGE_KEY_EXPANDED_PROJECTS = "workbench:workspace-projects-expanded";
+
 const router = useRouter();
 const addProjectOpen = ref(false);
 const addProjectError = ref("");
-const expandedProjects = ref<Record<string, boolean>>({});
+const expandedProjects = useLocalStorage<Record<string, boolean>>(
+  STORAGE_KEY_EXPANDED_PROJECTS,
+  {},
+);
 
 const { data: projects } = useQuery(projectsQueryOptions());
 const pickProjectFolder = usePickProjectFolderMutation();
@@ -141,11 +147,12 @@ async function addProject() {
         <SidebarMenuItem class="flex">
           <SidebarMenuButtonChild
             type="button"
+            size="sm"
             class="h-7 w-fit text-muted-foreground"
             :disabled="pickProjectFolder.isPending.value"
             @click="addProject"
           >
-            <FolderOpenIcon class="size-4 shrink-0" />
+            <FolderPlusIcon />
             <span>Add project</span>
           </SidebarMenuButtonChild>
         </SidebarMenuItem>

@@ -13,7 +13,7 @@ describe("claudeAdapter", () => {
   let home: string;
 
   beforeEach(() => {
-    home = mkdtempSync(join(tmpdir(), "lan-terminal-claude-"));
+    home = mkdtempSync(join(tmpdir(), "workbench-claude-"));
   });
 
   afterEach(() => {
@@ -36,7 +36,7 @@ describe("cursorAdapter", () => {
   let home: string;
 
   beforeEach(() => {
-    home = mkdtempSync(join(tmpdir(), "lan-terminal-cursor-"));
+    home = mkdtempSync(join(tmpdir(), "workbench-cursor-"));
   });
 
   afterEach(() => {
@@ -65,7 +65,7 @@ describe("geminiAdapter", () => {
   let home: string;
 
   beforeEach(() => {
-    home = mkdtempSync(join(tmpdir(), "lan-terminal-gemini-"));
+    home = mkdtempSync(join(tmpdir(), "workbench-gemini-"));
   });
 
   afterEach(() => {

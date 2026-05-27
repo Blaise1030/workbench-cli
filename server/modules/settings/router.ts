@@ -40,8 +40,10 @@ export function createSettingsRouter(
 
       try {
         await onLanToggle(enabled);
-      } catch {
-        return c.json({ error: "Failed to change network mode" }, 500);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to change network mode";
+        return c.json({ error: message }, 500);
       }
 
       return c.json(lan.getPublicState());

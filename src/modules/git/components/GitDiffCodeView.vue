@@ -683,9 +683,9 @@ function syncTheme() {
 }
 
 onMounted(() => {
-  annotationState?.setGitBridge(() =>
-    addFromCurrentSelection(props.items),
-  );
+  if (props.tabActive !== false) {
+    annotationState?.setGitBridge(() => addFromCurrentSelection(props.items));
+  }
   void mountViewer();
   const root = rootRef.value;
   root?.addEventListener("pointerup", onRootPointerUp);
@@ -746,6 +746,11 @@ watch(selectedPathSet, () => scheduleSyncCheckboxInputs());
 watch(
   () => props.tabActive,
   (active) => {
+    if (active) {
+      annotationState?.setGitBridge(() => addFromCurrentSelection(props.items));
+    } else if (active === false) {
+      annotationState?.setGitBridge(null);
+    }
     if (!active || !viewer.value) return;
     scheduleSyncCollapseButtons();
     scheduleSyncCheckboxInputs();

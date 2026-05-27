@@ -228,6 +228,7 @@ function EditorBody(
           note: note.value,
           includeSnippet: includeSnippet.val,
         });
+        callbacks.onRemove(meta.id);
       },
       onmousedown: stopBubble,
     },

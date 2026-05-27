@@ -12,7 +12,7 @@ describe("shellIntegrationSpawn", () => {
     });
     expect(env.ZDOTDIR).toBe(integrationDir());
     expect(env.USER_ZDOTDIR).toBe("/Users/me");
-    expect(env.LAN_TERMINAL).toBe("1");
+    expect(env.WORKBENCH).toBe("1");
     expect(args).toEqual(["-l"]);
   });
 
@@ -20,7 +20,7 @@ describe("shellIntegrationSpawn", () => {
     const { env, args } = shellIntegrationSpawn("/bin/bash", {
       HOME: "/Users/me",
     });
-    expect(env.LAN_TERMINAL).toBe("1");
+    expect(env.WORKBENCH).toBe("1");
     expect(args[0]).toBe("--rcfile");
     expect(args[1]).toBe(bashIntegrationRcPath());
   });

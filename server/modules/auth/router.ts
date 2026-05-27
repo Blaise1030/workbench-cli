@@ -10,10 +10,14 @@ import type { LanManager } from "../settings/lan.js";
 import { authBodySchema } from "../../schemas/api.js";
 import { isLocalRequest } from "./local.js";
 
-function setSessionCookie(c: Parameters<typeof setCookie>[0], sid: string) {
+function setSessionCookie(
+  c: Parameters<typeof setCookie>[0],
+  sid: string,
+  secure: boolean,
+) {
   setCookie(c, "sid", sid, {
     httpOnly: true,
-    secure: true,
+    secure,
     sameSite: "Strict",
     maxAge: 3600,
     path: "/",
@@ -24,6 +28,7 @@ export function createAuthRouter(
   token: SessionToken,
   session: Session,
   lan: LanManager,
+  cookieSecure: boolean,
 ) {
   return new Hono()
     .post("/local", async (c) => {
@@ -35,7 +40,7 @@ export function createAuthRouter(
         activateSession(session);
       }
 
-      setSessionCookie(c, session.sid);
+      setSessionCookie(c, session.sid, cookieSecure);
       return c.json({ ok: true as const });
     })
     .post("/", zValidator("json", authBodySchema), async (c) => {
@@ -49,7 +54,7 @@ export function createAuthRouter(
       }
       consumeInvite(invite!);
       activateSession(session);
-      setSessionCookie(c, session.sid);
+      setSessionCookie(c, session.sid, cookieSecure);
       return c.json({ ok: true });
     }
 
@@ -74,7 +79,7 @@ export function createAuthRouter(
     }
 
     activateSession(session);
-    setSessionCookie(c, session.sid);
+    setSessionCookie(c, session.sid, cookieSecure);
     return c.json({ ok: true as const });
   });
 }

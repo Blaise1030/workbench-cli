@@ -26,7 +26,7 @@ export interface GitPanelWorktreeState {
   collapsedByTab?: Partial<Record<GitPanelTabScope, string[]>>;
 }
 
-const STORAGE_PREFIX = "lan-terminal:git-panel:";
+const STORAGE_PREFIX = "workbench:git-panel:";
 
 export const GIT_PANEL_DEFAULT_TAB: GitPanelTabScope = "unstaged";
 

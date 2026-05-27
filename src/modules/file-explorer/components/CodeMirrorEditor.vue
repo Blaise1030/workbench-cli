@@ -28,6 +28,10 @@ import {
 } from "@codemirror/language";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { onBeforeUnmount, onMounted, watch } from "vue";
+import {
+  clearAnnotationsEffect,
+  codemirrorInlineAnnotationExtension,
+} from "@/modules/context-queue/lib/codemirror-inline-annotation";
 import { ref } from "vue";
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import { detectLanguage } from "@/modules/file-explorer/lib/detect-language";
@@ -106,6 +110,7 @@ function createState(content: string): EditorState {
         ...historyKeymap,
         ...foldKeymap,
       ]),
+      codemirrorInlineAnnotationExtension(),
       fontTheme,
       themeCompartment.of(buildThemeExtension(dark)),
       languageCompartment.of(buildLanguageExtension(props.filePath)),
@@ -150,6 +155,7 @@ function resetDocument(newContent: string, newFilePath: string) {
       changes: { from: 0, to: view.state.doc.length, insert: newContent },
       selection: { anchor: 0 },
       effects: [
+        clearAnnotationsEffect.of(null),
         languageCompartment.reconfigure(buildLanguageExtension(newFilePath)),
       ],
       scrollIntoView: true,
@@ -217,5 +223,15 @@ defineExpose({ triggerSave: () => handleSave() });
 
 .code-mirror-editor .cm-editor.cm-focused {
   outline: none;
+}
+
+.dark .code-mirror-editor .cm-editor,
+.dark .code-mirror-editor .cm-scroller {
+  background: var(--background) !important;
+}
+
+.dark .code-mirror-editor .cm-gutters {
+  background: var(--background) !important;
+  border-right-color: var(--border) !important;
 }
 </style>

@@ -40,7 +40,7 @@ export function mergeExpandedPaths(
   return [...merged].sort();
 }
 
-const STORAGE_PREFIX = "lan-terminal:file-explorer:";
+const STORAGE_PREFIX = "workbench:file-explorer:";
 
 export const FILE_EXPLORER_DEFAULT_TREE_SIZE = 30;
 export const FILE_EXPLORER_MIN_TREE_SIZE = 15;

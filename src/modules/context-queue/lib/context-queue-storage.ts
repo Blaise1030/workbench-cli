@@ -5,7 +5,7 @@ export interface ContextQueueState {
   text: string;
 }
 
-const STORAGE_PREFIX = "lan-terminal:context-queue:";
+const STORAGE_PREFIX = "workbench:context-queue:";
 
 export function useContextQueueStorage(worktreeId: MaybeRefOrGetter<string>) {
   const key = computed(() => `${STORAGE_PREFIX}${toValue(worktreeId)}`);

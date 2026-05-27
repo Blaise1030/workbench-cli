@@ -54,7 +54,7 @@ function tabClass(relativePath: string) {
     "group inline-flex h-7 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-md px-2 text-[0.8125rem] leading-none transition-colors",
     isActive
       ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
-      : "bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+      : "bg-muted/40 opacity-50 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
   );
 }
 

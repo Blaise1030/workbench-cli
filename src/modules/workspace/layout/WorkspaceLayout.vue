@@ -17,7 +17,7 @@ defineProps<{
   activeWorktreeId?: string;
 }>();
 
-const STORAGE_KEY = "lan-terminal:workspace-sidebar-width";
+const STORAGE_KEY = "workbench:workspace-sidebar-width";
 const DEFAULT_WIDTH_PX = 200;
 const MIN_WIDTH_PX = 160;
 const MAX_WIDTH_PX = 480;

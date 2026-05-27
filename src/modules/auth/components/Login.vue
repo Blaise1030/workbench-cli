@@ -37,7 +37,7 @@ async function submit() {
   <div class="flex items-center justify-center min-h-screen bg-background">
     <Card class="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>lan-terminal</CardTitle>
+        <CardTitle>Workbench CLI</CardTitle>
         <CardDescription>Enter the access token printed in your terminal.</CardDescription>
       </CardHeader>
       <CardContent>

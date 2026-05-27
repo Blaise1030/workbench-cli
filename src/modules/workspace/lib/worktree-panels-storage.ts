@@ -13,7 +13,7 @@ export interface WorktreeAuxPanelsState {
   lastTerminalId?: string;
 }
 
-const STORAGE_PREFIX = "lan-terminal:worktree-panels:";
+const STORAGE_PREFIX = "workbench:worktree-panels:";
 
 export function gitPanelId(worktreeId: string): string {
   return `panel-git-${worktreeId}`;

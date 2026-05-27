@@ -13,7 +13,7 @@ describe("session-utils", () => {
   let dir: string;
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "lan-terminal-session-utils-"));
+    dir = mkdtempSync(join(tmpdir(), "workbench-session-utils-"));
   });
 
   afterEach(() => {
