@@ -1,6 +1,5 @@
 /* Pierre slot layout + Tailwind scan target for slotted comment utilities. */
-@source "./context-queue-annotation-classes.ts";
-@source "./create-context-queue-annotation-element.ts";
+@source "./context-queue-annotation-popover.ts";
 
 diffs-container [data-annotation-slot],
 diffs-container .context-queue-annotation-slot {

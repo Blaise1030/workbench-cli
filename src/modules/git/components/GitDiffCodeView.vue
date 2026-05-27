@@ -792,7 +792,7 @@ onBeforeUnmount(() => {
 <style>
 @import "tailwindcss";
 @source "./git-diff-header.css";
-@source "../../context-queue/lib/context-queue-annotation-classes.ts";
+@source "../../context-queue/lib/context-queue-annotation-popover.ts";
 
 .git-diff-code-view {
   contain: layout style;

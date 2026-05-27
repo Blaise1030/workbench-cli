@@ -8,7 +8,7 @@ import {
   annotationSideFromRange,
   createContextQueueAnnotationElement,
   relativePathForItem,
-} from "@/modules/context-queue/lib/create-context-queue-annotation-element";
+} from "@/modules/context-queue/lib/context-queue-annotation-popover";
 import type { ContextQueueAnnotationMeta } from "@/modules/context-queue/lib/context-queue-annotation-types";
 import type {
   ContextQueueAnnotationsState,
@@ -21,7 +21,6 @@ import {
   singleSideRange,
 } from "@/modules/context-queue/lib/format-line-range";
 import type { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
-import { hasCommentContent } from "@/modules/context-queue/lib/context-queue-annotation-display";
 import { syncPierreAnnotationSlotsForHost } from "@/modules/context-queue/lib/sync-pierre-annotation-slots";
 import { toast } from "vue-sonner";
 
@@ -117,6 +116,9 @@ export function usePierreContextQueueAnnotations(opts: {
     const meta = findMeta(id);
     if (!meta) return;
     meta.includeSnippet = include;
+    if (annotations) {
+      annotations.value = [...annotations.value];
+    }
   }
 
   function onExpand(id: string) {
@@ -128,13 +130,16 @@ export function usePierreContextQueueAnnotations(opts: {
 
   function onCollapse(id: string) {
     const meta = findMeta(id);
-    if (!meta || !hasCommentContent(meta)) return;
+    if (!meta) return;
     meta.expanded = false;
     syncViewer();
   }
 
-  function onQueue(meta: ContextQueueAnnotationMeta) {
-    if (!opts.contextQueue || meta.queued) return;
+  function onQueue(payload: ContextQueueAnnotationMeta) {
+    const meta = findMeta(payload.id);
+    if (!meta || !opts.contextQueue || meta.queued) return;
+    meta.note = payload.note;
+    meta.includeSnippet = payload.includeSnippet;
     opts.contextQueue.appendFromContext({
       relativePath: meta.relativePath,
       lineRange: meta.range,
@@ -145,6 +150,9 @@ export function usePierreContextQueueAnnotations(opts: {
     });
     meta.queued = true;
     meta.expanded = false;
+    if (annotations) {
+      annotations.value = [...annotations.value];
+    }
     syncViewer();
   }
 

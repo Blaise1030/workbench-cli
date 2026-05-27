@@ -1,4 +1,4 @@
-import type { WTerm as WTermInstance } from "@wterm/vue";
+import type { Terminal } from "@xterm/xterm";
 import { notifyCommandSuccess } from "@/modules/terminal/lib/terminal-bell";
 import {
   formatTabLabel,
@@ -27,7 +27,7 @@ export class TerminalSession {
 
   private cols = 80;
   private rows = 24;
-  private terminal: WTermInstance | null = null;
+  private terminal: Terminal | null = null;
   private oscCarry = "";
   private onLabelChange?: (label: string) => void;
   private shouldNotifySuccess: () => boolean = () => true;
@@ -127,7 +127,7 @@ export class TerminalSession {
     };
   }
 
-  attach(terminal: WTermInstance) {
+  attach(terminal: Terminal) {
     this.terminal = terminal;
     terminal.write(CLEAR_SCREEN);
     if (this.buffer) terminal.write(this.buffer);

@@ -1,40 +1,15 @@
-/* wterm theme synced with app tokens from index.css (:root / .dark) */
-.wterm.theme-app {
-  --term-bg: var(--background);
-  --term-fg: var(--foreground);
-  --term-cursor: var(--ring);
-
-  --term-font-family: var(--font-mono);
-
-  --term-color-0: var(--card);
-  --term-color-1: var(--destructive);
-  --term-color-2: var(--chart-4);
-  --term-color-3: var(--chart-3);
-  --term-color-4: var(--primary);
-  --term-color-5: var(--chart-5);
-  --term-color-6: var(--chart-2);
-  --term-color-7: var(--foreground);
-
-  --term-color-8: var(--muted-foreground);
-  --term-color-9: var(--destructive);
-  --term-color-10: var(--chart-4);
-  --term-color-11: var(--chart-3);
-  --term-color-12: var(--primary);
-  --term-color-13: var(--chart-5);
-  --term-color-14: var(--chart-2);
-  --term-color-15: var(--foreground);
-
-  border-radius: 0;
-  box-shadow: none;
+/* xterm.js — make the viewport fill its container */
+.xterm {
+  height: 100%;
 }
 
-.wterm.theme-app ::selection {
+.xterm-viewport {
+  overflow-y: auto !important;
+}
+
+.xterm .xterm-screen canvas::selection,
+.xterm-rows span::selection {
   background: color-mix(in oklch, var(--primary) 30%, transparent);
-}
-
-.wterm.theme-app.focused .term-cursor {
-  background: var(--ring);
-  color: var(--background);
 }
 
 @keyframes terminal-drop-zone-inset {
@@ -62,7 +37,7 @@
     infinite;
 }
 
-.terminal-drop-zone--active .wterm.theme-app {
+.terminal-drop-zone--active .xterm {
   outline: 2px dashed color-mix(in oklch, var(--ring) 70%, transparent);
   outline-offset: -2px;
   transition: outline-color var(--terminal-drop-fade-duration) ease-out;

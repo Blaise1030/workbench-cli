@@ -52,7 +52,10 @@ export function useContextQueue(
     const selection = ctx.selection?.trim();
     const note = ctx.note?.trim();
     const includeSnippet =
-      ctx.includeSnippet ?? (ctx.lineRange == null && Boolean(selection));
+      ctx.includeSnippet === true ||
+      (ctx.includeSnippet === undefined &&
+        ctx.lineRange == null &&
+        Boolean(selection));
 
     if (path) {
       if (!note && !selection && !ctx.lineRange) {

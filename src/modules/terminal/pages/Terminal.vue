@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useTemplateRef, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useQuery } from "@tanstack/vue-query";
 import { useDropZone } from "@vueuse/core";
-import { Terminal as WTerm, type WTerm as WTermInstance } from "@wterm/vue";
-import "@wterm/vue/css";
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { WebglAddon } from "@xterm/addon-webgl";
+import "@xterm/xterm/css/xterm.css";
 import "@/assets/terminal.css";
 import { fileTreeQueryOptions } from "@/modules/file-explorer/queries";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
@@ -31,10 +33,13 @@ const props = defineProps<{
 
 const route = useRoute();
 const sessions = useTerminalSessions();
-const termRef = ref<InstanceType<typeof WTerm> | null>(null);
+const terminalElRef = useTemplateRef<HTMLDivElement>("terminalElRef");
 const dropZoneRef = useTemplateRef("dropZoneRef");
 const initError = ref<string | null>(null);
-let readyInstance: WTermInstance | null = null;
+
+let terminal: Terminal | null = null;
+let fitAddon: FitAddon | null = null;
+let resizeObserver: ResizeObserver | null = null;
 
 const worktreeId = computed(() => route.params.worktreeId as string);
 const { data: worktree } = useQuery(worktreeQueryOptions(worktreeId));
@@ -49,25 +54,92 @@ const dropPathOptions = computed((): DropPathOptions | undefined => {
   };
 });
 
-function bindSession() {
-  if (!readyInstance || !props.sessionId) return;
-  sessions.attach(props.sessionId, readyInstance);
+function buildTheme() {
+  const s = getComputedStyle(document.documentElement);
+  const v = (name: string) => s.getPropertyValue(name).trim();
+  return {
+    background: v("--background"),
+    foreground: v("--foreground"),
+    cursor: v("--ring"),
+    cursorAccent: v("--background"),
+    black: v("--card"),
+    red: v("--destructive"),
+    green: v("--chart-4"),
+    yellow: v("--chart-3"),
+    blue: v("--primary"),
+    magenta: v("--chart-5"),
+    cyan: v("--chart-2"),
+    white: v("--foreground"),
+    brightBlack: v("--muted-foreground"),
+    brightRed: v("--destructive"),
+    brightGreen: v("--chart-4"),
+    brightYellow: v("--chart-3"),
+    brightBlue: v("--primary"),
+    brightMagenta: v("--chart-5"),
+    brightCyan: v("--chart-2"),
+    brightWhite: v("--foreground"),
+  };
 }
 
-function onReady(wt: WTermInstance) {
-  initError.value = null;
-  readyInstance = wt;
-  bindSession();
-}
+onMounted(() => {
+  const el = terminalElRef.value;
+  if (!el) return;
 
-function onError(err: unknown) {
-  initError.value =
-    err instanceof Error ? err.message : "Failed to load terminal emulator";
-}
+  try {
+    const s = getComputedStyle(document.documentElement);
+    terminal = new Terminal({
+      cursorBlink: true,
+      theme: buildTheme(),
+      fontFamily: s.getPropertyValue("--font-mono").trim() || "monospace",
+      allowTransparency: false,
+    });
+
+    fitAddon = new FitAddon();
+    terminal.loadAddon(fitAddon);
+
+    try {
+      terminal.loadAddon(new WebglAddon());
+    } catch {
+      // WebGL unavailable, canvas renderer used instead
+    }
+
+    terminal.open(el);
+    fitAddon.fit();
+
+    terminal.onData((data) => sessions.get(props.sessionId)?.sendInput(data));
+    terminal.onResize(({ cols, rows }) => sessions.get(props.sessionId)?.sendResize(cols, rows));
+    terminal.onTitleChange((title) => sessions.get(props.sessionId)?.setWindowTitle(title));
+
+    resizeObserver = new ResizeObserver(() => fitAddon?.fit());
+    resizeObserver.observe(el);
+
+    sessions.attach(props.sessionId, terminal);
+    initError.value = null;
+  } catch (err) {
+    initError.value =
+      err instanceof Error ? err.message : "Failed to load terminal emulator";
+  }
+});
+
+onUnmounted(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+  terminal?.dispose();
+  terminal = null;
+  fitAddon = null;
+});
+
+watch(
+  () => props.sessionId,
+  (id, prev) => {
+    if (prev) sessions.detach(prev);
+    if (terminal) nextTick(() => sessions.attach(id, terminal!));
+  },
+);
 
 function insertAtPrompt(text: string) {
   sessions.get(props.sessionId)?.sendInput(text);
-  readyInstance?.focus();
+  terminal?.focus();
 }
 
 async function insertFromDrop(files: File[] | null, event: DragEvent) {
@@ -89,16 +161,12 @@ async function insertFromDrop(files: File[] | null, event: DragEvent) {
   if (fileList.length) {
     const split = partitionDroppedFiles(fileList, opts);
     paths.push(...split.resolved);
-    // Do not copy to ~/.workbench/image when we already have a real on-disk path.
     if (!hasNativePaths) toUpload = split.needsUpload;
   }
 
   if (toUpload.length) {
     try {
-      const uploaded = await uploadWorkbenchDropAssets(
-        worktreeId.value,
-        toUpload,
-      );
+      const uploaded = await uploadWorkbenchDropAssets(worktreeId.value, toUpload);
       paths.push(...uploaded);
     } catch {
       clearDragPayload();
@@ -130,26 +198,6 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
   },
   onDrop: insertFromDrop,
 });
-
-watch(
-  () => props.sessionId,
-  (id, prev) => {
-    if (prev) sessions.detach(prev);
-    nextTick(bindSession);
-  },
-);
-
-function onData(data: string) {
-  sessions.get(props.sessionId)?.sendInput(data);
-}
-
-function onResize(cols: number, rows: number) {
-  sessions.get(props.sessionId)?.sendResize(cols, rows);
-}
-
-function onTitle(title: string) {
-  sessions.get(props.sessionId)?.setWindowTitle(title);
-}
 </script>
 
 <template>
@@ -168,17 +216,9 @@ function onTitle(title: string) {
     >
       {{ initError }}
     </p>
-    <WTerm
+    <div
       v-show="!initError"
-      ref="termRef"
-      theme="app"
-      auto-resize
-      cursor-blink
-      @ready="onReady"
-      @error="onError"
-      @data="onData"
-      @resize="onResize"
-      @title="onTitle"
+      ref="terminalElRef"
       class="size-full min-h-0"
     />
   </div>

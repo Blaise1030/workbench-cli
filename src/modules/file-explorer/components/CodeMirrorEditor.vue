@@ -193,6 +193,8 @@ onBeforeUnmount(() => {
   view?.destroy();
   view = null;
 });
+
+defineExpose({ triggerSave: () => handleSave() });
 </script>
 
 <template>

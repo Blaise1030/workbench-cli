@@ -57,6 +57,9 @@ const explorerState = useFileExplorerStorage(() => props.worktreeId);
 const { save, isSaving } = useFileEditorSave(() => props.worktreeId);
 
 const treeEl = ref<HTMLElement | null>(null);
+const treePanelRef = ref<{ collapse: () => void; expand: () => void } | null>(null);
+const treeCollapsed = ref(false);
+const editorRef = ref<{ triggerSave: () => void } | null>(null);
 const selectionReady = ref(false);
 const syncingTreeSelection = ref(false);
 let tree: InstanceType<typeof FileTree> | null = null;
@@ -484,6 +487,20 @@ function handleEditorChange() {
   if (!path) return;
   dirtyPaths.value = new Set([...dirtyPaths.value, path]);
 }
+
+function handleSaveFromTab() {
+  editorRef.value?.triggerSave();
+}
+
+function toggleTree() {
+  const panel = treePanelRef.value;
+  if (!panel) return;
+  if (treeCollapsed.value) {
+    panel.expand();
+  } else {
+    panel.collapse();
+  }
+}
 </script>
 
 <template>
@@ -514,8 +531,12 @@ function handleEditorChange() {
             :tabs="openFileTabs"
             :active-path="selectedRelativePath"
             :dirty-paths="dirtyPaths"
+            :is-saving="isSaving"
+            :tree-collapsed="treeCollapsed"
             @select="openFileInTab"
             @close="closeFileTabHandler"
+            @save="handleSaveFromTab"
+            @toggle-tree="toggleTree"
           />
           <div v-if="!selectedRelativePath" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
             <FileIcon class="size-8 opacity-40" />
@@ -545,6 +566,7 @@ function handleEditorChange() {
             </p>
             <CodeMirrorEditor
               v-else
+              ref="editorRef"
               :file-path="fileContent.path"
               :content="fileContent.content"
               class="min-h-0 flex-1"
@@ -575,9 +597,14 @@ function handleEditorChange() {
 
       <ResizablePanel
         id="file-explorer-tree"
+        ref="treePanelRef"
         :default-size="treeDefaultSize"
         :min-size="FILE_EXPLORER_MIN_TREE_SIZE"
         :max-size="FILE_EXPLORER_MAX_TREE_SIZE"
+        collapsible
+        :collapsed-size="0"
+        @collapse="treeCollapsed = true"
+        @expand="treeCollapsed = false"
       >
         <div
           ref="treeEl"

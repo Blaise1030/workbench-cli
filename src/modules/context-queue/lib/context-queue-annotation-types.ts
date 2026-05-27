@@ -11,6 +11,6 @@ export type ContextQueueAnnotationMeta = {
   includeSnippet: boolean;
   diff: boolean;
   queued?: boolean;
-  /** Collapsed summary first; click expands the full editor. */
+  /** `true` = editor; `false` = collapsed summary. Defaults to expanded. */
   expanded?: boolean;
 };
