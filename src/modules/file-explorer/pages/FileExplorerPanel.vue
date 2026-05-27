@@ -482,7 +482,7 @@ function handleEditorChange() {
         :default-size="previewDefaultSize"
         :min-size="45"
       >
-        <div class="flex h-full min-h-0 flex-col">
+        <div class="relative flex h-full min-h-0 flex-col">
           <FileTabList
             :tabs="openFileTabs"
             :active-path="selectedRelativePath"
