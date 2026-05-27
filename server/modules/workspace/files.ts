@@ -1,4 +1,4 @@
-import { open, readdir, stat } from "node:fs/promises";
+import { open, readdir, stat, writeFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { assertPathWithinRoot } from "./path-guard.js";
 
@@ -93,4 +93,30 @@ export async function readFileForWorktree(
   } finally {
     await handle.close();
   }
+}
+
+export async function writeFileForWorktree(
+  worktreePath: string,
+  relativePath: string,
+  content: string,
+): Promise<void> {
+  const normalized = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!normalized || normalized.endsWith("/")) {
+    throw new FileReadError("Invalid file path", 400);
+  }
+
+  const absolutePath = assertPathWithinRoot(worktreePath, normalized);
+
+  let fileStat;
+  try {
+    fileStat = await stat(absolutePath);
+  } catch {
+    throw new FileReadError("File not found", 404);
+  }
+
+  if (!fileStat.isFile()) {
+    throw new FileReadError("Not a file", 400);
+  }
+
+  await writeFile(absolutePath, content, "utf-8");
 }

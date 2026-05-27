@@ -11,6 +11,7 @@ import {
   gitFileActionsBodySchema,
   registerProjectBodySchema,
   updateTerminalBodySchema,
+  writeFileBodySchema,
 } from "../../schemas/workspace.js";
 import {
   deleteProject,
@@ -42,7 +43,7 @@ import {
   getGitStatusForWorktree,
   GitPanelError,
 } from "./git.js";
-import { FileReadError, listFilesForWorktree, readFileForWorktree } from "./files.js";
+import { FileReadError, listFilesForWorktree, readFileForWorktree, writeFileForWorktree } from "./files.js";
 import {
   DropAssetError,
   saveWorkbenchDropAssets,
@@ -186,6 +187,24 @@ export function createWorkspaceRouter(
         throw err;
       }
     })
+    .put(
+      "/worktrees/:id/files/content",
+      zValidator("json", writeFileBodySchema),
+      async (c) => {
+        const worktree = await getWorktree(db, c.req.param("id"));
+        if (!worktree) return c.json({ error: "Worktree not found" }, 404);
+        const { path, content } = c.req.valid("json");
+        try {
+          await writeFileForWorktree(worktree.path, path, content);
+          return c.json({ ok: true as const });
+        } catch (err) {
+          if (err instanceof FileReadError) {
+            return c.json({ error: err.message }, err.status);
+          }
+          throw err;
+        }
+      },
+    )
     .post("/worktrees/:id/drop-assets", async (c) => {
       const worktree = await getWorktree(db, c.req.param("id"));
       if (!worktree) return c.json({ error: "Worktree not found" }, 404);
