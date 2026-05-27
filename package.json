@@ -16,8 +16,7 @@
     "package:release:all": "node scripts/package-release.mjs --bundle-node",
     "build:rust": "node scripts/build-rust.mjs",
     "start:rust": "server-rs/target/release/workbench-cli --host 127.0.0.1 --http",
-    "test:rust:smoke": "node scripts/smoke-test-rust.mjs",
-    "prepublishOnly": "pnpm run build"
+    "test:rust:smoke": "node scripts/smoke-test-rust.mjs"
   },
   "devDependencies": {
     "@codemirror/commands": "^6.10.3",
