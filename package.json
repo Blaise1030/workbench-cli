@@ -1,19 +1,14 @@
 {
-  "name": "workbench-cli",
+  "name": "workbench",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "engines": {
     "node": ">=20"
   },
-  "files": [
-    "dist"
-  ],
-  "bin": {
-    "workbench-cli": "dist/cli/index.cjs"
-  },
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/index.ts",
-    "build": "node scripts/build-server.mjs && vite build && node scripts/assert-shiki-bundle.mjs",
+    "build": "node scripts/build-server.mjs && vite build --config frontend/vite.config.ts && node scripts/assert-shiki-bundle.mjs",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "start": "NODE_ENV=production node dist/cli/index.cjs",
     "test": "vitest run",
@@ -22,12 +17,7 @@
     "build:rust": "node scripts/build-rust.mjs",
     "start:rust": "server-rs/target/release/workbench-cli --host 127.0.0.1 --http",
     "test:rust:smoke": "node scripts/smoke-test-rust.mjs",
-    "prepublishOnly": "npm run build"
-  },
-  "dependencies": {
-    "better-sqlite3": "^12.10.0",
-    "node-pty": "^1.0.0",
-    "ws": "^8.18.2"
+    "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
     "@codemirror/commands": "^6.10.3",
