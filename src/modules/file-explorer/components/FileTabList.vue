@@ -8,6 +8,7 @@ import FileTabIcon from "@/modules/file-explorer/components/FileTabIcon.vue";
 const props = defineProps<{
   tabs: string[];
   activePath: string | null;
+  dirtyPaths?: Set<string>;
 }>();
 
 const tabListEl = ref<HTMLElement | null>(null);
@@ -70,7 +71,14 @@ function closeClass(relativePath: string) {
       @click="emit('select', relativePath)"
     >
       <FileTabIcon :relative-path="relativePath" />
-      <span class="min-w-0 truncate">{{ basename(relativePath) }}</span>
+      <span class="relative min-w-0 truncate">
+        {{ basename(relativePath) }}
+        <span
+          v-if="dirtyPaths?.has(relativePath)"
+          class="ml-1 inline-block size-1.5 rounded-full bg-current opacity-60"
+          aria-label="unsaved changes"
+        />
+      </span>
       <span
         role="button"
         :class="closeClass(relativePath)"
