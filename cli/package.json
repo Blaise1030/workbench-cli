@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "bin": {
-    "workbench-cli": "../../dist/cli/index.cjs"
+    "workbench-cli": "../dist/cli/index.cjs"
   },
   "dependencies": {
     "@workbench/server": "workspace:*"
