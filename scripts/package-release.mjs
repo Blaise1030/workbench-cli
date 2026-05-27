@@ -149,11 +149,13 @@ async function main() {
 
   cpSync(join(root, "dist"), join(staging, "dist"), { recursive: true });
 
+  const serverPkg = JSON.parse(readFileSync(join(root, "server", "package.json"), "utf8"));
+  if (!serverPkg.dependencies) throw new Error("server/package.json has no dependencies key");
   const runtimePkg = {
     name: "workbench-cli-runtime",
     private: true,
     type: "module",
-    dependencies: JSON.parse(readFileSync(join(root, "server", "package.json"), "utf8")).dependencies,
+    dependencies: serverPkg.dependencies,
   };
   writeFileSync(join(staging, "package.json"), JSON.stringify(runtimePkg, null, 2));
   execFileSync("npm", ["install", "--omit=dev", "--no-audit", "--no-fund"], {
