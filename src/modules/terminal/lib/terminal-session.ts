@@ -6,8 +6,6 @@ import {
   type TerminalOscReport,
 } from "@/modules/terminal/lib/terminal-reports";
 
-const CLEAR_SCREEN = "\x1b[2J\x1b[H";
-
 export interface TerminalSessionMeta {
   id: string;
   title: string;
@@ -33,6 +31,7 @@ export class TerminalSession {
   private shouldNotifySuccess: () => boolean = () => true;
   private disposed = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private hasConnected = false;
 
   constructor(meta: TerminalSessionMeta) {
     this.id = meta.id;
@@ -100,9 +99,9 @@ export class TerminalSession {
 
   private connect() {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(
-      `${proto}//${location.host}/ws?terminalId=${encodeURIComponent(this.terminalId)}`,
-    );
+    const params = new URLSearchParams({ terminalId: this.terminalId });
+    if (this.hasConnected) params.set("skipReplay", "1");
+    const ws = new WebSocket(`${proto}//${location.host}/ws?${params}`);
     this.ws = ws;
 
     ws.onmessage = (event: MessageEvent<string>) => {
@@ -110,6 +109,7 @@ export class TerminalSession {
     };
 
     ws.onopen = () => {
+      this.hasConnected = true;
       this.sendResize(this.cols, this.rows);
     };
 
@@ -118,19 +118,21 @@ export class TerminalSession {
       if (!this.disposed) {
         this.reconnectTimer = setTimeout(() => {
           this.reconnectTimer = null;
-          this.buffer = "";
           this.oscCarry = "";
-          this.terminal?.write(CLEAR_SCREEN);
           this.connect();
-        }, 1000);
+        }, 250);
       }
     };
   }
 
-  attach(terminal: Terminal) {
+  attach(terminal: Terminal, options?: { reset?: boolean }) {
     this.terminal = terminal;
-    terminal.write(CLEAR_SCREEN);
-    if (this.buffer) terminal.write(this.buffer);
+    if (options?.reset) {
+      terminal.reset();
+    }
+    if (this.buffer) {
+      terminal.write(this.buffer);
+    }
     this.sendResize(terminal.cols, terminal.rows);
     terminal.focus();
   }

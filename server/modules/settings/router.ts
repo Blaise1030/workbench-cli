@@ -7,8 +7,13 @@ import { getLanIP } from "./network.js";
 import {
   createApprovedResumePrefixSchema,
   lanToggleBodySchema,
+  patchNetworkSettingsSchema,
   patchTerminalSettingsSchema,
 } from "../../schemas/api.js";
+import {
+  buildNetworkSettings,
+  patchNetworkSettings,
+} from "./network-settings.js";
 import type { SettingsStore } from "./store.js";
 import {
   addApprovedResumePrefix,
@@ -54,6 +59,19 @@ export function createSettingsRouter(
       }
       lan.refreshInvite();
       return c.json(lan.getPublicState());
+    })
+    .get("/network", (c) => c.json(buildNetworkSettings(lan)))
+    .patch("/network", zValidator("json", patchNetworkSettingsSchema), (c) => {
+      const patch = c.req.valid("json");
+      if (patch.host === undefined && patch.port === undefined) {
+        return c.json({ error: "No changes provided" }, 400);
+      }
+      try {
+        return c.json(patchNetworkSettings(lan, patch));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Invalid network settings";
+        return c.json({ error: message }, 400);
+      }
     })
     .get("/terminal", async (c) => {
       const settings = await getTerminalSettings(settingsStore);

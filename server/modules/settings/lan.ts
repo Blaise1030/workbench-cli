@@ -11,7 +11,14 @@ export class LanManager {
   private lanIP: string | null = null;
   private urlScheme: TransportScheme = "https";
 
-  constructor(private readonly port: number) {}
+  constructor(
+    readonly port: number,
+    private readonly localHost: string,
+  ) {}
+
+  getUrlScheme(): TransportScheme {
+    return this.urlScheme;
+  }
 
   setUrlScheme(scheme: TransportScheme): void {
     this.urlScheme = scheme;
@@ -46,9 +53,18 @@ export class LanManager {
   }
 
   getTlsHosts(): string[] {
-    return this.mode === "lan" && this.lanIP
-      ? ["localhost", this.lanIP]
-      : ["localhost"];
+    if (this.mode === "lan" && this.lanIP) {
+      return [this.localHost, "localhost", this.lanIP];
+    }
+    return [this.localHost, "localhost", "127.0.0.1"];
+  }
+
+  getLocalHost(): string {
+    return this.localHost;
+  }
+
+  getLocalUrl(): string {
+    return `${this.urlScheme}://${this.localHost}:${this.port}/`;
   }
 
   getPublicState(): LanPublicState {

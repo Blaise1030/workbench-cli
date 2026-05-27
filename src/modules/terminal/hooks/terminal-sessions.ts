@@ -56,11 +56,12 @@ export function createTerminalSessionsStore(): TerminalSessionsStore {
   }
 
   function attach(id: string, terminal: Parameters<TerminalSession["attach"]>[0]) {
+    const switchingTab = activeId.value !== null && activeId.value !== id;
     for (const [sid, session] of sessions) {
       if (sid !== id) session.detach();
     }
     activeId.value = id;
-    sessions.get(id)?.attach(terminal);
+    sessions.get(id)?.attach(terminal, { reset: switchingTab });
   }
 
   function detach(id: string) {

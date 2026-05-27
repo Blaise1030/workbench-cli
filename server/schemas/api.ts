@@ -17,6 +17,22 @@ export const lanPublicStateSchema = z.object({
   inviteExpiresAt: z.number().optional(),
 });
 
+export const networkSettingsSchema = z.object({
+  /** Saved in ~/.workbench/config.json — applied on next restart. */
+  host: z.string(),
+  port: z.number().int(),
+  /** Currently running URL (may differ until restart). */
+  localUrl: z.string(),
+  scheme: z.enum(["http", "https"]),
+  hostsFileLine: z.string(),
+  pendingRestart: z.boolean(),
+});
+
+export const patchNetworkSettingsSchema = z.object({
+  host: z.string().min(1).max(253).optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+});
+
 export const terminalSettingsSchema = z.object({
   autoResumeAgentSessions: z.boolean(),
   ptyIdleTtlHours: z.number().positive(),
@@ -60,6 +76,8 @@ export const createApprovedResumePrefixSchema = z.object({
 export type AuthBody = z.infer<typeof authBodySchema>;
 export type LanToggleBody = z.infer<typeof lanToggleBodySchema>;
 export type LanPublicState = z.infer<typeof lanPublicStateSchema>;
+export type NetworkSettings = z.infer<typeof networkSettingsSchema>;
+export type PatchNetworkSettings = z.infer<typeof patchNetworkSettingsSchema>;
 export type TerminalSettings = z.infer<typeof terminalSettingsSchema>;
 export type ApprovedResumePrefix = z.infer<typeof approvedResumePrefixSchema>;
 

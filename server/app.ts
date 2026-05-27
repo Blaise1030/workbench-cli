@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { getPublicDir } from "./paths.js";
 import type { SessionToken } from "./modules/auth/token.js";
 import type { Session } from "./modules/auth/session.js";
 import type { LanManager } from "./modules/settings/lan.js";
@@ -34,7 +35,7 @@ export function createApp(
     ),
   );
 
-  app.use("/*", serveStatic({ root: "./dist/public" }));
+  app.use("/*", serveStatic({ root: getPublicDir() }));
 
   return app;
 }

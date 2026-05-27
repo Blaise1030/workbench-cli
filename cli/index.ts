@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { parseCliArgs, printCliHelp } from "./args.js";
 import { promptMkcertInstall } from "./mkcert-prompt.js";
 import { startServer } from "../server/index.js";
@@ -12,10 +11,13 @@ async function main(): Promise<void> {
     }
 
     console.log("\n  workbench-cli starting...");
-    await startServer(args.port, {
-      forceHttp: args.forceHttp,
-      confirmMkcertInstall: args.assumeYes ? async () => true : promptMkcertInstall,
-    });
+    await startServer(
+      { port: args.port, host: args.host },
+      {
+        forceHttp: args.forceHttp,
+        confirmMkcertInstall: args.assumeYes ? async () => true : promptMkcertInstall,
+      },
+    );
   } catch (err) {
     console.error("\n  Startup failed:", (err as Error).message);
     process.exit(1);

@@ -1,4 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createApp } from "./app.js";
 import { createDatabase } from "./db/index.js";
 import { createToken } from "./modules/auth/token.js";
@@ -10,7 +13,7 @@ import { createPtyRegistry } from "./modules/terminal/pty-registry.js";
 function makeApp() {
   const token = createToken();
   const session = createSession();
-  const lan = new LanManager(3000);
+  const lan = new LanManager(4738, "workbench.local");
   const database = createDatabase(":memory:");
   const settingsStore = createSettingsStore(database.db);
   const ptyRegistry = createPtyRegistry({ settingsStore });
@@ -156,6 +159,61 @@ describe("GET /api/settings/lan", () => {
     const body = await res.json();
     expect(body.enabled).toBe(true);
     expect(body.lanUrl).toMatch(/\?invite=/);
+  });
+});
+
+describe("GET /api/settings/network", () => {
+  let tempHome: string;
+  const originalHome = process.env.HOME;
+
+  beforeEach(() => {
+    tempHome = mkdtempSync(join(tmpdir(), "workbench-app-net-"));
+    process.env.HOME = tempHome;
+  });
+
+  afterEach(() => {
+    process.env.HOME = originalHome;
+    rmSync(tempHome, { recursive: true, force: true });
+  });
+
+  it("requires session", async () => {
+    const { app } = makeApp();
+    const res = await app.request("/api/settings/network");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns network settings when authenticated", async () => {
+    const { session, app } = makeApp();
+    activateSession(session);
+    const res = await app.request("/api/settings/network", {
+      headers: { cookie: `sid=${session.sid}` },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.host).toBe("workbench.local");
+    expect(body.port).toBe(4738);
+    expect(body.localUrl).toMatch(/^https:\/\/workbench\.local:4738\//);
+    expect(body.hostsFileLine).toBe("127.0.0.1 workbench.local");
+  });
+
+  it("persists host and port for next restart", async () => {
+    const { session, app } = makeApp();
+    activateSession(session);
+    const headers = {
+      cookie: `sid=${session.sid}`,
+      "content-type": "application/json",
+    };
+
+    const patchRes = await app.request("/api/settings/network", {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ host: "dev.local", port: 5000 }),
+    });
+    expect(patchRes.status).toBe(200);
+    const patched = await patchRes.json();
+    expect(patched.host).toBe("dev.local");
+    expect(patched.port).toBe(5000);
+    expect(patched.pendingRestart).toBe(true);
   });
 });
 

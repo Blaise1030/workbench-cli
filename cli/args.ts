@@ -1,5 +1,12 @@
+import {
+  DEFAULT_NETWORK_HOST,
+  DEFAULT_NETWORK_PORT,
+  loadNetworkConfig,
+} from "../server/modules/settings/network-config.js";
+
 export interface CliArgs {
   port: number;
+  host: string;
   forceHttp: boolean;
   assumeYes: boolean;
   showHelp: boolean;
@@ -11,17 +18,22 @@ Usage:
   workbench-cli [options]
 
 Options:
-  -p, --port <number>   Port (default: 3000, or PORT env)
+  -p, --port <number>   Port (default: ${DEFAULT_NETWORK_PORT}, or PORT env, or ~/.workbench/config.json)
+  --host <hostname>     Local hostname (default: ${DEFAULT_NETWORK_HOST}, or WORKBENCH_HOST env)
   --http, --insecure    Serve HTTP on localhost only (no mkcert)
   -y, --yes             Install mkcert without prompting if missing
   -h, --help            Show this help
 
 LAN sharing in the UI requires mkcert (HTTPS). HTTP mode disables LAN until mkcert is installed.
 Without --yes, the CLI asks before installing mkcert.
+
+Add to /etc/hosts once: 127.0.0.1 ${DEFAULT_NETWORK_HOST}
 `;
 
 export function parseCliArgs(argv: string[]): CliArgs {
-  let port = parseInt(process.env.PORT ?? "3000", 10);
+  const fileConfig = loadNetworkConfig();
+  let port = parseInt(process.env.PORT ?? String(fileConfig.port), 10);
+  let host = process.env.WORKBENCH_HOST?.trim() || fileConfig.host;
   let forceHttp = false;
   let assumeYes = false;
   let showHelp = false;
@@ -39,12 +51,16 @@ export function parseCliArgs(argv: string[]): CliArgs {
       if (!next) throw new Error("Missing value for --port");
       port = parseInt(next, 10);
       if (Number.isNaN(port)) throw new Error(`Invalid port: ${next}`);
+    } else if (arg === "--host") {
+      const next = argv[++i];
+      if (!next) throw new Error("Missing value for --host");
+      host = next;
     } else if (arg.startsWith("-")) {
       throw new Error(`Unknown option: ${arg}`);
     }
   }
 
-  return { port, forceHttp, assumeYes, showHelp };
+  return { port, host, forceHttp, assumeYes, showHelp };
 }
 
 export function printCliHelp(): void {

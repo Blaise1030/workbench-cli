@@ -44,8 +44,18 @@ interface PtyEntry {
   oscCarry: string;
 }
 
+export interface PtyRegistryAttachOptions {
+  /** Skip ring replay when the client still has scrollback on screen (WS reconnect). */
+  skipReplay?: boolean;
+}
+
 export interface PtyRegistry {
-  attach(terminalId: string, ws: WebSocket, ctx: TerminalAttachContext): Promise<void>;
+  attach(
+    terminalId: string,
+    ws: WebSocket,
+    ctx: TerminalAttachContext,
+    options?: PtyRegistryAttachOptions,
+  ): Promise<void>;
   handleMessage(terminalId: string, ws: WebSocket, raw: string): Promise<void>;
   detach(terminalId: string, ws: WebSocket): void;
   kill(terminalId: string): void;
@@ -260,12 +270,14 @@ export function createPtyRegistry(deps: PtyRegistryDeps): PtyRegistry {
   }
 
   const registry: PtyRegistry = {
-    async attach(terminalId, ws, ctx) {
+    async attach(terminalId, ws, ctx, options) {
       const entry = await getOrCreateEntry(terminalId, ctx);
       await hydrateFromDisk(terminalId, entry);
       clearIdleTimer(entry);
       entry.clients.add(ws);
-      replayScrollback(ws, entry.ring);
+      if (!options?.skipReplay) {
+        replayScrollback(ws, entry.ring);
+      }
     },
 
     async handleMessage(terminalId, ws, raw) {

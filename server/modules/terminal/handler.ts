@@ -17,6 +17,11 @@ function parseTerminalId(url: URL): string {
   return url.searchParams.get("terminalId")?.trim() ?? "";
 }
 
+function parseSkipReplay(url: URL): boolean {
+  const v = url.searchParams.get("skipReplay")?.trim().toLowerCase();
+  return v === "1" || v === "true";
+}
+
 function bindTerminalSocket(
   registry: PtyRegistry,
   terminalId: string,
@@ -28,8 +33,9 @@ function bindTerminalSocket(
     agentKind?: string | null;
     agentSessionId?: string | null;
   },
+  skipReplay: boolean,
 ): void {
-  void registry.attach(terminalId, ws, ctx);
+  void registry.attach(terminalId, ws, ctx, { skipReplay });
 
   ws.on("message", (msg: Buffer | string) => {
     const input = typeof msg === "string" ? msg : msg.toString("utf-8");
@@ -78,14 +84,21 @@ export function attachWebSocketUpgrade(
         return;
       }
 
+      const skipReplay = parseSkipReplay(url);
       wss.handleUpgrade(req, socket, head, (ws) => {
-        bindTerminalSocket(registry, terminalId, ws, {
-          cwd: record.worktree.path,
-          resumeCommand: record.terminal.resumeCommand,
-          resumeTrusted: record.terminal.resumeTrusted,
-          agentKind: record.terminal.agentKind,
-          agentSessionId: record.terminal.agentSessionId,
-        });
+        bindTerminalSocket(
+          registry,
+          terminalId,
+          ws,
+          {
+            cwd: record.worktree.path,
+            resumeCommand: record.terminal.resumeCommand,
+            resumeTrusted: record.terminal.resumeTrusted,
+            agentKind: record.terminal.agentKind,
+            agentSessionId: record.terminal.agentSessionId,
+          },
+          skipReplay,
+        );
       });
     } catch (err) {
       if (err instanceof TerminalError) {

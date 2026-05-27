@@ -10,6 +10,7 @@ import { createSession } from "./modules/auth/session.js";
 import type { Session } from "./modules/auth/session.js";
 import { createApp } from "./app.js";
 import { LanManager } from "./modules/settings/lan.js";
+import { resolveNetworkConfig } from "./modules/settings/network-config.js";
 import { getLanIP } from "./modules/settings/network.js";
 import { createDatabase } from "./db/index.js";
 import type { AppDatabase } from "./db/index.js";
@@ -124,10 +125,17 @@ async function listen(
   };
 }
 
+export interface StartServerNetwork {
+  port?: number;
+  host?: string;
+}
+
 export async function startServer(
-  port = 3000,
+  networkOverrides: StartServerNetwork = {},
   options: StartServerOptions = {},
 ): Promise<void> {
+  const network = resolveNetworkConfig(networkOverrides);
+  const { port: listenPort, host: localHost } = network;
   const { forceHttp = false, confirmMkcertInstall } = options;
   const sessionToken = createToken();
   const session = createSession();
@@ -147,7 +155,7 @@ export async function startServer(
       );
     },
   });
-  const lan = new LanManager(port);
+  const lan = new LanManager(listenPort, localHost);
 
   async function bindTransport(): Promise<ServerTransport> {
     return resolveTransport({
@@ -174,7 +182,7 @@ export async function startServer(
     await listen(
       app,
       transport,
-      port,
+      listenPort,
       lan.getHostname(),
       session,
       database,
@@ -190,7 +198,7 @@ export async function startServer(
         throw new Error("No network interface found");
       }
       const transport = await resolveTransport({
-        hosts: ["localhost", ip],
+        hosts: [localHost, "localhost", ip],
         requireTls: true,
         confirmMkcertInstall,
       });
@@ -208,13 +216,17 @@ export async function startServer(
   registerShutdownHooks();
 
   console.log(`\n  Access token: ${sessionToken.value}`);
-  console.log(`  Open: ${formatOrigin(transport.scheme, "localhost", port)}\n`);
+  console.log(`  Open: ${lan.getLocalUrl()}`);
+  if (localHost !== "localhost" && localHost !== "127.0.0.1") {
+    console.log(`  Add to /etc/hosts: 127.0.0.1 ${localHost}\n`);
+  } else {
+    console.log("");
+  }
 }
 
 // Direct run (dev mode via tsx)
 if (process.argv[1] && process.argv[1].endsWith("index.ts")) {
-  const port = parseInt(process.env.PORT ?? "3001", 10);
-  startServer(port).catch((err) => {
+  startServer().catch((err) => {
     console.error(err);
     process.exit(1);
   });

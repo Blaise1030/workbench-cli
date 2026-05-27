@@ -4,16 +4,33 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/vue-query";
-import type { ApprovedResumePrefix, LanPublicState, TerminalSettings } from "@server/schemas/api";
+import type {
+  ApprovedResumePrefix,
+  LanPublicState,
+  NetworkSettings,
+  PatchNetworkSettings,
+  TerminalSettings,
+} from "@server/schemas/api";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 
 export const settingsKeys = {
   all: ["settings"] as const,
   lan: () => [...settingsKeys.all, "lan"] as const,
+  network: () => [...settingsKeys.all, "network"] as const,
   terminal: () => [...settingsKeys.all, "terminal"] as const,
   resumePrefixes: () => [...settingsKeys.all, "terminal", "resume-prefixes"] as const,
 };
+
+export function networkSettingsQueryOptions() {
+  return queryOptions({
+    queryKey: settingsKeys.network(),
+    queryFn: async () => {
+      const res = await apiClient.settings.network.$get();
+      return ensureOk<NetworkSettings>(res);
+    },
+  });
+}
 
 export function lanSettingsQueryOptions() {
   return queryOptions({
@@ -45,6 +62,10 @@ export function terminalResumePrefixesQueryOptions() {
   });
 }
 
+export function useNetworkSettingsQuery() {
+  return useQuery(networkSettingsQueryOptions());
+}
+
 export function useLanSettingsQuery() {
   return useQuery(lanSettingsQueryOptions());
 }
@@ -55,6 +76,19 @@ export function useTerminalSettingsQuery() {
 
 export function useTerminalResumePrefixesQuery() {
   return useQuery(terminalResumePrefixesQueryOptions());
+}
+
+export function usePatchNetworkSettingsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: PatchNetworkSettings) => {
+      const res = await apiClient.settings.network.$patch({ json: patch });
+      return ensureOk<NetworkSettings>(res);
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(settingsKeys.network(), data);
+    },
+  });
 }
 
 export function useSetLanMutation() {
