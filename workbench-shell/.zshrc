@@ -13,7 +13,7 @@ if [[ -z "${WORKBENCH_INTEGRATION:-}" ]]; then
   }
   __workbench_precmd() {
     local ec=$?
-    local cmd_b64=""
+  local cmd_b64=""
     if [[ -n "${__workbench_last_cmd}" ]]; then
       cmd_b64=$(printf %s "${__workbench_last_cmd}" | base64 | tr -d '\n')
     fi

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const assetsDir = join(root, "dist/public/assets");
 const allowlistSource = readFileSync(
-  join(root, "src/shared/lib/pierre-shiki-langs.ts"),
+  join(root, "frontend/src/shared/lib/pierre-shiki-langs.ts"),
   "utf8",
 );
 

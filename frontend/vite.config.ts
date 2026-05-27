@@ -54,6 +54,7 @@ function excludeTestFilesFromBuild() {
 }
 
 export default defineConfig({
+  root: fileURLToPath(new URL(".", import.meta.url)),
   customLogger: logger,
   plugins: [excludeTestFilesFromBuild(), allowlistShikiLanguageBundles(), vue(), tailwindcss()],
   worker: {
