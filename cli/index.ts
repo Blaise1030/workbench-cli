@@ -1,6 +1,6 @@
 import { parseCliArgs, printCliHelp } from "./args.js";
 import { promptMkcertInstall } from "./mkcert-prompt.js";
-import { startServer } from "../server/index.js";
+import { startServer } from "@workbench/server";
 
 async function main(): Promise<void> {
   try {
