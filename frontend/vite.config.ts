@@ -84,7 +84,7 @@ export default defineConfig({
     ],
   },
   build: {
-    outDir: "dist/public",
+    outDir: "../dist/public",
     target: "es2020",
     minify: "terser",
     cssMinify: true,
