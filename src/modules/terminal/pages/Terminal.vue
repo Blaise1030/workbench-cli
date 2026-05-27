@@ -216,10 +216,8 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
     >
       {{ initError }}
     </p>
-    <div
-      v-show="!initError"
-      ref="terminalElRef"
-      class="size-full min-h-0"
-    />
+    <div v-show="!initError" class="size-full min-h-0 px-3">
+      <div ref="terminalElRef" class="size-full min-h-0" />
+    </div>
   </div>
 </template>

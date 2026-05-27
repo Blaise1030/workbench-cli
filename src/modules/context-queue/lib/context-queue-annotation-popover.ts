@@ -13,8 +13,7 @@ import type { ContextQueueAnnotationMeta } from "@/modules/context-queue/lib/con
 import { isAnnotationExpanded } from "@/modules/context-queue/lib/context-queue-annotation-display";
 import { formatPathReference } from "@/modules/context-queue/lib/format-line-range";
 
-const { div, details, summary, span, label, input, pre, textarea, button, p } =
-  van.tags;
+const { div, span, label, input, textarea, button, p } = van.tags;
 
 const { svg, path: svgPath } = van.tags("http://www.w3.org/2000/svg");
 
@@ -107,7 +106,7 @@ function PopoverHeader(
     {
       type: "button",
       class:
-        "flex w-full min-w-0 items-start gap-2 rounded-sm p-0 text-left hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "flex w-full min-w-0 items-start py-1 gap-2 rounded-sm p-0 text-left hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
       "aria-expanded": expanded,
       onclick: (event: Event) => {
         stopBubble(event);
@@ -120,8 +119,7 @@ function PopoverHeader(
       { class: "flex min-w-0 flex-1 items-start justify-between gap-2" },
       span(
         {
-          class:
-            "min-w-0 text-sm font-semibold leading-snug break-all text-muted-foreground",
+          class: "min-w-0 text-sm leading-snug break-all",
         },
         pathLabel(meta),
       ),
@@ -139,7 +137,6 @@ function PopoverDivider() {
 
 function CollapsedBody(meta: ContextQueueAnnotationMeta) {
   const noteText = meta.note.trim();
-  const selectionText = meta.selection.trim();
 
   if (noteText) {
     return p(
@@ -150,65 +147,23 @@ function CollapsedBody(meta: ContextQueueAnnotationMeta) {
     );
   }
 
-  if (selectionText) {
-    return pre(
-      {
-        class:
-          "m-0 line-clamp-3 rounded-md border border-border/60 bg-muted/40 p-1.5 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-foreground",
-      },
-      truncateText(selectionText, MAX_PREVIEW_CHARS),
-    );
-  }
-
-  return p(
-    { class: "m-0 text-xs text-muted-foreground" },
-    "No comment yet",
-  );
+  return p({ class: "m-0 text-xs text-muted-foreground" }, "No comment yet");
 }
 
 function syncIncludeSnippet(
   meta: ContextQueueAnnotationMeta,
   callbacks: AnnotationCallbacks,
   include: boolean,
-  selectionPreview: HTMLDetailsElement,
 ) {
   meta.includeSnippet = include;
   callbacks.onIncludeSnippetChange(meta.id, include);
-  selectionPreview.open = include;
 }
 
 function EditorBody(
   meta: ContextQueueAnnotationMeta,
   callbacks: AnnotationCallbacks,
 ) {
-  const preview = meta.selection.trim();
-  const selectionBody =
-    preview.length > MAX_PREVIEW_CHARS
-      ? `${preview.slice(0, MAX_PREVIEW_CHARS)}\n… (${preview.length.toLocaleString()} chars)`
-      : preview || "(empty selection)";
-
   const includeSnippet = van.state(Boolean(meta.includeSnippet));
-
-  const selectionPreview = details(
-    {
-      class: "flex flex-col gap-1 text-xs text-muted-foreground",
-      open: includeSnippet,
-    },
-    summary(
-      {
-        class:
-          "cursor-pointer font-medium text-muted-foreground hover:text-foreground",
-      },
-      "Selection preview",
-    ),
-    pre(
-      {
-        class:
-          "m-0 max-h-32 overflow-auto rounded-md border border-border bg-muted/50 p-2 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-foreground",
-      },
-      selectionBody,
-    ),
-  ) as HTMLDetailsElement;
 
   const note = textarea({
     class: cn(
@@ -231,7 +186,7 @@ function EditorBody(
 
   const setIncludeSnippet = (checked: boolean) => {
     includeSnippet.val = checked;
-    syncIncludeSnippet(meta, callbacks, checked, selectionPreview);
+    syncIncludeSnippet(meta, callbacks, checked);
   };
 
   const snippetInput = input({
@@ -291,7 +246,6 @@ function EditorBody(
       snippetInput,
       span({}, "Include code in queue"),
     ),
-    selectionPreview,
     note,
     div(
       { class: "flex flex-wrap items-center justify-end gap-1 pt-1" },
@@ -329,11 +283,20 @@ export function createContextQueueAnnotationElement(
   return ContextQueuePopover(meta, callbacks);
 }
 
+/** Pierre CodeView callbacks pass virtualized context, not the item directly. */
+export function resolveCodeViewItem(
+  value: CodeViewItem | { item: CodeViewItem } | null | undefined,
+): CodeViewItem | null {
+  if (value == null) return null;
+  if ("item" in value && value.item != null) return value.item;
+  return value;
+}
+
 export function relativePathForItem(item: CodeViewItem): string {
   if (item.type === "file") {
     return item.id;
   }
-  return item.fileDiff.name ?? item.id;
+  return item.fileDiff?.name ?? item.id;
 }
 
 export function annotationSideFromRange(range: {

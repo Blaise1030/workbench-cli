@@ -30,7 +30,9 @@ export function formatQueueAppend({
     lines.push(relativePath.trim());
   }
 
-  if (comment) lines.push(comment);
+  if (comment) {
+    lines.push("```", comment, "```");
+  }
 
   if (includeSnippet && body) {
     lines.push("```", body, "```");

@@ -81,9 +81,7 @@ function viewOptions() {
       context: { type: string; item: CodeViewItem },
     ) => {
       const merged = mergeAnnotations([context.item])[0];
-      if (merged?.annotations?.length) {
-        mountAnnotationSlots(host, merged);
-      }
+      if (merged) mountAnnotationSlots(host, merged);
     },
   };
 }
@@ -114,9 +112,7 @@ function scheduleMountAnnotationSlots() {
     if (!root) return;
     const host = root.querySelector("diffs-container");
     const item = mergeAnnotations(items.value)[0];
-    if (host && item?.annotations?.length) {
-      mountAnnotationSlots(host as HTMLElement, item);
-    }
+    if (host && item) mountAnnotationSlots(host as HTMLElement, item);
   });
 }
 

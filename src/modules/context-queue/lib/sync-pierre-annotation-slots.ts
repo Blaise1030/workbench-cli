@@ -11,7 +11,9 @@ export function syncPierreAnnotationSlotsForHost(
   item: CodeViewItem,
   renderAnnotation: (annotation: StoredContextQueueAnnotation) => HTMLElement,
 ) {
-  for (const el of host.querySelectorAll("[data-annotation-slot]")) {
+  for (const el of host.querySelectorAll(
+    "[data-annotation-slot], .context-queue-annotation-slot",
+  )) {
     el.remove();
   }
 

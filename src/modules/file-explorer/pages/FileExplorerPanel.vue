@@ -482,10 +482,16 @@ async function handleEditorSave(filePath: string, content: string) {
   }
 }
 
-function handleEditorChange() {
+function handleEditorChange(isDirty: boolean) {
   const path = selectedRelativePath.value;
   if (!path) return;
-  dirtyPaths.value = new Set([...dirtyPaths.value, path]);
+  const next = new Set(dirtyPaths.value);
+  if (isDirty) {
+    next.add(path);
+  } else {
+    next.delete(path);
+  }
+  dirtyPaths.value = next;
 }
 
 function handleSaveFromTab() {

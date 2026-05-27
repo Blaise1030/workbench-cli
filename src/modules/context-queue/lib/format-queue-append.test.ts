@@ -35,14 +35,17 @@ describe("formatQueueAppend", () => {
     ).toBe("src/a.ts:old:3:7\n\n");
   });
 
-  it("includes note without snippet", () => {
+  it("fences only the note after the pointer", () => {
     expect(
       formatQueueAppend({
-        relativePath: "src/a.ts",
-        lineRange: { start: 1, end: 3 },
-        note: "Fix the guard here",
+        relativePath: "src/modules/context-queue/components/ContextQueuePopover.vue",
+        lineRange: { start: 6, end: 6, side: "additions", endSide: "additions" },
+        diff: true,
+        note: "Test",
       }),
-    ).toBe("src/a.ts:1:3\nFix the guard here\n\n");
+    ).toBe(
+      "src/modules/context-queue/components/ContextQueuePopover.vue:new:6:6\n```\nTest\n```\n\n",
+    );
   });
 
   it("includes fenced snippet only when requested", () => {
@@ -54,5 +57,20 @@ describe("formatQueueAppend", () => {
         includeSnippet: true,
       }),
     ).toBe("src/a.ts:2:2\n```\nconst x = 1;\n```\n\n");
+  });
+
+  it("fences note and snippet separately when all are present", () => {
+    expect(
+      formatQueueAppend({
+        relativePath: "server/tls.ts",
+        lineRange: { start: 14, end: 14, side: "additions", endSide: "additions" },
+        diff: true,
+        note: "asdasdasd",
+        selection: "export function parse() {}",
+        includeSnippet: true,
+      }),
+    ).toBe(
+      "server/tls.ts:new:14:14\n```\nasdasdasd\n```\n```\nexport function parse() {}\n```\n\n",
+    );
   });
 });

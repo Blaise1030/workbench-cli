@@ -4,6 +4,8 @@ import { MessageCircle } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
+  PopoverHeader,
+  PopoverTitle,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
@@ -29,11 +31,28 @@ const textModel = computed({
 });
 
 const hasContent = computed(() => Boolean(props.queue.text.value.trim()));
+
+const onClear = () => {
+  props.queue.clear();
+  open.value = false;
+};
+
+const onSend = () => {
+  props.queue.send();
+  open.value = false;
+};
 </script>
 
 <template>
   <Popover v-model:open="open">
-    <PopoverTrigger as-child>
+    <PopoverTrigger
+      as-child
+      :class="
+        Boolean(textModel)
+          ? 'w-auto opacity-100'
+          : 'w-0 opacity-0 overflow-hidden'
+      "
+    >
       <Button
         variant="ghost"
         size="icon-xs"
@@ -49,14 +68,10 @@ const hasContent = computed(() => Boolean(props.queue.text.value.trim()));
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-[min(32rem,calc(100vw-2rem))] p-3" align="end">
-      <div class="space-y-3">
-        <div>
-          <p class="text-sm font-medium">Context queue</p>
-          <p class="text-xs text-muted-foreground">
-            Files: path:from:to · diffs: path:old:from:to or path:new:from:to
-            (one side) · optional “Include code”
-          </p>
-        </div>
+      <PopoverHeader>
+        <PopoverTitle>Context queue</PopoverTitle>
+      </PopoverHeader>
+      <div class="space-y-2">
         <Textarea
           v-model="textModel"
           data-native-keyboard
@@ -64,14 +79,8 @@ const hasContent = computed(() => Boolean(props.queue.text.value.trim()));
           placeholder="Queued snippets and notes appear here…"
         />
         <div class="flex items-center justify-between gap-2">
-          <Button variant="outline" size="sm" @click="queue.clear()">
-            Clear
-          </Button>
-          <Button
-            size="sm"
-            :disabled="!queue.canSend.value"
-            @click="queue.send()"
-          >
+          <Button variant="outline" size="sm" @click="onClear"> Clear </Button>
+          <Button size="sm" :disabled="!queue.canSend.value" @click="onSend">
             Send to terminal
           </Button>
         </div>

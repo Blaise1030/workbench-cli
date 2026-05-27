@@ -1,10 +1,9 @@
-import type { MaybeRefOrGetter } from "vue";
+import { ref, toValue, watch, type MaybeRefOrGetter } from "vue";
 import type {
   DiffLineAnnotation,
   LineAnnotation,
 } from "@pierre/diffs";
 import type { ContextQueueAnnotationMeta } from "@/modules/context-queue/lib/context-queue-annotation-types";
-import { useContextQueueAnnotationsStorage } from "@/modules/context-queue/lib/context-queue-annotations-storage";
 
 export type StoredContextQueueAnnotation =
   | LineAnnotation<ContextQueueAnnotationMeta>
@@ -12,10 +11,34 @@ export type StoredContextQueueAnnotation =
 
 export type ContextQueueViewBridge = () => boolean;
 
+const LEGACY_ANNOTATIONS_PREFIX = "lan-terminal:context-queue-annotations:";
+let legacyAnnotationsStorageCleared = false;
+
+function clearLegacyAnnotationsStorage() {
+  if (legacyAnnotationsStorageCleared || typeof localStorage === "undefined") {
+    return;
+  }
+  legacyAnnotationsStorageCleared = true;
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(LEGACY_ANNOTATIONS_PREFIX)) localStorage.removeItem(key);
+  }
+}
+
 export function createContextQueueAnnotationsState(
   worktreeId: MaybeRefOrGetter<string>,
 ) {
-  const annotations = useContextQueueAnnotationsStorage(worktreeId);
+  clearLegacyAnnotationsStorage();
+
+  const annotations = ref<StoredContextQueueAnnotation[]>([]);
+
+  watch(
+    () => toValue(worktreeId),
+    () => {
+      annotations.value = [];
+    },
+  );
+
   let gitBridge: ContextQueueViewBridge | null = null;
   let explorerBridge: ContextQueueViewBridge | null = null;
 

@@ -550,9 +550,7 @@ function diffOptions() {
       if (context.type !== "diff" || context.item.type !== "diff") return;
       enhanceHeaderLinksInHost(host, context.item.fileDiff);
       const merged = mergeAnnotations([context.item])[0];
-      if (merged?.annotations?.length) {
-        mountAnnotationSlots(host, merged);
-      }
+      if (merged) mountAnnotationSlots(host, merged);
     },
   };
 }
@@ -578,9 +576,7 @@ function scheduleMountAnnotationSlots() {
     const merged = itemsForView();
     hosts.forEach((host, index) => {
       const item = merged[index];
-      if (item?.annotations?.length) {
-        mountAnnotationSlots(host as HTMLElement, item);
-      }
+      if (item) mountAnnotationSlots(host as HTMLElement, item);
     });
   });
 }

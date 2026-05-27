@@ -39,7 +39,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   save: [filePath: string, content: string];
-  change: [];
+  change: [isDirty: boolean];
 }>();
 
 const containerRef = ref<HTMLElement | null>(null);
@@ -53,8 +53,8 @@ const languageCompartment = new Compartment();
 let resetting = false;
 
 const fontTheme = EditorView.theme({
-  ".cm-content, .cm-gutters": { fontFamily: "var(--font-app-mono)", fontSize: "12px" },
-  ".cm-lineNumbers .cm-gutterElement": { fontFamily: "var(--font-app-mono)", fontSize: "12px" },
+  ".cm-content, .cm-gutters": { fontFamily: "var(--font-mono)", fontSize: "14px" },
+  ".cm-lineNumbers .cm-gutterElement": { fontFamily: "var(--font-mono)", fontSize: "14px" },
 });
 
 const lightTheme = EditorView.theme(
@@ -111,7 +111,7 @@ function createState(content: string): EditorState {
       languageCompartment.of(buildLanguageExtension(props.filePath)),
       EditorView.updateListener.of((update) => {
         if (update.docChanged && !resetting) {
-          emit("change");
+          emit("change", update.state.doc.toString() !== props.content);
         }
       }),
       EditorView.theme({
@@ -119,8 +119,8 @@ function createState(content: string): EditorState {
         ".cm-scroller": {
           overflow: "auto",
           scrollbarWidth: "thin",
-          fontFamily: "var(--font-app-mono)",
-          fontSize: "12px",
+          fontFamily: "var(--font-mono)",
+          fontSize: "14px",
         },
       }),
     ],

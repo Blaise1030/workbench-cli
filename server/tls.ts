@@ -11,7 +11,7 @@ export interface TLSCredentials {
 export interface CertPaths {
   certFile: string;
   keyFile: string;
-}
+} 
 
 export function parseCertPaths(cacheDir: string, ...hosts: string[]): CertPaths {
   const base = hosts[hosts.length - 1];
