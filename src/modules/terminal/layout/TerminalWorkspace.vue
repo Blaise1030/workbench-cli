@@ -63,7 +63,9 @@ const gitPanelState = useGitPanelStorage(() => props.worktreeId);
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
 const contextQueue = useContextQueue(() => props.worktreeId, sessions);
 provide(contextQueueKey, contextQueue);
-const contextQueueAnnotations = createContextQueueAnnotationsState();
+const contextQueueAnnotations = createContextQueueAnnotationsState(
+  () => props.worktreeId,
+);
 provide(contextQueueAnnotationsKey, contextQueueAnnotations);
 const gitItemIdsRef = ref<string[]>([]);
 provide(contextQueueGitItemIdsKey, gitItemIdsRef);

@@ -1,0 +1,11 @@
+@reference "../../../assets/index.css";
+
+/* Pierre shadow-DOM layout only — slotted nodes use Tailwind via global bundle. */
+@layer components {
+  [data-line-annotation] [data-annotation-content] {
+    @apply relative box-border w-full max-w-none min-w-0;
+    width: 100% !important;
+    left: 0 !important;
+    position: relative !important;
+  }
+}

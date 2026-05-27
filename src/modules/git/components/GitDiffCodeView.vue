@@ -24,7 +24,7 @@ import {
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
 import gitDiffHeaderStyles from "@/modules/git/components/git-diff-header.css?inline";
-import contextQueueAnnotationStyles from "@/modules/context-queue/lib/context-queue-annotations.css?inline";
+import contextQueueAnnotationShadowStyles from "@/modules/context-queue/lib/context-queue-annotations-shadow.css?inline";
 import {
   contextQueueAnnotationsKey,
   contextQueueKey,
@@ -528,7 +528,7 @@ function diffOptions() {
     overflow: props.wordWrap ? ("wrap" as const) : ("scroll" as const),
     diffIndicators: props.diffIndicators,
     diffStyle: props.diffStyle ?? "unified",
-    unsafeCSS: `${gitDiffHeaderStyles}\n${contextQueueAnnotationStyles}`,
+    unsafeCSS: `${gitDiffHeaderStyles}\n${contextQueueAnnotationShadowStyles}`,
     ...pierreContextQueueOptions,
     renderHeaderPrefix: (
       fileDiff: FileDiffMetadata,
@@ -614,7 +614,7 @@ async function mountViewer() {
       ...diffOptions(),
       ...pierreCodeViewOptions,
       stickyHeaders: true,
-      layout: { paddingTop: 8, paddingBottom: 8, gap: 12 },
+      layout: { paddingTop: 8, paddingBottom: 8, gap: 0 },
     },
     getPierreWorkerPool(),
   );
@@ -792,7 +792,7 @@ onBeforeUnmount(() => {
 <style>
 @import "tailwindcss";
 @source "./git-diff-header.css";
-@source "../../context-queue/lib/context-queue-annotations.css";
+@source "../../context-queue/lib/context-queue-annotation-classes.ts";
 
 .git-diff-code-view {
   contain: layout style;
@@ -800,6 +800,7 @@ onBeforeUnmount(() => {
 
 /* Light DOM: Pierre stacks one diffs-container per file with flex gap on the sticky row. */
 .git-diff-code-view diffs-container:not(:last-child) {
-  @apply block border-b border-border;
+  display: block;
+  border-bottom: 1px solid var(--border);
 }
 </style>

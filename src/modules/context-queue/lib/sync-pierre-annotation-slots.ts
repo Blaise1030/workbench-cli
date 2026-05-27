@@ -18,6 +18,7 @@ export function syncPierreAnnotationSlotsForHost(
   for (const annotation of item.annotations ?? []) {
     const slotName = getLineAnnotationName(annotation);
     const wrapper = createAnnotationWrapperNode(slotName);
+    wrapper.classList.add("context-queue-annotation-slot");
     wrapper.appendChild(renderAnnotation(annotation));
     host.appendChild(wrapper);
   }

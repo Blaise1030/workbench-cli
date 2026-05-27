@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { InboxIcon } from "@lucide/vue";
+import { MessageCircle } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -40,7 +40,7 @@ const hasContent = computed(() => Boolean(props.queue.text.value.trim()));
         class="relative"
         aria-label="Context queue"
       >
-        <InboxIcon class="size-4" />
+        <MessageCircle />
         <span
           v-if="hasContent"
           class="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary"
@@ -53,7 +53,8 @@ const hasContent = computed(() => Boolean(props.queue.text.value.trim()));
         <div>
           <p class="text-sm font-medium">Context queue</p>
           <p class="text-xs text-muted-foreground">
-            Files: path:from:to · diffs: path:old:from:to or path:new:from:to (one side) · optional “Include code”
+            Files: path:from:to · diffs: path:old:from:to or path:new:from:to
+            (one side) · optional “Include code”
           </p>
         </div>
         <Textarea

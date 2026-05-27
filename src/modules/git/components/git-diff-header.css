@@ -13,15 +13,23 @@
     @apply inline-flex size-4 shrink-0 items-center justify-center;
   }
 
-  /* Native input styled like components/ui/checkbox (CheckboxRoot) */
+  /* Native input styled like components/ui/checkbox (CheckboxRoot).
+     unsafeCSS runs in Pierre shadow DOM — use :root tokens (var(--primary)), not @apply bg-primary. */
   .git-diff-select-checkbox {
-    @apply size-4 shrink-0 cursor-pointer appearance-none rounded-[4px] border border-input bg-transparent outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30;
+    @apply size-4 shrink-0 cursor-pointer rounded-[4px] border outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    appearance: none;
+    -webkit-appearance: none;
+    accent-color: var(--primary);
+    border-color: var(--input);
+    background-color: transparent;
     @apply focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50;
   }
 
   .git-diff-select-checkbox:checked {
-    @apply border-primary bg-primary dark:bg-primary;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+    border-color: var(--primary);
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
     background-position: center;
     background-repeat: no-repeat;
     background-size: 0.875rem;

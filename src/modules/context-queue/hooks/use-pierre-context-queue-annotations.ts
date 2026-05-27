@@ -14,13 +14,14 @@ import type {
   ContextQueueAnnotationsState,
   StoredContextQueueAnnotation,
 } from "@/modules/context-queue/lib/context-queue-annotations-state";
-import { pierreSelectionText } from "@/modules/code-selection-affix/lib/pierre-line-selection";
+import { pierreSelectionText } from "@/modules/context-queue/lib/pierre-selection-text";
 import {
   isCrossSideRange,
   normalizedLineSpan,
   singleSideRange,
 } from "@/modules/context-queue/lib/format-line-range";
 import type { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
+import { hasCommentContent } from "@/modules/context-queue/lib/context-queue-annotation-display";
 import { syncPierreAnnotationSlotsForHost } from "@/modules/context-queue/lib/sync-pierre-annotation-slots";
 import { toast } from "vue-sonner";
 
@@ -65,6 +66,7 @@ export function usePierreContextQueueAnnotations(opts: {
       note: "",
       includeSnippet: false,
       diff: item.type === "diff",
+      expanded: true,
     };
 
     const entry: StoredContextQueueAnnotation =
@@ -117,6 +119,20 @@ export function usePierreContextQueueAnnotations(opts: {
     meta.includeSnippet = include;
   }
 
+  function onExpand(id: string) {
+    const meta = findMeta(id);
+    if (!meta) return;
+    meta.expanded = true;
+    syncViewer();
+  }
+
+  function onCollapse(id: string) {
+    const meta = findMeta(id);
+    if (!meta || !hasCommentContent(meta)) return;
+    meta.expanded = false;
+    syncViewer();
+  }
+
   function onQueue(meta: ContextQueueAnnotationMeta) {
     if (!opts.contextQueue || meta.queued) return;
     opts.contextQueue.appendFromContext({
@@ -128,6 +144,7 @@ export function usePierreContextQueueAnnotations(opts: {
       includeSnippet: meta.includeSnippet,
     });
     meta.queued = true;
+    meta.expanded = false;
     syncViewer();
   }
 
@@ -145,6 +162,8 @@ export function usePierreContextQueueAnnotations(opts: {
       onIncludeSnippetChange,
       onQueue,
       onRemove,
+      onExpand,
+      onCollapse,
     });
   }
 

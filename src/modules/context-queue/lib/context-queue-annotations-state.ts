@@ -1,9 +1,10 @@
-import { ref } from "vue";
+import type { MaybeRefOrGetter } from "vue";
 import type {
   DiffLineAnnotation,
   LineAnnotation,
 } from "@pierre/diffs";
 import type { ContextQueueAnnotationMeta } from "@/modules/context-queue/lib/context-queue-annotation-types";
+import { useContextQueueAnnotationsStorage } from "@/modules/context-queue/lib/context-queue-annotations-storage";
 
 export type StoredContextQueueAnnotation =
   | LineAnnotation<ContextQueueAnnotationMeta>
@@ -11,8 +12,10 @@ export type StoredContextQueueAnnotation =
 
 export type ContextQueueViewBridge = () => boolean;
 
-export function createContextQueueAnnotationsState() {
-  const annotations = ref<StoredContextQueueAnnotation[]>([]);
+export function createContextQueueAnnotationsState(
+  worktreeId: MaybeRefOrGetter<string>,
+) {
+  const annotations = useContextQueueAnnotationsStorage(worktreeId);
   let gitBridge: ContextQueueViewBridge | null = null;
   let explorerBridge: ContextQueueViewBridge | null = null;
 

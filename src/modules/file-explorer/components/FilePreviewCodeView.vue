@@ -16,7 +16,7 @@ import {
   PIERRE_DIFF_THEME,
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
-import contextQueueAnnotationStyles from "@/modules/context-queue/lib/context-queue-annotations.css?inline";
+import contextQueueAnnotationShadowStyles from "@/modules/context-queue/lib/context-queue-annotations-shadow.css?inline";
 import {
   contextQueueAnnotationsKey,
   contextQueueKey,
@@ -72,7 +72,7 @@ function viewOptions() {
     disableBackground: false,
     disableLineNumbers: false,
     overflow: "scroll" as const,
-    unsafeCSS: contextQueueAnnotationStyles,
+    unsafeCSS: contextQueueAnnotationShadowStyles,
     ...pierreContextQueueOptions,
     ...pierreCodeViewOptions,
     onPostRender: (
@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
 
 <style>
 @import "tailwindcss";
-@source "../../context-queue/lib/context-queue-annotations.css";
+@source "../../context-queue/lib/context-queue-annotation-classes.ts";
 
 .file-preview-code-view {
   contain: strict;
