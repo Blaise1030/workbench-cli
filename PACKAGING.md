@@ -41,6 +41,40 @@ cd workbench-cli-macos-arm64
 - **Runtime `dependencies`** are only native externals: `better-sqlite3`, `node-pty`, `ws`. Everything else is bundled into `dist/cli/index.cjs` or built into `dist/public/`.
 - **Static files** resolve via `server/paths.ts` (works from any cwd, release folder, or future standalone binary).
 
+## Go binary (recommended — single file, ~10 MB)
+
+The Go migration (`server-go/`) produces a true single binary with the frontend embedded:
+
+```bash
+npm run build:go
+# → bin/workbench-cli  (~10 MB, no Node required)
+```
+
+Run:
+
+```bash
+./bin/workbench-cli --http
+# or with HTTPS (requires mkcert):
+./bin/workbench-cli
+```
+
+### CI releases
+
+On tag `v*`, `.github/workflows/release-go.yml` builds matrix:
+
+| Platform | Binary |
+|----------|--------|
+| `darwin/arm64` | `workbench-cli-darwin-arm64.tar.gz` |
+| `darwin/amd64` | `workbench-cli-darwin-amd64.tar.gz` |
+| `linux/arm64` | `workbench-cli-linux-arm64.tar.gz` |
+| `linux/amd64` | `workbench-cli-linux-amd64.tar.gz` |
+
+Each tarball contains a single executable. Attach to GitHub Releases with `softprops/action-gh-release`.
+
+## Node tarball (legacy — ~80–140 MB)
+
+> **Status:** The Node packaging path below is superseded by the Go binary above.
+
 ## Roadmap: true single binary (~Herdr)
 
 | Approach | Pros | Cons |
