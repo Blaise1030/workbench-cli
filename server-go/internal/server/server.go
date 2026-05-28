@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/api"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 )
 
 const version = "0.1.0"
@@ -25,8 +26,11 @@ type Config struct {
 }
 
 func Run(cfg Config) error {
+	state := appstate.New()
+	cookieSecure := !cfg.ForceHTTP
+
 	r := chi.NewRouter()
-	api.RegisterRoutes(r, version)
+	api.RegisterRoutes(r, version, state, cookieSecure)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{
