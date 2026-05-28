@@ -185,23 +185,36 @@ impl PtyRegistry {
         }
     }
 
-    fn handle_osc_reports(&self, terminal_id: &str, entry: &mut PtyEntry, chunk: &str) {
+    fn collect_osc_command_completes(
+        entry: &mut PtyEntry,
+        chunk: &str,
+    ) -> Vec<CommandCompleteEvent> {
         let parsed = parse_osc_stream(&entry.osc_carry, chunk);
         entry.osc_carry = parsed.carry;
-        for report in parsed.reports {
-            if report.command_line.is_none() || report.command_exit.is_none() {
-                continue;
-            }
-            if let Some(cb) = &self.on_command_complete {
-                cb(
-                    terminal_id.to_string(),
-                    CommandCompleteEvent {
-                        command_line: report.command_line.unwrap(),
-                        exit_code: report.command_exit.unwrap(),
-                        cwd: entry.cwd.clone(),
-                    },
-                );
-            }
+        let cwd = entry.cwd.clone();
+        parsed
+            .reports
+            .into_iter()
+            .filter_map(|report| {
+                Some(CommandCompleteEvent {
+                    command_line: report.command_line?,
+                    exit_code: report.command_exit?,
+                    cwd: cwd.clone(),
+                })
+            })
+            .collect()
+    }
+
+    fn dispatch_command_completes(
+        &self,
+        terminal_id: &str,
+        events: Vec<CommandCompleteEvent>,
+    ) {
+        let Some(cb) = &self.on_command_complete else {
+            return;
+        };
+        for event in events {
+            cb(terminal_id.to_string(), event);
         }
     }
 
@@ -340,15 +353,23 @@ impl PtyRegistry {
             let terminal_id_pump = terminal_id.to_string();
             let pump_task = tokio::spawn(async move {
                 while let Some(chunk) = data_rx.recv().await {
-                    let mut entries = registry_pump.entries.lock();
-                    let Some(entry) = entries.get_mut(&terminal_id_pump) else {
-                        // Entry was removed (killed) while pump was still draining; remaining chunks discarded.
-                        break;
+                    let command_completes = {
+                        let mut entries = registry_pump.entries.lock();
+                        let Some(entry) = entries.get_mut(&terminal_id_pump) else {
+                            // Entry was removed (killed) while pump was still draining; remaining chunks discarded.
+                            break;
+                        };
+                        entry.last_activity = now_ms();
+                        let completes =
+                            PtyRegistry::collect_osc_command_completes(entry, &chunk);
+                        entry.ring.append(chunk.as_bytes());
+                        PtyRegistry::broadcast(entry, &chunk);
+                        completes
                     };
-                    entry.last_activity = now_ms();
-                    registry_pump.handle_osc_reports(&terminal_id_pump, entry, &chunk);
-                    entry.ring.append(chunk.as_bytes());
-                    PtyRegistry::broadcast(entry, &chunk);
+                    registry_pump.dispatch_command_completes(
+                        &terminal_id_pump,
+                        command_completes,
+                    );
                 }
             });
 
@@ -516,17 +537,31 @@ impl PtyRegistry {
         }
     }
 
+    /// Stop every live PTY (used on server shutdown so spawn_blocking wait/read tasks exit).
+    pub fn kill_all(&self) {
+        let ids: Vec<String> = self.entries.lock().keys().cloned().collect();
+        for id in ids {
+            self.kill(&id);
+        }
+    }
+
     pub fn kill(&self, terminal_id: &str) {
-        let mut entries = self.entries.lock();
-        let Some(mut entry) = entries.remove(terminal_id) else {
-            delete_scrollback(terminal_id);
-            return;
+        let pty = {
+            let mut entries = self.entries.lock();
+            let Some(mut entry) = entries.remove(terminal_id) else {
+                delete_scrollback(terminal_id);
+                return;
+            };
+            Self::clear_idle_timer(&mut entry);
+            entry.pty.take()
         };
-        Self::clear_idle_timer(&mut entry);
-        if let Some(pty) = entry.pty.take() {
-            let _ = pty.child.lock().kill();
+
+        if let Some(pty) = pty {
+            // Abort I/O tasks before touching the child — wait_task holds the child mutex
+            // for the duration of wait(); killing while holding entries.lock() deadlocks.
             pty.read_task.abort();
             pty.pump_task.abort();
+            let _ = pty.child.lock().kill();
             pty.wait_task.abort();
         }
         delete_scrollback(terminal_id);

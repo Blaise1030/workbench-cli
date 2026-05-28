@@ -8,19 +8,26 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::app_state::AppState;
+use crate::db::Db;
 use super::middleware::RequireSession;
 use crate::auth::is_local_addr;
 use crate::error::AppError;
 use crate::git::GitDiffScope;
 use crate::git::GitFileAction;
 use crate::types::{
-    CreateTerminalBody, CreateWorktreeBody, GitCommitBody, GitFileActionsBody,
+    CreateTerminalBody, CreateWorktreeBody, GitCommitBody, GitFileActionsBody, Project,
     RegisterProjectBody, UpdateTerminalBody, WriteFileBody,
 };
 use crate::workspace::{
     drop_assets::DropAssetUpload, files, git_panel, pick_folder, projects, terminals, worktrees,
     UpdateTerminalPatch,
 };
+
+async fn spawn_register_project(db: Arc<Db>, repo_path: String) -> Result<Project, AppError> {
+    tokio::task::spawn_blocking(move || projects::register_project(&db, &repo_path))
+        .await
+        .map_err(|e| AppError::Internal(format!("register project task failed: {e}")))?
+}
 
 
 #[derive(Debug, Deserialize)]
@@ -61,10 +68,14 @@ async fn pick_folder_route(
             "Folder picker is only available on localhost".into(),
         ));
     }
-    match pick_folder::pick_folder() {
+    let picked = tokio::task::spawn_blocking(pick_folder::pick_folder)
+        .await
+        .map_err(|e| AppError::Internal(format!("folder picker task failed: {e}")))?;
+
+    match picked {
         None => Ok(Json(json!({ "cancelled": true }))),
         Some(repo_path) => {
-            let project = projects::register_project(&state.db, &repo_path)?;
+            let project = spawn_register_project(Arc::clone(&state.db), repo_path).await?;
             Ok(Json(json!({ "project": project })))
         }
     }
@@ -75,7 +86,8 @@ async fn register_project(
     State(state): State<Arc<AppState>>,
     Json(body): Json<RegisterProjectBody>,
 ) -> Result<(axum::http::StatusCode, Json<serde_json::Value>), AppError> {
-    let project = projects::register_project(&state.db, &body.repo_path)?;
+    let project =
+        spawn_register_project(Arc::clone(&state.db), body.repo_path.clone()).await?;
     Ok((
         axum::http::StatusCode::CREATED,
         Json(json!({ "project": project })),

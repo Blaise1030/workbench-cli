@@ -1,11 +1,13 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::Router;
 use axum_server::Handle;
 use parking_lot::RwLock;
 use tokio::sync::mpsc;
-use tracing::info;
+use tokio::task::JoinHandle;
+use tracing::{info, warn};
 
 use crate::agents::handle_command::handle_agent_command_complete;
 use crate::agents::types::CommandCompleteEvent;
@@ -77,7 +79,7 @@ pub async fn run(config: ServerConfig, options: RunOptions) -> Result<(), Box<dy
         let app = build_router(Arc::clone(&state));
         let handle = Handle::new();
 
-        let server_task = {
+        let mut server_task: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> = {
             let handle = handle.clone();
             let transport = transport.clone();
             tokio::spawn(async move {
@@ -85,30 +87,35 @@ pub async fn run(config: ServerConfig, options: RunOptions) -> Result<(), Box<dy
             })
         };
 
-        tokio::select! {
-            result = server_task => {
-                result??;
-                break;
-            }
-            Some(enabled) = restart_rx.recv() => {
-                handle.graceful_shutdown(None);
-                lan_enabled = enabled;
-                if enabled {
-                    let mut lan = state.lan.write();
-                    let ip = get_lan_ip();
-                    if ip != "127.0.0.1" {
-                        lan.enable(ip);
-                    }
-                } else {
-                    state.lan.write().disable();
+        let exit = loop {
+            tokio::select! {
+                result = &mut server_task => {
+                    result??;
+                    break true;
                 }
-                pty_registry.shutdown().await;
+                Some(enabled) = restart_rx.recv() => {
+                    stop_server(&handle, &pty_registry, &mut server_task).await;
+                    lan_enabled = enabled;
+                    if enabled {
+                        let mut lan = state.lan.write();
+                        let ip = get_lan_ip();
+                        if ip != "127.0.0.1" {
+                            lan.enable(ip);
+                        }
+                    } else {
+                        state.lan.write().disable();
+                    }
+                    break false;
+                }
+                _ = shutdown_signal() => {
+                    stop_server(&handle, &pty_registry, &mut server_task).await;
+                    break true;
+                }
             }
-            _ = shutdown_signal() => {
-                handle.graceful_shutdown(None);
-                pty_registry.shutdown().await;
-                break;
-            }
+        };
+
+        if exit {
+            break;
         }
     }
 
@@ -188,6 +195,28 @@ fn print_startup_banner(state: &AppState, token: &str) {
     }
     println!();
     info!(%local_url, "workbench-cli rust server listening");
+}
+
+type ServeResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
+
+/// Tear down listeners and PTYs so Ctrl+C releases the bind port promptly.
+async fn stop_server(
+    handle: &Handle,
+    pty_registry: &PtyRegistry,
+    server_task: &mut JoinHandle<ServeResult>,
+) {
+    pty_registry.kill_all();
+    handle.graceful_shutdown(Some(Duration::from_secs(2)));
+    match tokio::time::timeout(Duration::from_secs(5), &mut *server_task).await {
+        Ok(Ok(Ok(()))) => {}
+        Ok(Ok(Err(e))) => tracing::error!("server stopped with error: {e}"),
+        Ok(Err(e)) => tracing::error!("server task failed: {e}"),
+        Err(_) => {
+            server_task.abort();
+            warn!("server shutdown timed out after 5s; aborted remaining task");
+        }
+    }
+    pty_registry.shutdown().await;
 }
 
 async fn shutdown_signal() {
