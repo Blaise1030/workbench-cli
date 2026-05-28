@@ -19,7 +19,8 @@
     "test:rust:smoke": "node scripts/smoke-test-rust.mjs",
     "build:go": "npm run build && cd server-go && go build -tags embed -ldflags='-s -w' -o ../bin/workbench-cli ./cmd/workbench-cli",
     "dev:go": "cd server-go && go run ./cmd/workbench-cli --http",
-    "test:go:smoke": "node scripts/test-go-smoke.mjs"
+    "test:go:smoke": "node scripts/test-go-smoke.mjs",
+    "test:contract": "node scripts/contract-test.mjs"
   },
   "devDependencies": {
     "shiki": "^3.23.0",
