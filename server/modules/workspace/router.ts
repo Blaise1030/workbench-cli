@@ -43,7 +43,7 @@ import {
   getGitStatusForWorktree,
   GitPanelError,
 } from "./git.js";
-import { FileReadError, listFilesForWorktree, readFileForWorktree, writeFileForWorktree } from "./files.js";
+import { FileReadError, listFilesForWorktree, readFileForWorktree, writeFileForWorktree, searchFilesForWorktree } from "./files.js";
 import {
   DropAssetError,
   saveWorkbenchDropAssets,
@@ -170,6 +170,15 @@ export function createWorkspaceRouter(
       const worktree = await getWorktree(db, c.req.param("id"));
       if (!worktree) return c.json({ error: "Worktree not found" }, 404);
       const paths = await listFilesForWorktree(worktree.path);
+      return c.json({ paths });
+    })
+    .get("/worktrees/:id/files/search", async (c) => {
+      const worktree = await getWorktree(db, c.req.param("id"));
+      if (!worktree) return c.json({ error: "Worktree not found" }, 404);
+      const q = c.req.query("q") ?? "";
+      const limit = Math.min(parseInt(c.req.query("limit") ?? "50", 10), 100);
+      if (!q.trim()) return c.json({ paths: [] });
+      const paths = await searchFilesForWorktree(worktree.path, q, limit);
       return c.json({ paths });
     })
     .get("/worktrees/:id/files/content", async (c) => {
