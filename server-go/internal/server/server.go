@@ -26,7 +26,11 @@ type Config struct {
 }
 
 func Run(cfg Config) error {
-	state := appstate.New(cfg.Port, cfg.Host, cfg.ForceHTTP)
+	state, err := appstate.New(cfg.Port, cfg.Host, cfg.ForceHTTP)
+	if err != nil {
+		return fmt.Errorf("init state: %w", err)
+	}
+	defer state.DB.Close()
 	cookieSecure := !cfg.ForceHTTP
 
 	r := chi.NewRouter()

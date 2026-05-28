@@ -7,6 +7,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/keybindings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
 )
 
 func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool) {
@@ -19,17 +20,15 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 
 		r.Route("/settings", func(r chi.Router) {
 			settings.RegisterRoutes(r, state.Session, state.SettingsStore, state.Lan, func(enabled bool) error {
-				if enabled {
-					// Phase 6 will implement real LAN binding
-					return nil
-				}
-				return nil
+				return nil // Phase 6 implements real LAN binding
 			})
 		})
 
 		r.Route("/keybindings", func(r chi.Router) {
 			keybindings.RegisterRoutes(r, state.Session)
 		})
+
+		workspace.RegisterRoutes(r, state.DB, state.Session)
 	})
 
 	// Static SPA — must be last
