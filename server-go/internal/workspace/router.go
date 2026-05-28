@@ -25,6 +25,13 @@ func wsErr(w http.ResponseWriter, msg string, code int) {
 	jsonResp(w, map[string]string{"error": msg}, code)
 }
 
+func orNull(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
 func domainStatus(err error) int {
 	type statusErr interface{ Error() string }
 	switch e := err.(type) {
@@ -227,6 +234,88 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 	r.Delete("/terminals/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if err := DeleteTerminal(db, chi.URLParam(r, "id"), nil); err != nil {
 			wsErr(w, err.Error(), domainStatus(err))
+			return
+		}
+		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+	})
+
+	// Git panel routes
+	r.Get("/worktrees/{id}/git/status", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		if !wt.IsLinked {
+			wsErr(w, "Worktree path is not available on disk", http.StatusNotFound)
+			return
+		}
+		entries, err := git.GetStatus(wt.Path)
+		if err != nil {
+			wsErr(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		branch, _ := git.GetCurrentBranch(wt.Path)
+		if entries == nil {
+			entries = []git.StatusEntry{}
+		}
+		jsonResp(w, map[string]any{"branch": branch, "files": entries}, http.StatusOK)
+	})
+	r.Get("/worktrees/{id}/git/diff", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		scope := git.ParseDiffScope(r.URL.Query().Get("scope"))
+		path := r.URL.Query().Get("path")
+		patch, err := git.GetDiff(wt.Path, scope, path)
+		if err != nil {
+			wsErr(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		jsonResp(w, map[string]any{"patch": patch, "scope": scope, "path": orNull(path)}, http.StatusOK)
+	})
+	r.Post("/worktrees/{id}/git/actions", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		var body struct {
+			Action string   `json:"action"`
+			Paths  []string `json:"paths"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			wsErr(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		action := git.FileAction(body.Action)
+		if action != git.ActionStage && action != git.ActionUnstage && action != git.ActionDiscard {
+			wsErr(w, "Invalid action", http.StatusBadRequest)
+			return
+		}
+		if err := git.ApplyFileAction(wt.Path, action, body.Paths); err != nil {
+			wsErr(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+	})
+	r.Post("/worktrees/{id}/git/commit", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		var body struct {
+			Message string `json:"message"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Message) == "" {
+			wsErr(w, "message is required", http.StatusBadRequest)
+			return
+		}
+		if err := git.CommitStaged(wt.Path, body.Message); err != nil {
+			wsErr(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
