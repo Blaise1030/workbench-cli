@@ -26,7 +26,7 @@ type Config struct {
 }
 
 func Run(cfg Config) error {
-	state := appstate.New()
+	state := appstate.New(cfg.Port, cfg.Host, cfg.ForceHTTP)
 	cookieSecure := !cfg.ForceHTTP
 
 	r := chi.NewRouter()
