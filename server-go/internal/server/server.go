@@ -14,6 +14,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/api"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
 )
 
 const version = "0.1.0"
@@ -31,21 +33,26 @@ func Run(cfg Config) error {
 		return fmt.Errorf("init state: %w", err)
 	}
 	defer state.DB.Close()
-	cookieSecure := !cfg.ForceHTTP
 
+	ts := settings.GetTerminalSettings(state.SettingsStore)
+	registry := terminal.NewRegistry(terminal.RegistryConfig{
+		CapBytes: settings.ScrollbackCapBytes(ts.ScrollbackCapKb),
+		IdleTTL:  time.Duration(settings.PtyIdleTtlMs(ts.PtyIdleTtlHours)) * time.Millisecond,
+	})
+	defer registry.Shutdown()
+
+	cookieSecure := !cfg.ForceHTTP
 	r := chi.NewRouter()
-	api.RegisterRoutes(r, version, state, cookieSecure)
+	api.RegisterRoutes(r, version, state, cookieSecure, registry)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: r,
-	}
-
 	listenAddr := addr
 	if cfg.ForceHTTP {
 		listenAddr = fmt.Sprintf("127.0.0.1:%d", cfg.Port)
-		srv.Addr = listenAddr
+	}
+	srv := &http.Server{
+		Addr:    listenAddr,
+		Handler: r,
 	}
 
 	ln, err := net.Listen("tcp", listenAddr)

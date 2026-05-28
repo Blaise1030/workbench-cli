@@ -7,10 +7,11 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/keybindings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
 )
 
-func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool) {
+func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool, registry *terminal.Registry) {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/health", Health(version))
 
@@ -30,6 +31,9 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 
 		workspace.RegisterRoutes(r, state.DB, state.Session)
 	})
+
+	// WebSocket endpoint
+	r.Handle("/ws", terminal.WSHandler(state.Session, state.DB, registry))
 
 	// Static SPA — must be last
 	r.Handle("/*", assets.Handler())

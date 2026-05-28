@@ -3,6 +3,8 @@ module github.com/blaisetiong/workbench-cli/server-go
 go 1.23.0
 
 require (
+	github.com/coder/websocket v1.8.13
+	github.com/creack/pty v1.1.24
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/inconshreveable/mousetrap v1.1.0
