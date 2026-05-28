@@ -125,3 +125,28 @@ export async function writeFileForWorktree(
     throw new FileReadError(`Failed to write file: ${msg}`, 400);
   }
 }
+
+export async function searchFilesForWorktree(
+  worktreePath: string,
+  query: string,
+  limit: number,
+): Promise<string[]> {
+  const allPaths = await listFilesForWorktree(worktreePath);
+  const q = query.toLowerCase();
+
+  const scored: Array<{ path: string; score: number }> = [];
+  for (const p of allPaths) {
+    const lower = p.toLowerCase();
+    const filename = lower.split("/").at(-1) ?? lower;
+    let score = 0;
+    if (filename.startsWith(q)) score = 3;
+    else if (filename.includes(q)) score = 2;
+    else if (lower.includes(q)) score = 1;
+    if (score > 0) scored.push({ path: p, score });
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((s) => s.path);
+}
