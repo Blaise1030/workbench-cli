@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"net"
@@ -16,6 +17,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/tlsutil"
 )
 
 const version = "0.1.0"
@@ -45,14 +47,10 @@ func Run(cfg Config) error {
 	r := chi.NewRouter()
 	api.RegisterRoutes(r, version, state, cookieSecure, registry)
 
-	addr := fmt.Sprintf(":%d", cfg.Port)
-	listenAddr := addr
-	if cfg.ForceHTTP {
-		listenAddr = fmt.Sprintf("127.0.0.1:%d", cfg.Port)
-	}
-	srv := &http.Server{
-		Addr:    listenAddr,
-		Handler: r,
+	listenAddr := fmt.Sprintf("127.0.0.1:%d", cfg.Port)
+	if !cfg.ForceHTTP {
+		// Bind to all interfaces for HTTPS (LAN-capable)
+		listenAddr = fmt.Sprintf(":%d", cfg.Port)
 	}
 
 	ln, err := net.Listen("tcp", listenAddr)
@@ -60,11 +58,29 @@ func Run(cfg Config) error {
 		return fmt.Errorf("listen %s: %w", listenAddr, err)
 	}
 
-	scheme := "https"
-	if cfg.ForceHTTP {
-		scheme = "http"
+	scheme := "http"
+	if !cfg.ForceHTTP {
+		hosts := []string{cfg.Host, "localhost", "127.0.0.1"}
+		creds, tlsErr := tlsutil.EnsureTLS(hosts, tlsutil.EnsureOptions{
+			AutoInstall: cfg.AssumeYes,
+		})
+		if tlsErr != nil {
+			slog.Warn("TLS setup failed, falling back to HTTP", "err", tlsErr)
+			fmt.Printf("\n  ⚠ Serving over HTTP on localhost only (not encrypted).\n  %s\n\n", tlsErr)
+		} else {
+			scheme = "https"
+			ln = tls.NewListener(ln, &tls.Config{
+				Certificates: []tls.Certificate{creds.Cert},
+			})
+		}
 	}
+
 	slog.Info("workbench-cli started", "url", fmt.Sprintf("%s://%s:%d", scheme, cfg.Host, cfg.Port))
+
+	srv := &http.Server{
+		Addr:    listenAddr,
+		Handler: r,
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

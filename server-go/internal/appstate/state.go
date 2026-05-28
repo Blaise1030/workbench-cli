@@ -8,6 +8,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/db"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/lan"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
 )
 
@@ -35,14 +36,14 @@ func New(port int, host string, forceHTTP bool) (*AppState, error) {
 	return &AppState{
 		Token:         auth.CreateToken(),
 		Session:       auth.CreateSession(),
-		Lan:           NewStubLan(port, host, forceHTTP),
+		Lan:           lan.New(port, host, forceHTTP),
 		SettingsStore: settings.NewFileStore(storeFile),
 		DB:            database,
 	}, nil
 }
 
-func (s *AppState) SetLan(lan LanManager) {
+func (s *AppState) SetLan(l LanManager) {
 	s.mu.Lock()
-	s.Lan = lan
+	s.Lan = l
 	s.mu.Unlock()
 }

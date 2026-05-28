@@ -175,3 +175,8 @@ func DeleteTerminal(db *sql.DB, id string, onKill func(string)) error {
 	_, err = db.Exec(`DELETE FROM terminals WHERE id = ?`, id)
 	return err
 }
+
+func UpdateTerminalAgentSession(db *sql.DB, id, agentKind, agentSessionID string) error {
+	_, err := db.Exec(`UPDATE terminals SET agent_kind=?, agent_session_id=? WHERE id=?`, agentKind, agentSessionID, id)
+	return err
+}
