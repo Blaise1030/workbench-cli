@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { listFilesForWorktree, readFileForWorktree } from "./files.js";
+import {
+  listFilesForWorktree,
+  readFileForWorktree,
+  searchFilesForWorktree,
+} from "./files.js";
 
 describe("listFilesForWorktree", () => {
   let dir: string;
@@ -62,5 +67,43 @@ describe("listFilesForWorktree", () => {
     } finally {
       rmSync(empty, { recursive: true, force: true });
     }
+  });
+});
+
+describe("searchFilesForWorktree", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "search-test-"));
+    await mkdir(join(dir, "src/components"), { recursive: true });
+    await mkdir(join(dir, "src/pages"), { recursive: true });
+    await writeFile(join(dir, "src/components/Button.vue"), "");
+    await writeFile(join(dir, "src/components/InputGroup.vue"), "");
+    await writeFile(join(dir, "src/pages/HomePage.vue"), "");
+    await writeFile(join(dir, "README.md"), "");
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("returns paths ranked by filename match quality", async () => {
+    const results = await searchFilesForWorktree(dir, "button", 10);
+    expect(results[0]).toBe("src/components/Button.vue");
+  });
+
+  it("returns empty array when no match", async () => {
+    const results = await searchFilesForWorktree(dir, "zzznomatch", 10);
+    expect(results).toEqual([]);
+  });
+
+  it("respects the limit", async () => {
+    const results = await searchFilesForWorktree(dir, "vue", 2);
+    expect(results.length).toBeLessThanOrEqual(2);
+  });
+
+  it("matches partial filename", async () => {
+    const results = await searchFilesForWorktree(dir, "group", 10);
+    expect(results).toContain("src/components/InputGroup.vue");
   });
 });
