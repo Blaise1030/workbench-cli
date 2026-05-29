@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.workbench/
 bin/
 server-go/internal/assets/public/
 *.log

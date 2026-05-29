@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/git"
 )
 
@@ -384,7 +385,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			wsErr(w, "No files provided", http.StatusBadRequest)
 			return
 		}
-		assetsDir := filepath.Join(wt.Path, ".workbench", "files")
+		assetsDir := filepath.Join(config.DataDir(), "files")
 		if err := os.MkdirAll(assetsDir, 0755); err != nil {
 			wsErr(w, "Failed to create assets directory", http.StatusInternalServerError)
 			return
@@ -412,7 +413,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 				wsErr(w, "Failed to write file", http.StatusInternalServerError)
 				return
 			}
-			paths = append(paths, filepath.Join(".workbench", "files", id))
+			paths = append(paths, destPath)
 		}
 		jsonResp(w, map[string]any{"paths": paths}, http.StatusOK)
 	})
