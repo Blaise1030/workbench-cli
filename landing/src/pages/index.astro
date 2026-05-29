@@ -2,70 +2,38 @@
 import '../styles/global.css';
 import rawContent from '../content/landing.md?raw';
 
-// Convert markdown links [text](url) to HTML
 function parseLinks(text: string): string {
   return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
-// Split content into sections on ~~~
-const sections = rawContent.split(/\n~~~\n/).map(s => s.trim()).filter(Boolean);
-
-// Parse each section into a typed structure
-type MetaSection = { kind: 'meta'; pairs: { key: string; value: string }[] };
-type LabelSection = { kind: 'label'; label: string; items: { text: string; isInstall?: boolean }[] };
-type ProseSection = { kind: 'prose'; label: string; paragraphs: string[] };
-type FooterSection = { kind: 'footer'; text: string };
-type Section = MetaSection | LabelSection | ProseSection | FooterSection;
-
-const parsed: Section[] = sections.map((section): Section => {
-  // Footer line
-  if (section.startsWith('~*~')) {
-    return { kind: 'footer', text: section };
-  }
-
-  const lines = section.split('\n').map(l => l.trim()).filter(Boolean);
-
-  // Metadata block: all lines are KEY: VALUE with no leading label
-  const isAllMeta = lines.every(l => /^[A-Z ]+:/.test(l) && !l.endsWith(':'));
-  if (isAllMeta) {
-    return {
-      kind: 'meta',
-      pairs: lines.map(l => {
-        const colon = l.indexOf(':');
-        return { key: l.slice(0, colon).trim(), value: l.slice(colon + 1).trim() };
-      }),
-    };
-  }
-
-  // LABEL: section
-  const firstLine = lines[0];
-  if (firstLine && /^[A-Z ]+:$/.test(firstLine)) {
-    const label = firstLine.slice(0, -1);
-    const rest = lines.slice(1);
-    // List items
-    if (rest.every(l => l.startsWith('- '))) {
-      return {
-        kind: 'label',
-        label,
-        items: rest.map(l => ({
-          text: parseLinks(l.slice(2)),
-          isInstall: l.startsWith('- curl'),
-        })),
-      };
-    }
-    // Prose paragraphs
-    return {
-      kind: 'prose',
-      label,
-      paragraphs: rest.map(l => parseLinks(l)),
-    };
-  }
-
-  // Fallback: treat as prose with no label
-  return { kind: 'prose', label: '', paragraphs: lines.map(l => parseLinks(l)) };
-});
-
 const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh';
+
+// Render each line to a typed token — 1:1 with landing.md
+type Token =
+  | { kind: 'divider' }
+  | { kind: 'meta'; key: string; value: string }
+  | { kind: 'label'; text: string }
+  | { kind: 'install' }
+  | { kind: 'item'; html: string }
+  | { kind: 'text'; html: string }
+  | { kind: 'footer'; text: string };
+
+const tokens: Token[] = rawContent.split('\n').flatMap((raw): Token[] => {
+  const line = raw.trim();
+  if (!line) return [];
+  if (line === '~~~') return [{ kind: 'divider' }];
+  if (line.startsWith('~*~')) return [{ kind: 'footer', text: line }];
+  if (line === '- curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh')
+    return [{ kind: 'install' }];
+  if (line.startsWith('- ')) return [{ kind: 'item', html: parseLinks(line.slice(2)) }];
+  // KEY: (label only, no value)
+  if (/^[A-Z][A-Z ]+:$/.test(line)) return [{ kind: 'label', text: line.slice(0, -1) }];
+  // KEY: VALUE (meta row)
+  const metaMatch = line.match(/^([A-Z][A-Z ]+): (.+)$/);
+  if (metaMatch) return [{ kind: 'meta', key: metaMatch[1], value: metaMatch[2] }];
+  // Plain text
+  return [{ kind: 'text', html: parseLinks(line) }];
+});
 ---
 
 <!doctype html>
@@ -83,54 +51,27 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
 
         <div class="brand">WORKBENCH <span class="cursor" aria-hidden="true"></span></div>
 
-        {parsed.map((section) => (
-          <>
-            <div class="divider">~~~</div>
-
-            {section.kind === 'meta' && (
-              <div class="meta-block">
-                {section.pairs.map(({ key, value }) => (
-                  <div class="row">
-                    <span class="label">{key}:</span>{' '}
-                    <span class="muted">{value}</span>
-                  </div>
-                ))}
+        {tokens.map((token) => {
+          if (token.kind === 'divider')
+            return <div class="divider">~~~</div>;
+          if (token.kind === 'meta')
+            return <div class="row"><span class="label">{token.key}:</span> <span class="muted">{token.value}</span></div>;
+          if (token.kind === 'label')
+            return <div class="row"><span class="label">{token.text}:</span></div>;
+          if (token.kind === 'install')
+            return (
+              <div class="install-row">
+                <span class="install-cmd" id="install-cmd">{installCmd}</span>
+                <button class="copy-btn" aria-label="Copy install command">COPY</button>
               </div>
-            )}
-
-            {section.kind === 'prose' && (
-              <div class="prose-block">
-                {section.label && <div class="row"><span class="label">{section.label}:</span></div>}
-                {section.paragraphs.map(p => (
-                  <p class="prose" set:html={p} />
-                ))}
-              </div>
-            )}
-
-            {section.kind === 'label' && (
-              <div class="list-block">
-                <div class="row"><span class="label">{section.label}:</span></div>
-                {section.items.map(({ text, isInstall }) => (
-                  isInstall ? (
-                    <div class="install-row">
-                      <span class="install-cmd" id="install-cmd">{installCmd}</span>
-                      <button class="copy-btn" aria-label="Copy install command">COPY</button>
-                    </div>
-                  ) : (
-                    <div class="list-item">
-                      <span class="dash"> -</span>{' '}
-                      <span set:html={text} />
-                    </div>
-                  )
-                ))}
-              </div>
-            )}
-
-            {section.kind === 'footer' && (
-              <div class="muted">{section.text}</div>
-            )}
-          </>
-        ))}
+            );
+          if (token.kind === 'item')
+            return <div class="list-item"><span class="dash"> -</span> <span set:html={token.html} /></div>;
+          if (token.kind === 'text')
+            return <div class="text" set:html={token.html} />;
+          if (token.kind === 'footer')
+            return <div class="muted">{token.text}</div>;
+        })}
 
       </div>
       <div class="aside"></div>
@@ -182,7 +123,7 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
 
       .muted { color: hsl(var(--muted-foreground)); }
 
-      .prose {
+      .text {
         color: hsl(var(--muted-foreground));
         padding-left: 1ch;
       }
