@@ -169,7 +169,7 @@ const ITEM_CLASS =
             <!-- Search input row — CommandInput keeps ListboxFilter wired to the
                  ListboxRoot context so arrow-key navigation works correctly -->
             <div
-              class="flex items-center gap-3 px-3 border-b border-border/50
+              class="flex items-center gap-3 px-3
                      [&_[data-slot=command-input-wrapper]]:flex-1
                      [&_[data-slot=command-input-wrapper]]:p-0
                      [&_[data-slot=input-group]]:bg-transparent!
@@ -188,18 +188,16 @@ const ITEM_CLASS =
             </div>
             <div
               v-if="isContentMode && contentQuery && !contentLoading && contentResults.length > 0"
-              class="px-3 py-1 text-xs text-muted-foreground border-b border-border/50"
+              class="px-3 py-1 text-xs text-muted-foreground"
             >
               {{ contentResultCount }} result{{ contentResultCount === 1 ? '' : 's' }}
             </div>
 
             <!-- Scrollable list with gradient fade -->
-            <div class="relative">              
+            <div class="relative">
               <CommandList class="max-h-80! px-1">
-                 <!-- Gradient scroll fade -->
-              <div
-                class="sticky top-0 inset-x-0 h-2 bg-gradient-to-t from-popover to-transparent pointer-events-none rounded-b-xl"
-              />
+                <!-- Top fade -->
+                <div class="sticky top-0 inset-x-0 h-3 bg-gradient-to-b from-popover to-transparent pointer-events-none z-10" />
                 <!-- Content search mode -->
                 <template v-if="isContentMode">
                   <div
@@ -333,12 +331,9 @@ const ITEM_CLASS =
                     </CommandItem>
                   </CommandGroup>
                 </template>
+                <!-- Bottom fade -->
+                <div class="sticky bottom-0 inset-x-0 h-3 bg-gradient-to-t from-popover to-transparent pointer-events-none z-10" />
               </CommandList>
-
-              <!-- Gradient scroll fade -->
-              <div
-                class="sticky bottom-0 inset-x-0 h-2 bg-gradient-to-t from-popover to-transparent pointer-events-none rounded-b-xl"
-              />
             </div>
           </Command>
         </div>

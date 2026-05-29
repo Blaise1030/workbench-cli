@@ -206,6 +206,31 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 		}
 		jsonResp(w, map[string]any{"paths": paths}, http.StatusOK)
 	})
+	r.Get("/worktrees/{id}/files/content-search", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		q := r.URL.Query().Get("q")
+		if q == "" {
+			jsonResp(w, map[string]any{"matches": []ContentMatch{}}, http.StatusOK)
+			return
+		}
+		limit := 50
+		if l := r.URL.Query().Get("limit"); l != "" {
+			fmt.Sscanf(l, "%d", &limit)
+		}
+		matches, err := ContentSearchFiles(wt.Path, q, limit)
+		if err != nil {
+			wsErr(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if matches == nil {
+			matches = []ContentMatch{}
+		}
+		jsonResp(w, map[string]any{"matches": matches}, http.StatusOK)
+	})
 	r.Get("/worktrees/{id}/files/content", func(w http.ResponseWriter, r *http.Request) {
 		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
 		if err != nil || wt == nil {

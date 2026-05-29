@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -176,6 +177,56 @@ func SearchFiles(worktreePath, query string, limit int) ([]string, error) {
 		paths[i] = m.path
 	}
 	return paths, nil
+}
+
+type ContentMatch struct {
+	File string `json:"file"`
+	Line int    `json:"line"`
+	Text string `json:"text"`
+}
+
+func ContentSearchFiles(worktreePath, query string, limit int) ([]ContentMatch, error) {
+	if query == "" {
+		return []ContentMatch{}, nil
+	}
+	all, err := ListFiles(worktreePath)
+	if err != nil {
+		return nil, err
+	}
+	root, err := filepath.Abs(worktreePath)
+	if err != nil {
+		return nil, err
+	}
+	lQuery := strings.ToLower(query)
+	var matches []ContentMatch
+	for _, rel := range all {
+		if limit > 0 && len(matches) >= limit {
+			break
+		}
+		abs := filepath.Join(root, rel)
+		f, err := os.Open(abs)
+		if err != nil {
+			continue
+		}
+		scanner := bufio.NewScanner(f)
+		lineNum := 0
+		for scanner.Scan() {
+			lineNum++
+			line := scanner.Text()
+			if strings.Contains(strings.ToLower(line), lQuery) {
+				matches = append(matches, ContentMatch{
+					File: rel,
+					Line: lineNum,
+					Text: strings.TrimSpace(line),
+				})
+				if limit > 0 && len(matches) >= limit {
+					break
+				}
+			}
+		}
+		f.Close()
+	}
+	return matches, nil
 }
 
 func WriteFile(worktreePath, relativePath, content string) error {
