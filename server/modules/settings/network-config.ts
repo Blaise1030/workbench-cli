@@ -5,6 +5,12 @@ import { getDataDir } from "../../db/data-dir.js";
 
 export const DEFAULT_NETWORK_HOST = "workbench.local";
 export const DEFAULT_NETWORK_PORT = 4738;
+/** Added to prod port for feature-branch / non-default worktree instances. */
+export const NON_PROD_PORT_OFFSET = 1;
+
+export function nonProdPort(prodPort: number): number {
+  return prodPort + NON_PROD_PORT_OFFSET;
+}
 
 const HOST_PATTERN =
   /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i;

@@ -2,9 +2,20 @@
 
 package assets
 
-import "embed"
+import (
+	"embed"
+	"io/fs"
+)
 
-//go:embed all:../../../dist/public
-var Public embed.FS
+//go:embed all:public
+var publicEmbed embed.FS
 
 const IsEmbedded = true
+
+func init() {
+	sub, err := fs.Sub(publicEmbed, "public")
+	if err != nil {
+		panic("assets: embed public: " + err.Error())
+	}
+	Public = sub
+}

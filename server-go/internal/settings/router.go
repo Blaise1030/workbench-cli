@@ -36,6 +36,8 @@ type LanPublicState struct {
 type NetworkSettings struct {
 	Host           string `json:"host"`
 	Port           int    `json:"port"`
+	ProdPort       int    `json:"prodPort"`
+	NonProdPort    int    `json:"nonProdPort"`
 	LocalURL       string `json:"localUrl"`
 	Scheme         string `json:"scheme"`
 	HostsFileLine  string `json:"hostsFileLine"`
@@ -70,11 +72,13 @@ func buildNetworkSettings(lan LanProvider) NetworkSettings {
 	running := config.NetworkConfig{Host: lan.GetLocalHost(), Port: lan.Port()}
 	pendingRestart := saved.Host != running.Host || saved.Port != running.Port
 	return NetworkSettings{
-		Host:          saved.Host,
-		Port:          saved.Port,
-		LocalURL:      lan.GetLocalURL(),
-		Scheme:        lan.GetURLScheme(),
-		HostsFileLine: fmt.Sprintf("127.0.0.1 %s", saved.Host),
+		Host:           saved.Host,
+		Port:           saved.Port,
+		ProdPort:       saved.Port,
+		NonProdPort:    config.NonProdPort(saved.Port),
+		LocalURL:       lan.GetLocalURL(),
+		Scheme:         lan.GetURLScheme(),
+		HostsFileLine:  fmt.Sprintf("127.0.0.1 %s", saved.Host),
 		PendingRestart: pendingRestart,
 	}
 }

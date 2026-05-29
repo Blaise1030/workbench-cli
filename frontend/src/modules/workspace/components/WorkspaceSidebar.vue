@@ -28,10 +28,6 @@ import { useQuery } from "@tanstack/vue-query";
 import { isLocalHost } from "@/lib/is-local-host";
 import { cn } from "@/lib/utils";
 
-defineProps<{
-  activeWorktreeId?: string;
-}>();
-
 const STORAGE_KEY_EXPANDED_PROJECTS = "workbench:workspace-projects-expanded";
 
 const router = useRouter();
@@ -44,6 +40,10 @@ const expandedProjects = useLocalStorage<Record<string, boolean>>(
 
 const { data: projects } = useQuery(projectsQueryOptions());
 const pickProjectFolder = usePickProjectFolderMutation();
+
+defineProps<{
+  activeWorktreeId?: string;
+}>();
 
 watch(
   projects,
@@ -85,18 +85,6 @@ async function addProject() {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <div class="flex h-8 items-center justify-end px-3">
-      <div class="flex items-center gap-0.5">
-        <ThemeToggle />
-        <Button variant="ghost" size="icon-xs" as-child>
-          <RouterLink to="/settings" aria-label="Settings">
-            <SettingsIcon />
-            <span class="sr-only">Settings</span>
-          </RouterLink>
-        </Button>
-      </div>
-    </div>
-
     <p
       v-if="addProjectError"
       class="border-b px-3 py-2 text-xs text-destructive"
@@ -104,7 +92,17 @@ async function addProject() {
       {{ addProjectError }}
     </p>
 
-    <div class="min-h-0 flex-1 overflow-y-auto p-2">
+    <div class="flex h-8 shrink-0 items-center justify-end gap-0.5 px-2">
+      <ThemeToggle />
+      <Button variant="ghost" size="icon-xs" as-child>
+        <RouterLink to="/settings" aria-label="Settings">
+          <SettingsIcon />
+          <span class="sr-only">Settings</span>
+        </RouterLink>
+      </Button>
+    </div>
+
+    <div class="min-h-0 flex-1 overflow-y-auto px-2">
       <p
         v-if="!projects?.length"
         class="px-2 py-4 text-center text-sm text-muted-foreground"

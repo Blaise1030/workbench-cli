@@ -85,7 +85,9 @@ export default defineConfig({
     ],
   },
   build: {
+    // Monorepo: UI lands in repo-root dist/public (outside frontend/).
     outDir: "../dist/public",
+    emptyOutDir: true,
     target: "es2020",
     minify: "terser",
     cssMinify: true,
@@ -125,6 +127,9 @@ export default defineConfig({
       },
       onwarn(warning, warn) {
         if (warning.code === "SOURCEMAP_ERROR") return;
+        // @vueuse/core prebuilt dist — harmless misplaced #__PURE__ in dependency
+        if (warning.code === "INVALID_ANNOTATION") return;
+        if (warning.message?.includes("annotation that Rollup cannot interpret")) return;
         warn(warning);
       },
     },

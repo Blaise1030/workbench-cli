@@ -4,6 +4,7 @@ import {
   configDiffersFromRunning,
   hostsFileLine,
   loadNetworkConfig,
+  nonProdPort,
   saveNetworkConfig,
   type NetworkConfig,
   type PatchNetworkConfig,
@@ -19,6 +20,8 @@ export function buildNetworkSettings(lan: LanManager): NetworkSettings {
   return {
     host: saved.host,
     port: saved.port,
+    prodPort: saved.port,
+    nonProdPort: nonProdPort(saved.port),
     localUrl: lan.getLocalUrl(),
     scheme: lan.getUrlScheme(),
     hostsFileLine: hostsFileLine(saved.host),

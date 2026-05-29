@@ -21,6 +21,10 @@ export const networkSettingsSchema = z.object({
   /** Saved in ~/.workbench/config.json — applied on next restart. */
   host: z.string(),
   port: z.number().int(),
+  /** Configured prod port (default branch worktrees). */
+  prodPort: z.number().int(),
+  /** Port for non-default-branch worktrees (prodPort + offset). */
+  nonProdPort: z.number().int(),
   /** Currently running URL (may differ until restart). */
   localUrl: z.string(),
   scheme: z.enum(["http", "https"]),

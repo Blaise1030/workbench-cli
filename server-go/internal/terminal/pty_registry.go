@@ -249,10 +249,54 @@ func (reg *Registry) spawnPTY(terminalID string, e *ptyEntry, cols, rows uint16)
 	}
 	e.ptySide = ptm
 
-	// Goroutine: read PTY output → ring + fan-out to clients
-	// CRITICAL: never hold registry lock during PTY read
+	// dataCh carries raw PTY chunks to the coalescing goroutine.
+	// Blocking send provides natural backpressure so the reader never outruns the flusher.
+	dataCh := make(chan []byte, 128)
+
+	// Coalescing goroutine: accumulates chunks over a 2ms window then fan-out once.
+	// This mirrors node-pty's libuv behaviour where rapid writes are delivered as one callback.
 	go func() {
-		buf := make([]byte, 4096)
+		const window = 2 * time.Millisecond
+		ticker := time.NewTicker(window)
+		defer ticker.Stop()
+		var pending []byte
+
+		flush := func() {
+			if len(pending) == 0 {
+				return
+			}
+			data := pending
+			pending = nil
+			e.mu.Lock()
+			for c := range e.clients {
+				cp := make([]byte, len(data))
+				copy(cp, data)
+				select {
+				case c.send <- cp:
+				default:
+				}
+			}
+			e.mu.Unlock()
+		}
+
+		for {
+			select {
+			case chunk, ok := <-dataCh:
+				if !ok {
+					flush()
+					return
+				}
+				pending = append(pending, chunk...)
+			case <-ticker.C:
+				flush()
+			}
+		}
+	}()
+
+	// PTY read goroutine: reads output, updates ring + OSC state, feeds coalescer.
+	// CRITICAL: never hold registry lock during PTY read.
+	go func() {
+		buf := make([]byte, 32*1024)
 		for {
 			n, err := ptm.Read(buf)
 			if n > 0 {
@@ -268,20 +312,13 @@ func (reg *Registry) spawnPTY(terminalID string, e *ptyEntry, cols, rows uint16)
 					}
 				}
 
-				// Fan-out to all clients
-				e.mu.Lock()
-				for c := range e.clients {
-					select {
-					case c.send <- chunk:
-					default:
-					}
-				}
-				e.mu.Unlock()
+				dataCh <- chunk
 			}
 			if err != nil {
 				break
 			}
 		}
+		close(dataCh)
 
 		// PTY exited
 		e.mu.Lock()

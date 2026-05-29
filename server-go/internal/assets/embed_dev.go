@@ -2,12 +2,7 @@
 
 package assets
 
-import (
-	"io/fs"
-	"os"
-)
-
-var Public fs.FS
+import "os"
 
 const IsEmbedded = false
 

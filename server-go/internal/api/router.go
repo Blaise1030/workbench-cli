@@ -29,7 +29,9 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 			keybindings.RegisterRoutes(r, state.Session)
 		})
 
-		workspace.RegisterRoutes(r, state.DB, state.Session)
+		r.Group(func(r chi.Router) {
+				workspace.RegisterRoutes(r, state.DB, state.Session)
+			})
 	})
 
 	// WebSocket endpoint

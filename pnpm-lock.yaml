@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    optionalDependencies:
+      '@tailwindcss/oxide-darwin-arm64':
+        specifier: 4.3.0
+        version: 4.3.0
     devDependencies:
       '@codemirror/commands':
         specifier: ^6.10.3
@@ -2040,7 +2044,6 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
-    dev: true
     optional: true
 
   /@tailwindcss/oxide-darwin-x64@4.3.0:

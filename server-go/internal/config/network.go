@@ -9,7 +9,13 @@ import (
 const (
 	DefaultHost = "workbench.local"
 	DefaultPort = 4738
+	// NonProdPortOffset is added to the configured prod port for non-default-branch worktrees.
+	NonProdPortOffset = 1
 )
+
+func NonProdPort(prodPort int) int {
+	return prodPort + NonProdPortOffset
+}
 
 type NetworkConfig struct {
 	Host string `json:"host"`

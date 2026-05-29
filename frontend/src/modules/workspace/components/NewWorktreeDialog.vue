@@ -16,6 +16,11 @@ import {
   branchesQueryOptions,
   useCreateWorktreeMutation,
 } from "@/modules/workspace/queries";
+import {
+  navigateToWorktreeOnPortIfNeeded,
+  portForWorktreeBranch,
+} from "@/modules/workspace/lib/worktree-env";
+import { networkSettingsQueryOptions } from "@/modules/settings/queries/settings";
 import { useQuery } from "@tanstack/vue-query";
 
 const props = defineProps<{
@@ -33,6 +38,7 @@ const { data: branchData } = useQuery({
   ...branchesQueryOptions(() => props.projectId),
   enabled: computed(() => open.value && Boolean(props.projectId)),
 });
+const { data: network } = useQuery(networkSettingsQueryOptions());
 
 watch(
   () => branchData.value,
@@ -76,6 +82,12 @@ async function submit() {
     });
     open.value = false;
     localStorage.setItem("lastWorktreeId", worktree.id);
+    if (network.value) {
+      const targetPort = portForWorktreeBranch(false, network.value);
+      if (navigateToWorktreeOnPortIfNeeded(worktree.id, targetPort, network.value)) {
+        return;
+      }
+    }
     await router.push({
       name: "workspace",
       params: { worktreeId: worktree.id },

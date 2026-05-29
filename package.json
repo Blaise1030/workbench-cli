@@ -17,16 +17,15 @@
     "build:rust": "node scripts/build-rust.mjs",
     "start:rust": "server-rs/target/release/workbench-cli --host 127.0.0.1 --http",
     "test:rust:smoke": "node scripts/smoke-test-rust.mjs",
-    "build:go": "npm run build && cd server-go && go build -tags embed -ldflags='-s -w' -o ../bin/workbench-cli ./cmd/workbench-cli",
-    "dev:go": "cd server-go && go run ./cmd/workbench-cli --http",
+    "build:go": "node scripts/build-go.mjs",
+    "install:go": "node scripts/install-go-local.mjs",
+    "install:go:global": "node scripts/install-go-local.mjs --global",
+    "dev:go": "cd server-go && go run ./cmd/workbench-cli --http -p 4739",
     "test:go:smoke": "node scripts/test-go-smoke.mjs",
     "test:contract": "node scripts/contract-test.mjs",
     "benchmark": "node scripts/benchmark.mjs"
   },
   "devDependencies": {
-    "shiki": "^3.23.0",
-    "@shikijs/core": "^3.23.0",
-    "@shikijs/langs": "^3.23.0",
     "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-html": "^6.4.11",
@@ -47,6 +46,8 @@
     "@lucide/vue": "^1.16.0",
     "@pierre/diffs": "^1.2.2",
     "@pierre/trees": "^1.0.0-beta.4",
+    "@shikijs/core": "^3.23.0",
+    "@shikijs/langs": "^3.23.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/vue-query": "^5.100.13",
     "@tanstack/vue-table": "^8.21.3",
@@ -72,6 +73,7 @@
     "qrcode": "^1.5.4",
     "reka-ui": "^2.9.8",
     "shadcn-vue": "^2.7.3",
+    "shiki": "^3.23.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
     "terser": "^5.44.0",
@@ -88,5 +90,8 @@
     "vue-router": "^4.6.4",
     "vue-sonner": "^2.0.9",
     "zod": "^3.25.76"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-darwin-arm64": "4.3.0"
   }
 }

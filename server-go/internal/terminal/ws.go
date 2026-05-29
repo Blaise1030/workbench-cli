@@ -61,7 +61,7 @@ func WSHandler(session *auth.Session, db *sql.DB, registry *Registry) http.Handl
 		}
 
 		client := &clientConn{
-			send: make(chan []byte, 64),
+			send: make(chan []byte, 256),
 			done: make(chan struct{}),
 		}
 

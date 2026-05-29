@@ -85,8 +85,12 @@ router.beforeEach(async (to, from) => {
 
   if (to.meta.public) {
     if (to.name === "login" && isLocalHost()) {
-      await ensureLocalAuth();
-      return { name: "home" };
+      try {
+        await ensureLocalAuth();
+        return { name: "home" };
+      } catch {
+        return true;
+      }
     }
     return true;
   }
@@ -94,14 +98,11 @@ router.beforeEach(async (to, from) => {
   if (isLocalHost()) {
     try {
       await ensureLocalAuth();
-      await queryClient.ensureQueryData(lanSettingsQueryOptions());
-      return true;
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        return { name: "login", query: to.query };
-      }
-      throw err;
+      return { name: "login", query: to.query };
     }
+    queryClient.prefetchQuery(lanSettingsQueryOptions());
+    return true;
   }
 
   try {

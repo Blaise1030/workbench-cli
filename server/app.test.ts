@@ -192,6 +192,8 @@ describe("GET /api/settings/network", () => {
     const body = await res.json();
     expect(body.host).toBe("workbench.local");
     expect(body.port).toBe(4738);
+    expect(body.prodPort).toBe(4738);
+    expect(body.nonProdPort).toBe(4739);
     expect(body.localUrl).toMatch(/^https:\/\/workbench\.local:4738\//);
     expect(body.hostsFileLine).toBe("127.0.0.1 workbench.local");
   });
