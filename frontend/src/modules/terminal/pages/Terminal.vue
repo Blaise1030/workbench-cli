@@ -25,6 +25,9 @@ import {
 } from "@/modules/terminal/lib/terminal-drop";
 import { uploadWorkbenchDropAssets } from "@/modules/terminal/lib/upload-drop-assets";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
+import { useRouter } from "vue-router";
+import { useWorktreePanels } from "@/modules/workspace/lib/worktree-panels-storage";
+import { createFileLinkProvider } from "@/modules/terminal/lib/terminal-file-links";
 import { cn } from "@/lib/utils";
 
 const props = defineProps<{
@@ -44,6 +47,8 @@ let fitInterval: ReturnType<typeof setInterval> | null = null;
 
 const worktreeId = computed(() => route.params.worktreeId as string);
 const { data: worktree } = useQuery(worktreeQueryOptions(worktreeId));
+const router = useRouter();
+const panelsState = useWorktreePanels(worktreeId);
 const { data: fileTreePaths } = useQuery(fileTreeQueryOptions(worktreeId));
 
 const dropPathOptions = computed((): DropPathOptions | undefined => {
@@ -107,6 +112,20 @@ onMounted(async () => {
     }
 
     terminal.open(el);
+    terminal.registerLinkProvider(
+      createFileLinkProvider(
+        terminal,
+        () => worktree.value?.path ?? "",
+        (path) => {
+          panelsState.value = { ...panelsState.value, explorer: true };
+          void router.push({
+            name: "explorer",
+            params: { worktreeId: worktreeId.value },
+            query: { ...route.query, file: encodeURIComponent(path) },
+          });
+        },
+      ),
+    );
     fitAddon.fit();
 
     terminal.onData((data) => sessions.get(props.sessionId)?.sendInput(data));
