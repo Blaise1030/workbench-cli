@@ -42,7 +42,7 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
       <div class="row"><span class="label">INSTALL:</span></div>
       <div class="install-row">
         <span class="install-cmd" id="install-cmd">{installCmd}</span>
-        <button class="copy-btn" onclick="copyInstall()" aria-label="Copy install command">COPY</button>
+        <button class="copy-btn" aria-label="Copy install command">COPY</button>
       </div>
       <div class="list-item"><span class="dash"> -</span> <a href="https://blaise1030.github.io/workbench-cli/">Install options</a></div>
       <div class="list-item"><span class="dash"> -</span> <a href="https://github.com/Blaise1030/workbench-cli/releases">Releases</a></div>
@@ -182,16 +182,23 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
     </style>
 
     <script>
-      function copyInstall() {
-        const cmd = document.getElementById('install-cmd')?.textContent ?? '';
+      const btn = document.querySelector('.copy-btn') as HTMLButtonElement | null;
+      const cmdEl = document.getElementById('install-cmd');
+
+      btn?.addEventListener('click', () => {
+        const cmd = cmdEl?.textContent ?? '';
         navigator.clipboard.writeText(cmd).then(() => {
-          const btn = document.querySelector('.copy-btn');
           if (btn) {
             btn.textContent = 'COPIED';
             setTimeout(() => { btn.textContent = 'COPY'; }, 1500);
           }
+        }).catch(() => {
+          if (btn) {
+            btn.textContent = 'ERR';
+            setTimeout(() => { btn.textContent = 'COPY'; }, 1500);
+          }
         });
-      }
+      });
     </script>
   </body>
 </html>
