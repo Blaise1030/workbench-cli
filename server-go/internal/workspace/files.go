@@ -107,6 +107,77 @@ func ReadFile(worktreePath, relativePath string) (*FileContent, error) {
 	return &FileContent{Path: normalized, Content: string(buf), Truncated: truncated}, nil
 }
 
+// fuzzyScore returns a score > 0 if query matches path (subsequence match).
+// Higher score = better match (consecutive chars and filename matches rank higher).
+func fuzzyScore(path, query string) int {
+	if query == "" {
+		return 0
+	}
+	lPath := strings.ToLower(path)
+	lQuery := strings.ToLower(query)
+
+	// Check subsequence match
+	pi, qi := 0, 0
+	for pi < len(lPath) && qi < len(lQuery) {
+		if lPath[pi] == lQuery[qi] {
+			qi++
+		}
+		pi++
+	}
+	if qi < len(lQuery) {
+		return 0 // not a match
+	}
+
+	score := 1
+	// Bonus: query is a substring
+	if strings.Contains(lPath, lQuery) {
+		score += 10
+	}
+	// Bonus: filename (last segment) contains query as substring
+	filename := strings.ToLower(filepath.Base(path))
+	if strings.Contains(filename, lQuery) {
+		score += 20
+	}
+	// Bonus: filename starts with query
+	if strings.HasPrefix(filename, lQuery) {
+		score += 10
+	}
+	return score
+}
+
+func SearchFiles(worktreePath, query string, limit int) ([]string, error) {
+	all, err := ListFiles(worktreePath)
+	if err != nil {
+		return nil, err
+	}
+	type scored struct {
+		path  string
+		score int
+	}
+	var matches []scored
+	for _, p := range all {
+		if s := fuzzyScore(p, query); s > 0 {
+			matches = append(matches, scored{p, s})
+		}
+	}
+	// Sort by score descending
+	for i := 0; i < len(matches); i++ {
+		for j := i + 1; j < len(matches); j++ {
+			if matches[j].score > matches[i].score {
+				matches[i], matches[j] = matches[j], matches[i]
+			}
+		}
+	}
+	if limit > 0 && len(matches) > limit {
+		matches = matches[:limit]
+	}
+	paths := make([]string, len(matches))
+	for i, m := range matches {
+		paths[i] = m.path
+	}
+	return paths, nil
+}
+
 func WriteFile(worktreePath, relativePath, content string) error {
 	normalized := strings.ReplaceAll(relativePath, "\\", "/")
 	normalized = strings.TrimLeft(normalized, "/")

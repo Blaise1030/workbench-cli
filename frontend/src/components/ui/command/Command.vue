@@ -7,7 +7,7 @@ import { reactive, ref, watch } from 'vue'
 import { cn } from '@/lib/utils'
 import { provideCommandContext } from '.'
 
-const props = withDefaults(defineProps<ListboxRootProps & { class?: HTMLAttributes['class'] }>(), {
+const props = withDefaults(defineProps<ListboxRootProps & { class?: HTMLAttributes['class'], disableFilter?: boolean }>(), {
   modelValue: '',
 })
 
@@ -34,9 +34,10 @@ const filterState = reactive({
 })
 
 function filterItems() {
-  if (!filterState.search) {
+  if (!filterState.search || props.disableFilter) {
     filterState.filtered.count = allItems.value.size
-    // Do nothing, each item will know to show itself because search is empty
+    filterState.filtered.items.forEach((_, key) => filterState.filtered.items.set(key, 1))
+    filterState.filtered.groups = new Set(allGroups.value.keys())
     return
   }
 
@@ -66,6 +67,10 @@ function filterItems() {
 }
 
 watch(() => filterState.search, () => {
+  filterItems()
+})
+
+watch(allGroups, () => {
   filterItems()
 })
 

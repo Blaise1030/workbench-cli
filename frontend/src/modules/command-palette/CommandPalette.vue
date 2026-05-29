@@ -108,7 +108,7 @@ const GROUP_HEADING_CLASS =
   "p-0! [&_[data-slot=command-group-heading]]:px-2 [&_[data-slot=command-group-heading]]:py-1 [&_[data-slot=command-group-heading]]:text-xs [&_[data-slot=command-group-heading]]:font-medium [&_[data-slot=command-group-heading]]:text-muted-foreground";
 
 const ITEM_CLASS =
-  "py-1.5! px-2! rounded-lg! data-highlighted:bg-muted! data-highlighted:text-foreground! focus:bg-muted! focus:text-foreground!";
+  "py-1.5! px-2! rounded-lg! data-highlighted:bg-muted! data-highlighted:text-foreground! hover:bg-muted hover:text-foreground";
 </script>
 
 <template>
@@ -125,7 +125,7 @@ const ITEM_CLASS =
           @keydown.esc="handleOpenChange(false)"
           @keydown.enter="handleEnterFallback"
         >
-          <Command class="rounded-none! bg-transparent! p-0! h-auto!">
+          <Command class="rounded-none! bg-transparent! p-0! h-auto!" :disable-filter="isFileMode">
             <CommandFilterBridge />
 
             <!-- Search input row — CommandInput keeps ListboxFilter wired to the
