@@ -11,3 +11,4 @@ server-go/internal/assets/public/
 .idea/
 node-compile-cache/
 tsx-501
+.playwright-mcp/
