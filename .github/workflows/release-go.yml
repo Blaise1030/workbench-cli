@@ -1,60 +1,172 @@
-name: Release Go binaries
+name: Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
-    runs-on: ubuntu-latest
+    name: Build ${{ matrix.name }}
     strategy:
+      fail-fast: false
       matrix:
-        goos: [darwin, linux]
-        goarch: [arm64, amd64]
+        include:
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+            name: workbench-cli-linux-x86_64
+          - goos: linux
+            goarch: arm64
+            runner: ubuntu-latest
+            name: workbench-cli-linux-aarch64
+          - goos: darwin
+            goarch: amd64
+            runner: macos-latest
+            name: workbench-cli-macos-x86_64
+          - goos: darwin
+            goarch: arm64
+            runner: macos-latest
+            name: workbench-cli-macos-aarch64
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches package version
+        if: github.event_name == 'push'
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "error: tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: server-go/go.mod
+          cache-dependency-path: server-go/go.sum
 
-      - name: Install pnpm dependencies
-        run: npm install -g pnpm && pnpm install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build frontend
         run: pnpm run build
+
+      - name: Stage UI for go:embed
+        run: |
+          rm -rf server-go/internal/assets/public
+          mkdir -p server-go/internal/assets/public
+          cp -R dist/public server-go/internal/assets/public
 
       - name: Build Go binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
+          CGO_ENABLED: "0"
         run: |
+          mkdir -p dist
           cd server-go
           go build \
             -tags embed \
-            -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
-            -o ../dist/workbench-cli-${{ matrix.goos }}-${{ matrix.goarch }} \
+            -ldflags="-s -w" \
+            -o "../dist/${{ matrix.name }}" \
             ./cmd/workbench-cli
 
-      - name: Create tarball
+      - name: Package tarball
         run: |
+          chmod +x "dist/${{ matrix.name }}"
           cd dist
-          tar czf workbench-cli-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz \
-            workbench-cli-${{ matrix.goos }}-${{ matrix.goarch }}
+          tar czf "${{ matrix.name }}.tar.gz" "${{ matrix.name }}"
 
-      - name: Upload release asset
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: dist/${{ matrix.name }}.tar.gz
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/workbench-cli-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+          generate_release_notes: true
+          files: artifacts/*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pages:
+    name: Update install manifest (GitHub Pages)
+    needs: release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate latest.json
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: node scripts/generate-latest-json.mjs
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

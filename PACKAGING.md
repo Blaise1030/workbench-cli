@@ -71,6 +71,18 @@ On tag `v*`, `.github/workflows/release-go.yml` builds matrix:
 
 Each tarball contains a single executable. Attach to GitHub Releases with `softprops/action-gh-release`.
 
+### Install via GitHub Pages (Herdr-style)
+
+After the first release, enable **GitHub Pages** in the repo settings: **Source → GitHub Actions**.
+
+Users install with:
+
+```bash
+curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh
+```
+
+The install script reads `latest.json` from the same Pages site; that manifest is regenerated on every `v*` tag release (`.github/workflows/release-go.yml` → `pages` job).
+
 ## Node tarball (legacy — ~80–140 MB)
 
 > **Status:** The Node packaging path below is superseded by the Go binary above.
