@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"database/sql"
+	"path/filepath"
 	"time"
 
 	"github.com/google/uuid"
@@ -210,6 +211,23 @@ func DeleteWorktree(db *sql.DB, id string) error {
 	}
 	if w == nil {
 		return &WorktreeError{Msg: "Worktree not found", Status: 404}
+	}
+	p, err := GetProject(db, w.ProjectID)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return &ProjectError{Msg: "Project not found", Status: 404}
+	}
+	repoPath := filepath.Clean(p.RepoPath)
+	wtPath := filepath.Clean(w.Path)
+	if repoPath == wtPath {
+		return &WorktreeError{Msg: "Cannot remove the main worktree", Status: 400}
+	}
+	if git.WorktreePathExists(w.Path) {
+		if err := git.RemoveWorktree(p.RepoPath, w.Path, true); err != nil {
+			return &WorktreeError{Msg: err.Error(), Status: 400}
+		}
 	}
 	_, err = db.Exec(`DELETE FROM worktrees WHERE id = ?`, id)
 	return err

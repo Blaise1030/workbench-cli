@@ -16,6 +16,14 @@ const router = useRouter();
 
 const worktreeId = computed(() => route.params.worktreeId as string | undefined);
 
+watch(
+  worktreeId,
+  (id) => {
+    if (id) localStorage.setItem("lastWorktreeId", id);
+  },
+  { immediate: true },
+);
+
 useGlobalWorkspaceKeybindings(worktreeId);
 
 const { data: projects } = useQuery(projectsQueryOptions());

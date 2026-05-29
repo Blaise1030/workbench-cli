@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 import { GitBranchIcon, Trash2Icon } from "@lucide/vue";
 import {
   SidebarMenuSub,
@@ -14,17 +13,12 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
-  branchesQueryOptions,
   useDeleteWorktreeMutation,
   worktreesQueryOptions,
   type Worktree,
 } from "@/modules/workspace/queries";
-import {
-  isProdWorktreeBranch,
-  navigateToWorktreeOnPortIfNeeded,
-  portForWorktreeBranch,
-} from "@/modules/workspace/lib/worktree-env";
-import { networkSettingsQueryOptions } from "@/modules/settings/queries/settings";
+import { worktreePath } from "@/modules/workspace/lib/worktree-env";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import NewWorktreeDialog from "@/modules/workspace/components/NewWorktreeDialog.vue";
 
@@ -33,43 +27,26 @@ const props = defineProps<{
   activeWorktreeId?: string;
 }>();
 
-const emit = defineEmits<{
-  select: [worktree: Worktree];
-}>();
-
 const router = useRouter();
 
 const { data: worktrees } = useQuery(
   worktreesQueryOptions(() => props.projectId),
 );
-const { data: branchData } = useQuery(
-  branchesQueryOptions(() => props.projectId),
-);
-const { data: network } = useQuery(networkSettingsQueryOptions());
 const deleteWorktree = useDeleteWorktreeMutation(() => props.projectId);
-
-const defaultBranch = computed(() => branchData.value?.defaultBranch ?? "main");
 
 function label(w: Worktree) {
   return w.branch ?? w.path.split("/").pop() ?? "worktree";
 }
 
-function selectWorktree(w: Worktree) {
-  if (network.value) {
-    const targetPort = portForWorktreeBranch(
-      isProdWorktreeBranch(w.branch, defaultBranch.value),
-      network.value,
-    );
-    if (navigateToWorktreeOnPortIfNeeded(w.id, targetPort)) return;
-  }
-  emit("select", w);
+function rememberWorktree(worktreeId: string) {
+  localStorage.setItem("lastWorktreeId", worktreeId);
 }
 
 async function removeWorktree(w: Worktree) {
   const name = label(w);
   if (
     !window.confirm(
-      `Remove "${name}" from this project? Saved terminals will be removed. Files on disk are not deleted.`,
+      `Remove "${name}"? This deletes the git worktree on disk and removes its saved terminals.`,
     )
   ) {
     return;
@@ -85,7 +62,8 @@ async function removeWorktree(w: Worktree) {
     if (wasActive) {
       localStorage.removeItem("lastWorktreeId");
       if (siblings[0]) {
-        selectWorktree(siblings[0]);
+        rememberWorktree(siblings[0].id);
+        await router.push(worktreePath(siblings[0].id));
       } else {
         await router.push({ name: "home" });
       }
@@ -104,20 +82,25 @@ async function removeWorktree(w: Worktree) {
       <ContextMenu>
         <ContextMenuTrigger as-child>
           <SidebarMenuSubButton
-            as="button"
-            type="button"
+            as-child
             :is-active="activeWorktreeId === w.id"
-            :class="!w.isLinked && 'opacity-60'"
-            @click="selectWorktree(w)"
+            :class="
+              cn(
+                'w-fit max-w-full whitespace-nowrap [&>span:last-child]:truncate-none',
+                !w.isLinked && 'opacity-60',
+              )
+            "
           >
-            <GitBranchIcon />
-            <span>{{ label(w) }}</span>
-            <span
-              v-if="!w.isLinked"
-              class="ml-auto text-[10px] uppercase text-muted-foreground"
-            >
-              missing
-            </span>
+            <RouterLink :to="worktreePath(w.id)" @click="rememberWorktree(w.id)">
+              <GitBranchIcon />
+              <span>{{ label(w) }}</span>
+              <span
+                v-if="!w.isLinked"
+                class="text-[10px] uppercase text-muted-foreground"
+              >
+                missing
+              </span>
+            </RouterLink>
           </SidebarMenuSubButton>
         </ContextMenuTrigger>
         <ContextMenuContent>

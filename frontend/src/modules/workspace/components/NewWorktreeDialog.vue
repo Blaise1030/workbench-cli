@@ -16,12 +16,7 @@ import {
   branchesQueryOptions,
   useCreateWorktreeMutation,
 } from "@/modules/workspace/queries";
-import {
-  navigateToWorktreeOnPortIfNeeded,
-  portForWorktreeBranch,
-  worktreePath,
-} from "@/modules/workspace/lib/worktree-env";
-import { networkSettingsQueryOptions } from "@/modules/settings/queries/settings";
+import { worktreePath } from "@/modules/workspace/lib/worktree-env";
 import { useQuery } from "@tanstack/vue-query";
 
 const props = defineProps<{
@@ -39,8 +34,6 @@ const { data: branchData } = useQuery({
   ...branchesQueryOptions(() => props.projectId),
   enabled: computed(() => open.value && Boolean(props.projectId)),
 });
-const { data: network } = useQuery(networkSettingsQueryOptions());
-
 watch(
   () => branchData.value,
   (data) => {
@@ -83,12 +76,6 @@ async function submit() {
     });
     open.value = false;
     localStorage.setItem("lastWorktreeId", worktree.id);
-    if (network.value) {
-      const targetPort = portForWorktreeBranch(false, network.value);
-      if (navigateToWorktreeOnPortIfNeeded(worktree.id, targetPort)) {
-        return;
-      }
-    }
     await router.push(worktreePath(worktree.id));
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to create worktree";
@@ -103,7 +90,7 @@ async function submit() {
         as="button"
         type="button"
         size="sm"
-        class="text-muted-foreground"
+        class="w-fit max-w-full whitespace-nowrap text-muted-foreground [&>span:last-child]:truncate-none"
       >
         <PlusIcon class="stroke-muted-foreground" />
         <span>New worktree</span>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLocalStorage } from "@vueuse/core";
 import { ref, watch } from "vue";
-import { useRouter, RouterLink } from "vue-router";
+import { RouterLink } from "vue-router";
 import {
   ChevronRightIcon,
   FolderGit2Icon,
@@ -22,7 +22,6 @@ import SidebarMenuButtonChild from "@/components/ui/sidebar/SidebarMenuButtonChi
 import {
   projectsQueryOptions,
   usePickProjectFolderMutation,
-  type Worktree,
 } from "@/modules/workspace/queries";
 import { useQuery } from "@tanstack/vue-query";
 import { isLocalHost } from "@/lib/is-local-host";
@@ -30,7 +29,6 @@ import { cn } from "@/lib/utils";
 
 const STORAGE_KEY_EXPANDED_PROJECTS = "workbench:workspace-projects-expanded";
 
-const router = useRouter();
 const addProjectOpen = ref(false);
 const addProjectError = ref("");
 const expandedProjects = useLocalStorage<Record<string, boolean>>(
@@ -60,11 +58,6 @@ watch(
 
 function setExpanded(projectId: string, open: boolean) {
   expandedProjects.value = { ...expandedProjects.value, [projectId]: open };
-}
-
-function selectWorktree(worktree: Worktree) {
-  localStorage.setItem("lastWorktreeId", worktree.id);
-  router.push({ name: "workspace", params: { worktreeId: worktree.id } });
 }
 
 async function addProject() {
@@ -138,7 +131,6 @@ async function addProject() {
               <ProjectWorktrees
                 :project-id="project.id"
                 :active-worktree-id="activeWorktreeId"
-                @select="selectWorktree"
               />
             </CollapsibleContent>
           </Collapsible>

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import type { AppDatabase } from "../../db/index.js";
 import { worktrees } from "../../db/schema.js";
@@ -8,6 +9,7 @@ import {
   listWorktrees as gitListWorktrees,
   worktreePathExists,
 } from "../git/worktree-list.js";
+import { removeWorktree as gitRemoveWorktree } from "../git/worktree-remove.js";
 import { getProject, ProjectError } from "./projects.js";
 
 export class WorktreeError extends Error {
@@ -133,5 +135,24 @@ export async function createWorktreeForProject(
 export async function deleteWorktree(db: AppDatabase["db"], id: string) {
   const row = await getWorktree(db, id);
   if (!row) throw new WorktreeError("Worktree not found", 404);
+
+  const project = await getProject(db, row.projectId);
+  if (!project) throw new WorktreeError("Project not found", 404);
+
+  if (resolve(project.repoPath) === resolve(row.path)) {
+    throw new WorktreeError("Cannot remove the main worktree", 400);
+  }
+
+  if (worktreePathExists(row.path)) {
+    try {
+      gitRemoveWorktree(project.repoPath, row.path, { force: true });
+    } catch (err) {
+      if (err instanceof GitError) {
+        throw new WorktreeError(err.message);
+      }
+      throw err;
+    }
+  }
+
   await db.delete(worktrees).where(eq(worktrees.id, id));
 }
