@@ -8,7 +8,7 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	handler := Health("0.1.0")
+	handler := Health("0.1.1")
 	req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
 	rr := httptest.NewRecorder()
 
@@ -31,7 +31,7 @@ func TestHealth(t *testing.T) {
 	if resp.Server != "go" {
 		t.Errorf("expected server=go, got %s", resp.Server)
 	}
-	if resp.Version != "0.1.0" {
-		t.Errorf("expected version=0.1.0, got %s", resp.Version)
+	if resp.Version != "0.1.1" {
+		t.Errorf("expected version=0.1.1, got %s", resp.Version)
 	}
 }

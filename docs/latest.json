@@ -1,9 +1,9 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "assets": {
-    "linux-x86_64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.0/workbench-cli-linux-x86_64.tar.gz",
-    "linux-aarch64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.0/workbench-cli-linux-aarch64.tar.gz",
-    "macos-x86_64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.0/workbench-cli-macos-x86_64.tar.gz",
-    "macos-aarch64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.0/workbench-cli-macos-aarch64.tar.gz"
+    "linux-x86_64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.1/workbench-cli-linux-x86_64.tar.gz",
+    "linux-aarch64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.1/workbench-cli-linux-aarch64.tar.gz",
+    "macos-x86_64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.1/workbench-cli-macos-x86_64.tar.gz",
+    "macos-aarch64": "https://github.com/Blaise1030/workbench-cli/releases/download/v0.1.1/workbench-cli-macos-aarch64.tar.gz"
   }
 }

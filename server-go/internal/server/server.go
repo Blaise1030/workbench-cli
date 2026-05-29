@@ -20,7 +20,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/tlsutil"
 )
 
-const version = "0.1.0"
+const version = "0.1.1"
 
 type Config struct {
 	Port      int
