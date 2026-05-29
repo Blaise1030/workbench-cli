@@ -7,6 +7,8 @@ on:
       - "docs/**"
       - "scripts/generate-latest-json.mjs"
       - ".github/workflows/pages.yml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +30,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate latest.json from release
+        if: github.event_name == 'release'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/generate-latest-json.mjs
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
