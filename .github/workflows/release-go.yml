@@ -75,7 +75,8 @@ jobs:
         run: |
           rm -rf server-go/internal/assets/public
           mkdir -p server-go/internal/assets/public
-          cp -R dist/public server-go/internal/assets/public
+          cp -R dist/public/. server-go/internal/assets/public/
+          test -f server-go/internal/assets/public/index.html
 
       - name: Build Go binary
         env:

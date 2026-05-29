@@ -5,7 +5,7 @@
  *   node scripts/build-go.mjs --skip-ui   # reuse existing dist/public
  */
 import { execFileSync } from "node:child_process";
-import { chmodSync, cpSync, existsSync, mkdirSync, rmSync, statSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -31,7 +31,14 @@ if (!skipUi) {
 console.log("Staging UI for go:embed …");
 rmSync(embedPublic, { recursive: true, force: true });
 mkdirSync(embedPublic, { recursive: true });
-cpSync(join(root, "dist/public"), embedPublic, { recursive: true });
+// Copy contents (not the folder itself) so go:embed sees public/index.html
+for (const entry of readdirSync(join(root, "dist/public"))) {
+  cpSync(join(root, "dist/public", entry), join(embedPublic, entry), { recursive: true });
+}
+if (!existsSync(join(embedPublic, "index.html"))) {
+  console.error("Missing index.html after staging UI for go:embed.");
+  process.exit(1);
+}
 
 mkdirSync(join(root, "bin"), { recursive: true });
 
