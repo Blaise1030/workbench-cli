@@ -24,7 +24,7 @@ export function extractFilePaths(lineText: string, worktreePath: string): FileLi
   const results: FileLinkMatch[] = [];
 
   for (const match of lineText.matchAll(new RegExp(PATH_RE.source, "g"))) {
-    const raw = match[0];
+    const raw = match[0].replace(/:+$/, "");
     const clean = raw.replace(LINE_COL_RE, "");
     if (!clean.startsWith(prefix)) continue;
     const startX = match.index!;

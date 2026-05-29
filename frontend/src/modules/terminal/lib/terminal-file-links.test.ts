@@ -46,6 +46,7 @@ describe("extractFilePaths", () => {
     expect(results).toHaveLength(1);
     expect(results[0].path).toBe("/home/user/project/src/app.ts");
     expect(results[0].startX).toBe(prefix.length);
+    expect(results[0].endX).toBe(prefix.length + "/home/user/project/src/app.ts:10:5".length);
   });
 
   it("returns multiple paths found on the same line", () => {
