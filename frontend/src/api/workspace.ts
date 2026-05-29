@@ -10,6 +10,7 @@ export {
   useRegisterProjectMutation,
   usePickProjectFolderMutation,
   useCreateWorktreeMutation,
+  useDeleteWorktreeMutation,
 } from "@/modules/workspace/queries/projects";
 export type {
   GitFileStatusCode,

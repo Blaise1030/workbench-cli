@@ -4,6 +4,8 @@ import {
   XIcon,
   SaveIcon,
   LoaderIcon,
+  EyeIcon,
+  CodeIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
 } from "@lucide/vue";
@@ -18,6 +20,7 @@ const props = defineProps<{
   dirtyPaths?: Set<string>;
   isSaving?: boolean;
   treeCollapsed?: boolean;
+  markdownPreview?: boolean;
 }>();
 
 const tabListEl = ref<HTMLElement | null>(null);
@@ -40,6 +43,7 @@ const emit = defineEmits<{
   close: [relativePath: string];
   save: [];
   toggleTree: [];
+  toggleMarkdownPreview: [];
 }>();
 
 const canSave = computed(
@@ -48,10 +52,14 @@ const canSave = computed(
     (props.dirtyPaths?.has(props.activePath) ?? false),
 );
 
+const isMarkdownActive = computed(
+  () => props.activePath != null && props.activePath.endsWith(".md"),
+);
+
 function tabClass(relativePath: string) {
   const isActive = relativePath === props.activePath;
   return cn(
-    "group inline-flex h-7 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-md px-2 text-[0.8125rem] leading-none transition-colors",
+    "group inline-flex h-6 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-md px-1 text-[0.8rem] leading-none transition-colors",
     isActive
       ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
       : "bg-muted/40 opacity-50 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
@@ -70,13 +78,13 @@ function closeClass(relativePath: string) {
 <template>
   <div
     v-if="tabs.length > 0"
-    class="flex min-h-9 shrink-0 items-center gap-1 px-2 py-1"
+    class="flex shrink-0 items-center gap-1 px-2 py-0.5"
     role="tablist"
     aria-label="Open files"
   >
     <div
       ref="tabListEl"
-      class="flex min-w-0 flex-1 p-0.5 pe-0 items-center gap-1 relative overflow-x-auto"
+      class="flex min-w-0 flex-1 ps-0.5 pe-0 items-center gap-1 relative overflow-x-auto"
     >
       <button
         v-for="relativePath in tabs"
@@ -123,6 +131,17 @@ function closeClass(relativePath: string) {
       <LoaderIcon v-if="isSaving" class="animate-spin" />
       <SaveIcon v-else />
       Save
+    </Button>
+    <Button
+      v-if="isMarkdownActive"
+      variant="ghost"
+      size="icon-xs"
+      :aria-label="markdownPreview ? 'Switch to editor' : 'Switch to preview'"
+      :class="markdownPreview ? 'text-foreground' : 'text-muted-foreground'"
+      @click="emit('toggleMarkdownPreview')"
+    >
+      <EyeIcon v-if="!markdownPreview" class="size-3.5" />
+      <CodeIcon v-else class="size-3.5" />
     </Button>
     <Button
       variant="ghost"

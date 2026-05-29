@@ -9,4 +9,5 @@ export {
   useRegisterProjectMutation,
   usePickProjectFolderMutation,
   useCreateWorktreeMutation,
+  useDeleteWorktreeMutation,
 } from "./projects";

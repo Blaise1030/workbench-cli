@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import { computed, defineComponent, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { FileIcon, SearchIcon } from "@lucide/vue";
+import { useQuery } from "@tanstack/vue-query";
+import { FileIcon, LoaderIcon, SearchIcon } from "@lucide/vue";
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandSeparator, useCommand } from "@/components/ui/command";
 import { Kbd } from "@/components/ui/kbd";
-import { closeCommandPalette } from "./useCommandPalette";
+import { closeCommandPalette, savedInput, pendingInitialInput, recentFiles, addRecentFile } from "./useCommandPalette";
 import { COMMANDS } from "./commands";
 import { useFileSearch } from "./useFileSearch";
+import { useContentSearch } from "./useContentSearch";
 import { useKeybindingsQuery } from "@/modules/keyboard/queries/keybindings";
+import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import { chordLabel } from "@/modules/keyboard/chord";
 import { KEYBINDING_OPTIONS } from "@/modules/keyboard/options";
 import type { RouteLocationRaw } from "vue-router";
 import type { KeybindingAction } from "@/modules/keyboard/types";
+
+// Exposes a setter into the Command's filterState so the parent can seed the
+// initial search value after the Command mounts (filterState lives inside Command).
+const setSearch = ref<((v: string) => void) | null>(null);
 
 // Syncs filterState.search (driven by CommandInput) → `input` ref so the
 // parent can detect @-file mode without needing to access the Command context.
@@ -19,6 +26,7 @@ const CommandFilterBridge = defineComponent({
   setup() {
     const { filterState } = useCommand();
     watch(() => filterState.search, (v) => { input.value = v; });
+    setSearch.value = (v: string) => { filterState.search = v; };
     return () => null;
   },
 });
@@ -42,8 +50,13 @@ let closing = false;
 
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
+    const initial = pendingInitialInput.value || savedInput.value;
+    pendingInitialInput.value = "";
     closing = false;
+    // Sync immediately so isFileMode computed is correct before render.
+    input.value = initial;
     nextTick(() => {
+      if (initial) setSearch.value?.(initial);
       paletteRef.value?.querySelector<HTMLInputElement>("[data-slot=command-input]")?.focus();
     });
   }
@@ -51,14 +64,34 @@ watch(() => props.open, (isOpen) => {
 
 const isFileMode = computed(() => input.value.startsWith("@"));
 const fileQuery = computed(() => (isFileMode.value ? input.value.slice(1) : ""));
+const isContentMode = computed(() => !isFileMode.value && input.value.startsWith(">"));
+const contentQuery = computed(() => (isContentMode.value ? input.value.slice(1).trim() : ""));
 
 const worktreeIdRef = computed(() => props.worktreeId);
 const { results: fileResults, isLoading: fileLoading } = useFileSearch(worktreeIdRef, fileQuery);
+const { results: contentResults, isLoading: contentLoading, resultCount: contentResultCount } = useContentSearch(worktreeIdRef, contentQuery);
+const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId ?? ""));
+
+function fileName(path: string) { return path.split("/").at(-1) ?? path; }
+function fileDirname(path: string) { const i = path.lastIndexOf("/"); return i >= 0 ? path.slice(0, i) : ""; }
+function highlightMatch(text: string, query: string) {
+  const i = text.toLowerCase().indexOf(query.toLowerCase());
+  if (i === -1) return { before: text.trimEnd(), match: "", after: "" };
+  return { before: text.slice(0, i), match: text.slice(i, i + query.length), after: text.slice(i + query.length).trimEnd() };
+}
+function fullFilePath(relativePath: string) {
+  const base = worktree.value?.path ?? "";
+  return base ? `${base}/${relativePath}` : relativePath;
+}
+
+const visibleRecentFiles = computed(() =>
+  recentFiles.value.filter((p) => props.worktreeId),
+);
 
 const { data: keybindings } = useKeybindingsQuery();
 
 const filteredCommands = computed(() => {
-  const q = isFileMode.value ? "" : input.value.toLowerCase();
+  const q = (isFileMode.value || isContentMode.value) ? "" : input.value.toLowerCase();
   return COMMANDS.filter((cmd) => {
     if (cmd.type === "navigate" && cmd.requiresWorktree && !props.worktreeId) return false;
     return !q || cmd.label.toLowerCase().includes(q);
@@ -80,7 +113,7 @@ function handleOpenChange(value: boolean) {
   if (!value) {
     if (closing) return;
     closing = true;
-    input.value = "";
+    savedInput.value = input.value;
     closeCommandPalette();
     nextTick(() => { closing = false; });
   }
@@ -90,6 +123,11 @@ function handleOpenChange(value: boolean) {
 function navigateTo(to: RouteLocationRaw) {
   router.push(to);
   handleOpenChange(false);
+}
+
+function openFile(relativePath: string) {
+  addRecentFile(relativePath);
+  navigateTo({ name: "explorer", params: { worktreeId: props.worktreeId }, query: { file: encodeURIComponent(fullFilePath(relativePath)) } });
 }
 
 function handleAction(key: string) {
@@ -125,7 +163,7 @@ const ITEM_CLASS =
           @keydown.esc="handleOpenChange(false)"
           @keydown.enter="handleEnterFallback"
         >
-          <Command class="rounded-none! bg-transparent! p-0! h-auto!" :disable-filter="isFileMode">
+          <Command class="rounded-none! bg-transparent! p-0! h-auto!" :disable-filter="isFileMode || isContentMode">
             <CommandFilterBridge />
 
             <!-- Search input row — CommandInput keeps ListboxFilter wired to the
@@ -141,11 +179,18 @@ const ITEM_CLASS =
                      [&_[data-slot=input-group]]:h-auto!
                      [&_[data-slot=input-group-addon]]:hidden"
             >
-              <SearchIcon class="size-4 shrink-0 text-muted-foreground" />
+              <SearchIcon v-if="!contentLoading" class="size-4 shrink-0 text-muted-foreground" />
+              <LoaderIcon v-else class="size-4 shrink-0 text-muted-foreground animate-spin" />
               <CommandInput
-                placeholder="Type a command or @filename..."
+                placeholder="Type a command, @filename, or >search content..."
                 class="py-3!"
               />
+            </div>
+            <div
+              v-if="isContentMode && contentQuery && !contentLoading && contentResults.length > 0"
+              class="px-3 py-1 text-xs text-muted-foreground border-b border-border/50"
+            >
+              {{ contentResultCount }} result{{ contentResultCount === 1 ? '' : 's' }}
             </div>
 
             <!-- Scrollable list with gradient fade -->
@@ -155,28 +200,91 @@ const ITEM_CLASS =
               <div
                 class="sticky top-0 inset-x-0 h-2 bg-gradient-to-t from-popover to-transparent pointer-events-none rounded-b-xl"
               />
-                <!-- File mode -->
-                <template v-if="isFileMode">
+                <!-- Content search mode -->
+                <template v-if="isContentMode">
                   <div
-                    v-if="!fileResults.length"
+                    v-if="!contentResults.length"
                     class="py-6 text-center text-xs text-muted-foreground"
                   >
                     <span v-if="!worktreeId">No active worktree</span>
-                    <span v-else-if="fileLoading">Searching...</span>
-                    <span v-else>No files found</span>
+                    <span v-else-if="!contentQuery">Type to search file contents</span>
+                    <span v-else-if="contentLoading">Searching...</span>
+                    <span v-else>No results found</span>
                   </div>
-                  <CommandGroup v-if="fileResults.length" heading="Files" :class="GROUP_HEADING_CLASS">
+                  <CommandGroup v-if="contentResults.length" heading="In files" :class="GROUP_HEADING_CLASS">
                     <CommandItem
-                      v-for="path in fileResults"
-                      :key="path"
-                      :value="path"
+                      v-for="match in contentResults"
+                      :key="`${match.file}:${match.line}`"
+                      :value="`${match.file}:${match.line}`"
                       :class="ITEM_CLASS"
-                      @select="() => navigateTo({ name: 'explorer', params: { worktreeId }, query: { file: encodeURIComponent(path) } })"
+                      @select="() => openFile(match.file)"
                     >
-                      <FileIcon class="size-4 shrink-0 text-muted-foreground" />
-                      <span class="truncate text-sm">{{ path }}</span>
+                      <div class="flex flex-col gap-0.5 min-w-0 w-full">
+                        <div class="flex items-center gap-2">
+                          <span class="text-sm shrink-0 truncate">{{ fileName(match.file) }}</span>
+                          <span class="text-xs text-muted-foreground shrink-0">:{{ match.line }}</span>
+                          <span class="truncate text-xs text-muted-foreground">{{ fileDirname(match.file) }}</span>
+                        </div>
+                        <div class="text-xs font-mono text-muted-foreground truncate">
+                          <span>{{ highlightMatch(match.text, contentQuery).before }}</span>
+                          <mark class="bg-yellow-200/30 text-foreground rounded-sm not-italic">{{ highlightMatch(match.text, contentQuery).match }}</mark>
+                          <span>{{ highlightMatch(match.text, contentQuery).after }}</span>
+                        </div>
+                      </div>
                     </CommandItem>
                   </CommandGroup>
+                </template>
+
+                <!-- File mode -->
+                <template v-else-if="isFileMode">
+                  <!-- Empty query: show recents -->
+                  <template v-if="!fileQuery">
+                    <div
+                      v-if="!visibleRecentFiles.length"
+                      class="py-6 text-center text-xs text-muted-foreground"
+                    >
+                      <span v-if="!worktreeId">No active worktree</span>
+                      <span v-else>Type to search files</span>
+                    </div>
+                    <CommandGroup v-if="visibleRecentFiles.length" heading="Recent" :class="GROUP_HEADING_CLASS">
+                      <CommandItem
+                        v-for="path in visibleRecentFiles"
+                        :key="path"
+                        :value="path"
+                        :class="ITEM_CLASS"
+                        @select="() => openFile(path)"
+                      >
+                        <FileIcon class="size-4 shrink-0 text-muted-foreground" />
+                        <span class="text-sm shrink-0">{{ fileName(path) }}</span>
+                        <span class="truncate text-xs text-muted-foreground">{{ fileDirname(path) }}</span>
+                      </CommandItem>
+                    </CommandGroup>
+                  </template>
+
+                  <!-- Active query: show search results -->
+                  <template v-else>
+                    <div
+                      v-if="!fileResults.length"
+                      class="py-6 text-center text-xs text-muted-foreground"
+                    >
+                      <span v-if="!worktreeId">No active worktree</span>
+                      <span v-else-if="fileLoading">Searching...</span>
+                      <span v-else>No files found</span>
+                    </div>
+                    <CommandGroup v-if="fileResults.length" heading="Files" :class="GROUP_HEADING_CLASS">
+                      <CommandItem
+                        v-for="path in fileResults"
+                        :key="path"
+                        :value="path"
+                        :class="ITEM_CLASS"
+                        @select="() => openFile(path)"
+                      >
+                        <FileIcon class="size-4 shrink-0 text-muted-foreground" />
+                        <span class="text-sm shrink-0">{{ fileName(path) }}</span>
+                        <span class="truncate text-xs text-muted-foreground">{{ fileDirname(path) }}</span>
+                      </CommandItem>
+                    </CommandGroup>
+                  </template>
                 </template>
 
                 <!-- Command mode -->

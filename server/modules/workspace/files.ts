@@ -150,3 +150,40 @@ export async function searchFilesForWorktree(
     .slice(0, limit)
     .map((s) => s.path);
 }
+
+export interface ContentMatch {
+  file: string;
+  line: number;
+  text: string;
+}
+
+export async function contentSearchFilesForWorktree(
+  worktreePath: string,
+  query: string,
+  limit: number,
+): Promise<ContentMatch[]> {
+  if (!query.trim()) return [];
+  const q = query.toLowerCase();
+  const allPaths = await listFilesForWorktree(worktreePath);
+  const matches: ContentMatch[] = [];
+
+  for (const relativePath of allPaths) {
+    if (matches.length >= limit) break;
+    let content: string;
+    try {
+      const result = await readFileForWorktree(worktreePath, relativePath);
+      content = result.content;
+    } catch {
+      continue;
+    }
+    const lines = content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (matches.length >= limit) break;
+      if (lines[i].toLowerCase().includes(q)) {
+        matches.push({ file: relativePath, line: i + 1, text: lines[i] });
+      }
+    }
+  }
+
+  return matches;
+}

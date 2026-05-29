@@ -2,7 +2,7 @@
 import { computed, inject, nextTick, ref, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useDebounceFn } from "@vueuse/core";
-import { FileIcon, FolderTreeIcon } from "@lucide/vue";
+import { FileIcon, FileTextIcon, FolderTreeIcon, SearchIcon } from "@lucide/vue";
 import { useQuery } from "@tanstack/vue-query";
 import { FileTree } from "@pierre/trees";
 import {
@@ -13,6 +13,7 @@ import { gitStatusQueryOptions, type GitStatusEntry } from "@/modules/git/querie
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import CodeMirrorEditor from "@/modules/file-explorer/components/CodeMirrorEditor.vue";
 import FileTabList from "@/modules/file-explorer/components/FileTabList.vue";
+import MarkdownPreview from "@/modules/file-explorer/components/MarkdownPreview.vue";
 import {
   adjacentFileAfterClose,
   closeFileTab,
@@ -50,6 +51,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { openWithFileSearch } from "@/modules/command-palette/useCommandPalette";
 
 const props = defineProps<{
   worktreeId: string;
@@ -63,6 +66,20 @@ const router = useRouter();
 
 const explorerState = useFileExplorerStorage(() => props.worktreeId);
 const { save, isSaving } = useFileEditorSave(() => props.worktreeId);
+
+const showMarkdownOnly = computed({
+  get: () => explorerState.value.markdownOnly ?? false,
+  set: (val: boolean) => {
+    explorerState.value = { ...explorerState.value, markdownOnly: val };
+  },
+});
+
+const markdownPreview = computed({
+  get: () => explorerState.value.markdownPreview ?? false,
+  set: (val: boolean) => {
+    explorerState.value = { ...explorerState.value, markdownPreview: val };
+  },
+});
 
 const treeEl = ref<HTMLElement | null>(null);
 const treePanelRef = ref<{ collapse: () => void; expand: () => void } | null>(null);
@@ -106,6 +123,13 @@ const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId)
 const { data: paths } = useQuery(fileTreeQueryOptions(() => props.worktreeId));
 const { data: gitStatus } = useQuery(gitStatusQueryOptions(() => props.worktreeId));
 
+const filteredPaths = computed(() => {
+  const all = paths.value;
+  if (!all) return null;
+  if (!showMarkdownOnly.value) return all;
+  return all.filter((p) => p.endsWith(".md"));
+});
+
 const selectedRelativePath = computed(() => {
   const encoded = route.query.file;
   if (typeof encoded !== "string" || !encoded) return null;
@@ -116,6 +140,12 @@ const selectedRelativePath = computed(() => {
   if (!fullPath.startsWith(prefix)) return null;
   return fullPath.slice(prefix.length);
 });
+
+const showMarkdownPreview = computed(
+  () =>
+    markdownPreview.value &&
+    (selectedRelativePath.value?.endsWith(".md") ?? false),
+);
 
 useExplorerContextQueueBridge({
   annotationState,
@@ -415,7 +445,7 @@ function mountTree(newPaths: string[]) {
 }
 
 function tryMountTree() {
-  const newPaths = paths.value;
+  const newPaths = filteredPaths.value;
   if (!newPaths) return;
   mountTree(newPaths);
 }
@@ -436,10 +466,15 @@ watch(
   { flush: "post" },
 );
 
+watch(showMarkdownOnly, () => {
+  teardownTree();
+  nextTick(() => tryMountTree());
+});
+
 watch(selectedRelativePath, (path) => {
   if (path) persistLastFile(path);
   revealActiveFileInTree();
-});
+}, { immediate: true });
 
 watch(
   [openFileTabs, selectedRelativePath, () => paths.value],
@@ -556,10 +591,12 @@ function toggleTree() {
             :dirty-paths="dirtyPaths"
             :is-saving="isSaving"
             :tree-collapsed="treeCollapsed"
+            :markdown-preview="markdownPreview"
             @select="openFileInTab"
             @close="closeFileTabHandler"
             @save="handleSaveFromTab"
             @toggle-tree="toggleTree"
+            @toggle-markdown-preview="markdownPreview = !markdownPreview"
           />
           <div v-if="!selectedRelativePath" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
             <FileIcon class="size-8 opacity-40" />
@@ -587,6 +624,10 @@ function toggleTree() {
             >
               Preview truncated — file exceeds size limit.
             </p>
+            <MarkdownPreview
+              v-else-if="showMarkdownPreview"
+              :content="fileContent.content"
+            />
             <CodeMirrorEditor
               v-else
               ref="editorRef"
@@ -629,10 +670,31 @@ function toggleTree() {
         @collapse="treeCollapsed = true"
         @expand="treeCollapsed = false"
       >
-        <div
-          ref="treeEl"
-          class="trees-shadcn h-full min-h-0 overflow-auto px-1 py-1"
-        />
+        <div class="flex h-full min-h-0 flex-col">
+          <div class="flex shrink-0 items-center justify-end px-1 py-0.5">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              :aria-label="showMarkdownOnly ? 'Show all files' : 'Show markdown files only'"
+              :class="showMarkdownOnly ? 'text-foreground' : 'text-muted-foreground'"
+              @click="showMarkdownOnly = !showMarkdownOnly"
+            >
+              <FileTextIcon class="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Search files"
+              @click="openWithFileSearch"
+            >
+              <SearchIcon class="size-3.5" />
+            </Button>
+          </div>
+          <div
+            ref="treeEl"
+            class="trees-shadcn min-h-0 flex-1 overflow-auto px-1 pb-1"
+          />
+        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
 

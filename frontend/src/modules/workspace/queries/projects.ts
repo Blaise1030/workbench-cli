@@ -126,3 +126,26 @@ export function useCreateWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
     },
   });
 }
+
+export function useDeleteWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (worktreeId: string) => {
+      const res = await apiClient.worktrees[":id"].$delete({
+        param: { id: worktreeId },
+      });
+      await ensureOk<{ ok: true }>(res);
+    },
+    onSuccess: (_, worktreeId) => {
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.worktrees(toValue(projectId)),
+      });
+      queryClient.removeQueries({
+        queryKey: workspaceKeys.worktree(worktreeId),
+      });
+      queryClient.removeQueries({
+        queryKey: workspaceKeys.terminals(worktreeId),
+      });
+    },
+  });
+}

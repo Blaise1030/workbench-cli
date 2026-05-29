@@ -10,6 +10,10 @@ export interface FileExplorerWorktreeState {
   openFiles?: string[];
   /** Folder paths expanded in the file tree sidebar. */
   expandedPaths?: string[];
+  /** Whether to show only .md files in the file tree. */
+  markdownOnly?: boolean;
+  /** Whether markdown files open in rendered preview instead of the editor. */
+  markdownPreview?: boolean;
 }
 
 /** Ancestor directory paths for a file or folder path (not including the path itself). */

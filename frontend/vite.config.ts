@@ -3,6 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 import { isAllowedShikiLang } from "./src/shared/lib/pierre-shiki-langs";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const shikiShim = fileURLToPath(new URL("./src/shims/shiki.ts", import.meta.url));
 const shikiWasmShim = fileURLToPath(new URL("./src/shims/shiki-wasm.ts", import.meta.url));
@@ -60,7 +61,13 @@ const viteDevPort = Number(process.env.VITE_DEV_PORT ?? 5173);
 export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
   customLogger: logger,
-  plugins: [excludeTestFilesFromBuild(), allowlistShikiLanguageBundles(), vue(), tailwindcss()],
+  plugins: [
+    excludeTestFilesFromBuild(),
+    allowlistShikiLanguageBundles(),
+    vue(),
+    tailwindcss(),
+    ...(process.env.ANALYZE ? [visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })] : []),
+  ],
   // npm run dev:go — Vite HMR UI, Go handles /api and /ws
   ...(goDevBackend
     ? {
