@@ -75,7 +75,12 @@ func Run(cfg Config) error {
 		}
 	}
 
-	slog.Info("workbench-cli started", "url", fmt.Sprintf("%s://%s:%d", scheme, cfg.Host, cfg.Port))
+	openHost := cfg.Host
+	if cfg.ForceHTTP {
+		openHost = "127.0.0.1"
+	}
+	fmt.Printf("\n  → %s://%s:%d\n\n", scheme, openHost, cfg.Port)
+	slog.Info("workbench-cli started", "url", fmt.Sprintf("%s://%s:%d", scheme, openHost, cfg.Port))
 
 	srv := &http.Server{
 		Addr:    listenAddr,

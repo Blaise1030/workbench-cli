@@ -19,6 +19,7 @@ import {
 import {
   navigateToWorktreeOnPortIfNeeded,
   portForWorktreeBranch,
+  worktreePath,
 } from "@/modules/workspace/lib/worktree-env";
 import { networkSettingsQueryOptions } from "@/modules/settings/queries/settings";
 import { useQuery } from "@tanstack/vue-query";
@@ -84,14 +85,11 @@ async function submit() {
     localStorage.setItem("lastWorktreeId", worktree.id);
     if (network.value) {
       const targetPort = portForWorktreeBranch(false, network.value);
-      if (navigateToWorktreeOnPortIfNeeded(worktree.id, targetPort, network.value)) {
+      if (navigateToWorktreeOnPortIfNeeded(worktree.id, targetPort)) {
         return;
       }
     }
-    await router.push({
-      name: "workspace",
-      params: { worktreeId: worktree.id },
-    });
+    await router.push(worktreePath(worktree.id));
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to create worktree";
   }

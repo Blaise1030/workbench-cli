@@ -7,20 +7,17 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "NODE_ENV=development tsx watch server/index.ts",
+    "dev": "NODE_ENV=development PORT=4739 tsx watch server/index.ts",
     "build": "node scripts/build-server.mjs && vite build --config frontend/vite.config.ts && node scripts/assert-shiki-bundle.mjs",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "start": "NODE_ENV=production node dist/cli/index.cjs",
     "test": "vitest run",
     "package:release": "node scripts/package-release.mjs",
     "package:release:all": "node scripts/package-release.mjs --bundle-node",
-    "build:rust": "node scripts/build-rust.mjs",
-    "start:rust": "server-rs/target/release/workbench-cli --host 127.0.0.1 --http",
-    "test:rust:smoke": "node scripts/smoke-test-rust.mjs",
     "build:go": "node scripts/build-go.mjs",
     "install:go": "node scripts/install-go-local.mjs",
     "install:go:global": "node scripts/install-go-local.mjs --global",
-    "dev:go": "cd server-go && go run ./cmd/workbench-cli --http -p 4739",
+    "dev:go": "node scripts/dev-go.mjs",
     "test:go:smoke": "node scripts/test-go-smoke.mjs",
     "test:contract": "node scripts/contract-test.mjs",
     "benchmark": "node scripts/benchmark.mjs"

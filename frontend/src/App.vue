@@ -1,9 +1,11 @@
 <template>
   <RouterView />
+  <AppCommandPalette />
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
+import AppCommandPalette from '@/modules/command-palette/AppCommandPalette.vue'
 import { useWorkbenchDocumentTitle } from '@/modules/workspace/hooks/use-workbench-document-title'
 
 useWorkbenchDocumentTitle()

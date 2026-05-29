@@ -11,13 +11,22 @@ export function closeCommandPalette() {
   isOpen.value = false;
 }
 
+function isCommandPaletteChord(e: KeyboardEvent): boolean {
+  if (e.key.toLowerCase() !== "k") return false;
+  return e.metaKey || e.ctrlKey;
+}
+
 export function useCommandPalette() {
-  useEventListener(window, "keydown", (e: KeyboardEvent) => {
-    if (e.metaKey && e.key === "k") {
+  useEventListener(
+    window,
+    "keydown",
+    (e: KeyboardEvent) => {
+      if (!isCommandPaletteChord(e)) return;
       e.preventDefault();
       isOpen.value = !isOpen.value;
-    }
-  }, { capture: true });
+    },
+    { capture: true },
+  );
 
   return { isOpen };
 }

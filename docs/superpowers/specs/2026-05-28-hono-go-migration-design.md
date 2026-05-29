@@ -3,7 +3,7 @@
 **Date:** 2026-05-28  
 **Status:** Approved  
 **Reference implementation:** `server/` (Hono + Node) — the **only** source to port from  
-**Supersedes:** `2026-05-27-hono-rust-migration-design.md` (native-server goal; implementation language is Go, not Rust)
+**Supersedes:** `2026-05-27-hono-rust-migration-design.md` and the removed `server-rs/` crate (native server is Go only)
 
 ## Goal
 
@@ -20,17 +20,16 @@ Replace the Node/Hono server with a **Go binary** that:
 
 - Rewriting the Vue frontend
 - Changing API shapes the SPA consumes (`server/schemas/`, existing route paths)
-- **Any edits under `server/` or `server-rs/`** — both directories are read-only references for the entire migration
-- Deleting `server/` or `server-rs/` before a dedicated cutover decision (out of scope for migration work)
+- **Any edits under `server/`** during migration (Hono stays the oracle until cutover)
+- Deleting `server/` before a dedicated cutover decision (out of scope for migration work)
 
-## Hard constraint: do not touch `server/` or `server-rs/`
+## Hard constraint: do not touch `server/`
 
 | Directory | Rule |
 |-----------|------|
 | `server/` | **No modifications.** This is the **Hono reference** — read TypeScript, match behavior. Vitest (`server/**/*.test.ts`) is the oracle. Contract tests spawn `tsx server/index.ts` but never patch these files. |
-| `server-rs/` | **No modifications. Not a port source.** Ignore for migration work; do not read or mirror Rust code. |
 
-All implementation, tests, scripts, and CI for the native server belong in **`server-go/`**, root `scripts/`, and root `package.json` only.
+All native-server code lives in **`server-go/`**, plus root `scripts/` and `package.json`. The Rust `server-rs/` tree has been **removed**; do not reintroduce it.
 
 ## How to port (every phase)
 
@@ -38,7 +37,7 @@ All implementation, tests, scripts, and CI for the native server belong in **`se
 2. **Run** the existing Vitest file(s) for that module to understand expected behavior.
 3. **Implement** the equivalent in `server-go/internal/...`.
 4. **Verify** with `go test` + contract harness (same HTTP → same JSON as Hono).
-5. **Never** consult or copy from `server-rs/`.
+5. Port only from Hono — there is no Rust reference implementation in the repo.
 
 ## Current baseline (Node)
 
@@ -180,11 +179,11 @@ Target binary size: **≤ 25 MB** stripped with embedded UI.
 - [ ] Single binary runs without Node or sidecar folders
 - [ ] Binary ≤ 25 MB (release, stripped, UI embedded)
 - [ ] Full SPA works against Go server
-- [ ] **Zero diff** in `server/` and `server-rs/` across all migration PRs
+- [ ] **Zero diff** in `server/` across all migration PRs
 - [ ] All new server code and Go tests live under `server-go/`
 
 ## Cutover (does not require editing `server/`)
 
 1. Root `package.json` scripts point to the Go binary (`build:go`, `dev:go`, release).
 2. Hono server remains in the repo for rollback and contract/oracle tests; run via existing Node entry if needed.
-3. `server-rs/` is out of scope for this migration — do not reference or update it.
+3. Native server is **Go only** (`server-go/`).

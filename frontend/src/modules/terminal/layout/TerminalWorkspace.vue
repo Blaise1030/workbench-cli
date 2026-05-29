@@ -40,6 +40,7 @@ import {
   type WorktreeLastRoute,
 } from "@/modules/workspace/lib/worktree-panels-storage";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
+import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
 import { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
 import { useContextQueueKeybinding } from "@/modules/context-queue/hooks/use-context-queue-keybinding";
@@ -55,7 +56,16 @@ const props = defineProps<{
 
 const route = useRoute();
 const router = useRouter();
+const { colorMode } = useAppColorMode();
 const sessions = createTerminalSessionsStore();
+
+/** Remount terminal emulator when theme changes so xterm picks up new CSS tokens. */
+const routerViewKey = computed(() => {
+  if (route.name === "terminal") {
+    return `${route.params.terminalId as string}:${colorMode.value}`;
+  }
+  return route.fullPath;
+});
 provide(terminalSessionsKey, sessions);
 
 const panelsState = useWorktreePanels(() => props.worktreeId);
@@ -250,6 +260,8 @@ function openAuxPanel(type: "git" | "explorer") {
 }
 
 async function closeTab(id: string) {
+  if (!window.confirm("Close this terminal?")) return;
+
   const isActive = id === activeId.value;
   const remaining = terminalTabItems.value.filter((t) => t.id !== id);
 
@@ -442,7 +454,7 @@ function openResumeDialog(terminalId: string) {
           </Button>
         </div>
       </div>
-      <RouterView v-else class="absolute border-t inset-0" />
+      <RouterView v-else :key="routerViewKey" class="absolute border-t inset-0" />
     </div>
 
     <TerminalResumeDialog

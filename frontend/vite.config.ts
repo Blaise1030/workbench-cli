@@ -53,10 +53,33 @@ function excludeTestFilesFromBuild() {
   };
 }
 
+const goDevBackend = process.env.WORKBENCH_DEV_BACKEND === "go";
+const goPort = Number(process.env.WORKBENCH_GO_PORT ?? 4740);
+const viteDevPort = Number(process.env.VITE_DEV_PORT ?? 5173);
+
 export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
   customLogger: logger,
   plugins: [excludeTestFilesFromBuild(), allowlistShikiLanguageBundles(), vue(), tailwindcss()],
+  // npm run dev:go — Vite HMR UI, Go handles /api and /ws
+  ...(goDevBackend
+    ? {
+        server: {
+          port: viteDevPort,
+          strictPort: true,
+          proxy: {
+            "/api": {
+              target: `http://127.0.0.1:${goPort}`,
+              changeOrigin: true,
+            },
+            "/ws": {
+              target: `ws://127.0.0.1:${goPort}`,
+              ws: true,
+            },
+          },
+        },
+      }
+    : {}),
   worker: {
     format: "es",
     plugins: () => [allowlistShikiLanguageBundles()],

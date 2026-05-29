@@ -22,26 +22,24 @@ export function currentBrowserPort(): number {
   return window.location.protocol === "https:" ? 443 : 80;
 }
 
-export function buildWorktreeUrl(
-  worktreeId: string,
-  port: number,
-  network: Pick<NetworkSettings, "host" | "scheme">,
-): string {
-  const url = new URL(`${network.scheme}://${network.host}`);
-  url.port = String(port);
-  url.pathname = `/w/${worktreeId}`;
-  url.search = "";
-  url.hash = "";
-  return url.toString();
+/** SPA route for a worktree (same origin). */
+export function worktreePath(worktreeId: string): string {
+  return `/w/${encodeURIComponent(worktreeId)}`;
 }
 
-/** Full-page navigation when the target worktree needs the other port. Returns true if navigating away. */
+/**
+ * Full-page navigation when the worktree lives on the other prod/non-prod port.
+ * Uses a relative path; only the port (and host from the current page) changes.
+ * Returns true if navigating away.
+ */
 export function navigateToWorktreeOnPortIfNeeded(
   worktreeId: string,
   targetPort: number,
-  network: NetworkSettings,
 ): boolean {
   if (targetPort === currentBrowserPort()) return false;
-  window.location.assign(buildWorktreeUrl(worktreeId, targetPort, network));
+  const { protocol, hostname } = window.location;
+  window.location.assign(
+    `${protocol}//${hostname}:${targetPort}${worktreePath(worktreeId)}`,
+  );
   return true;
 }

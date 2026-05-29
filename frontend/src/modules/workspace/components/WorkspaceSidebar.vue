@@ -92,16 +92,6 @@ async function addProject() {
       {{ addProjectError }}
     </p>
 
-    <div class="flex h-8 shrink-0 items-center justify-end gap-0.5 px-2">
-      <ThemeToggle />
-      <Button variant="ghost" size="icon-xs" as-child>
-        <RouterLink to="/settings" aria-label="Settings">
-          <SettingsIcon />
-          <span class="sr-only">Settings</span>
-        </RouterLink>
-      </Button>
-    </div>
-
     <div class="min-h-0 flex-1 overflow-y-auto px-2">
       <p
         v-if="!projects?.length"
@@ -110,7 +100,18 @@ async function addProject() {
         No projects yet. Choose a folder to add a git repository.
       </p>
 
-      <SidebarMenu>
+      <SidebarMenu class="relative">
+        <div
+          class="flex sticky top-0 z-50 left-0 w-full h-8 bg-linear-to-b from-background to-transparent items-center justify-end"
+        >
+          <ThemeToggle />
+          <Button variant="ghost" size="icon-xs" as-child>
+            <RouterLink to="/settings" aria-label="Settings">
+              <SettingsIcon />
+              <span class="sr-only">Settings</span>
+            </RouterLink>
+          </Button>
+        </div>
         <SidebarMenuItem
           v-for="project in projects"
           :key="project.id"
@@ -154,6 +155,9 @@ async function addProject() {
             <span>Add project</span>
           </SidebarMenuButtonChild>
         </SidebarMenuItem>
+        <div
+          class="bg-gradient-to-t from-background to-transparent sticky bottom-0 left-0 z-50 h-8"
+        ></div>
       </SidebarMenu>
     </div>
   </div>

@@ -28,4 +28,16 @@ Default (prod / main-branch worktrees) on port **4738**; non-default branches us
 ./bin/workbench-cli --http -p 4739 -y
 ```
 
-`npm run dev:go` starts the non-prod port (4739) for local development.
+### Dev with HMR
+
+```bash
+npm run dev:go
+```
+
+Starts **Go** (API + WebSocket on port 4740) and **Vite** (UI with HMR on port 5173). Open **http://127.0.0.1:5173** — not the Go port. Vite proxies `/api` and `/ws` to Go.
+
+To run Go alone (no HMR, serves `dist/public` if built):
+
+```bash
+cd server-go && go run ./cmd/workbench-cli --http -p 4740
+```

@@ -8,6 +8,7 @@ import {
   SunMoonIcon,
 } from "@lucide/vue";
 import type { Component } from "vue";
+import type { KeybindingAction } from "@/modules/keyboard/types";
 
 export type NavigateCommand = {
   type: "navigate";
@@ -16,6 +17,7 @@ export type NavigateCommand = {
   icon: Component;
   to: (worktreeId: string) => RouteLocationRaw;
   requiresWorktree: boolean;
+  keybindingAction?: KeybindingAction;
 };
 
 export type ActionCommand = {
@@ -24,18 +26,19 @@ export type ActionCommand = {
   label: string;
   icon: Component;
   action: string;
+  keybindingAction?: KeybindingAction;
 };
 
 export type Command = NavigateCommand | ActionCommand;
 
 export const COMMANDS: Command[] = [
   {
-    type: "navigate",
-    id: "nav.terminal",
-    label: "Open Terminal",
+    type: "action",
+    id: "action.newTerminal",
+    label: "New Terminal",
     icon: TerminalIcon,
-    to: (worktreeId) => ({ name: "terminal", params: { worktreeId } }),
-    requiresWorktree: true,
+    action: "newTerminal",
+    keybindingAction: "terminal.newTerminal",
   },
   {
     type: "navigate",
@@ -44,6 +47,7 @@ export const COMMANDS: Command[] = [
     icon: FolderTreeIcon,
     to: (worktreeId) => ({ name: "explorer", params: { worktreeId } }),
     requiresWorktree: true,
+    keybindingAction: "panel.explorer",
   },
   {
     type: "navigate",
@@ -52,6 +56,7 @@ export const COMMANDS: Command[] = [
     icon: GitBranchIcon,
     to: (worktreeId) => ({ name: "git", params: { worktreeId } }),
     requiresWorktree: true,
+    keybindingAction: "panel.git",
   },
   {
     type: "navigate",
@@ -60,6 +65,7 @@ export const COMMANDS: Command[] = [
     icon: SettingsIcon,
     to: () => ({ name: "settings" }),
     requiresWorktree: false,
+    keybindingAction: "settings.open",
   },
   {
     type: "action",

@@ -3,10 +3,15 @@ package workspace
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/git"
 )
@@ -354,11 +359,35 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			wsErr(w, "No files provided", http.StatusBadRequest)
 			return
 		}
+		assetsDir := filepath.Join(wt.Path, ".workbench", "files")
+		if err := os.MkdirAll(assetsDir, 0755); err != nil {
+			wsErr(w, "Failed to create assets directory", http.StatusInternalServerError)
+			return
+		}
 		var paths []string
 		for _, fh := range files {
-			destPath := chi.URLParam(r, "id") + "/" + fh.Filename
-			_ = destPath
-			paths = append(paths, fh.Filename)
+			ext := filepath.Ext(fh.Filename)
+			id := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+			destPath := filepath.Join(assetsDir, id)
+			src, err := fh.Open()
+			if err != nil {
+				wsErr(w, "Failed to open uploaded file", http.StatusInternalServerError)
+				return
+			}
+			dst, err := os.Create(destPath)
+			if err != nil {
+				src.Close()
+				wsErr(w, "Failed to create destination file", http.StatusInternalServerError)
+				return
+			}
+			_, copyErr := io.Copy(dst, src)
+			src.Close()
+			dst.Close()
+			if copyErr != nil {
+				wsErr(w, "Failed to write file", http.StatusInternalServerError)
+				return
+			}
+			paths = append(paths, filepath.Join(".workbench", "files", id))
 		}
 		jsonResp(w, map[string]any{"paths": paths}, http.StatusOK)
 	})

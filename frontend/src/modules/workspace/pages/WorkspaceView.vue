@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useColorMode } from "@vueuse/core";
 import WorkspaceLayout from "@/modules/workspace/layout/WorkspaceLayout.vue";
 import TerminalWorkspace from "@/modules/terminal/layout/TerminalWorkspace.vue";
-import CommandPalette from "@/modules/command-palette/CommandPalette.vue";
-import { useCommandPalette } from "@/modules/command-palette/useCommandPalette";
 import {
   projectsQueryOptions,
-  usePickProjectFolderMutation,
   worktreeQueryOptions,
 } from "@/modules/workspace/queries";
 import { useQuery } from "@tanstack/vue-query";
@@ -21,18 +17,6 @@ const router = useRouter();
 const worktreeId = computed(() => route.params.worktreeId as string | undefined);
 
 useGlobalWorkspaceKeybindings(worktreeId);
-
-const { isOpen } = useCommandPalette();
-const pickProjectFolder = usePickProjectFolderMutation();
-const colorMode = useColorMode();
-
-function handlePaletteAction(key: string) {
-  if (key === "addProject") {
-    void pickProjectFolder.mutateAsync();
-  } else if (key === "toggleTheme") {
-    colorMode.value = colorMode.value === "dark" ? "light" : "dark";
-  }
-}
 
 const { data: projects } = useQuery(projectsQueryOptions());
 
@@ -75,11 +59,4 @@ watch(
       </div>
     </div>
   </WorkspaceLayout>
-
-  <CommandPalette
-    :open="isOpen"
-    :worktree-id="worktreeId"
-    @update:open="(v) => { isOpen.value = v }"
-    @action="handlePaletteAction"
-  />
 </template>

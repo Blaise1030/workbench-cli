@@ -2,7 +2,6 @@ node_modules/
 dist/
 bin/
 server-go/internal/assets/public/
-server-rs/target/
 *.log
 .env*
 .vite/

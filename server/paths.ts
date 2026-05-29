@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 /** Directory containing `cli/index.cjs` and `public/` (the shipped `dist/` tree). */
 export function getDistDir(): string {
@@ -14,9 +13,6 @@ export function getDistDir(): string {
     const fromBundle = join(__dirname, "..");
     if (existsSync(join(fromBundle, "public"))) return fromBundle;
   }
-
-  const fromModule = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
-  if (existsSync(join(fromModule, "public"))) return fromModule;
 
   const fromCwd = join(process.cwd(), "dist");
   if (existsSync(join(fromCwd, "public"))) return fromCwd;

@@ -4,13 +4,13 @@
 
 **Goal:** Replace the **Hono** server (`server/`) with a single Go `workbench-cli` binary (embedded UI, full API parity) using a strangler migration.
 
-**Architecture:** New `server-go/` tree. Every feature is ported from the **Hono implementation** in `server/` — routers, modules, schemas, and Vitest tests. Contract tests spawn `tsx server/index.ts` and assert Go responses match Hono JSON. Do **not** use `server-rs/` as a reference.
+**Architecture:** New `server-go/` tree. Every feature is ported from the **Hono implementation** in `server/` — routers, modules, schemas, and Vitest tests. Contract tests spawn `tsx server/index.ts` and assert Go responses match Hono JSON. (`server-rs/` was removed; Hono is the only reference.)
 
 **Tech Stack:** Go 1.22+, chi, coder/websocket, creack/pty, modernc.org/sqlite, go:embed, slog.
 
 **Design spec:** `docs/superpowers/specs/2026-05-28-hono-go-migration-design.md`
 
-**Hard constraint:** Do **not** modify `server/` or `server-rs/`. **Port source = Hono only** (`server/`, `cli/args.ts`, `server/schemas/`). Implement exclusively in `server-go/` (+ root `scripts/`, `package.json` as needed).
+**Hard constraint:** Do **not** modify `server/`. **Port source = Hono only** (`server/`, `cli/args.ts`, `server/schemas/`). Implement exclusively in `server-go/` (+ root `scripts/`, `package.json` as needed).
 
 ---
 
@@ -330,7 +330,7 @@ var Public embed.FS
 - [ ] All contract tests pass
 - [ ] `npm run test:go:smoke` in CI
 - [ ] Hono Vitest `server/**` still green (run as-is; **no edits** to `server/`)
-- [ ] `git diff server/` is empty across migration branch (`server-rs/` also untouched)
+- [ ] `git diff server/` is empty across migration branch
 - [ ] `package.json` default start uses Go binary
 - [ ] `server-go/README.md` documents build/run
 

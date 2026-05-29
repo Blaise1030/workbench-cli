@@ -29,8 +29,12 @@ const emit = defineEmits<{
   select: [worktree: Worktree];
 }>();
 
-const { data: worktrees } = useQuery(worktreesQueryOptions(() => props.projectId));
-const { data: branchData } = useQuery(branchesQueryOptions(() => props.projectId));
+const { data: worktrees } = useQuery(
+  worktreesQueryOptions(() => props.projectId),
+);
+const { data: branchData } = useQuery(
+  branchesQueryOptions(() => props.projectId),
+);
 const { data: network } = useQuery(networkSettingsQueryOptions());
 
 const defaultBranch = computed(() => branchData.value?.defaultBranch ?? "main");
@@ -40,15 +44,13 @@ function label(w: Worktree) {
 }
 
 function selectWorktree(w: Worktree) {
-  if (!network.value) {
-    emit("select", w);
-    return;
+  if (network.value) {
+    const targetPort = portForWorktreeBranch(
+      isProdWorktreeBranch(w.branch, defaultBranch.value),
+      network.value,
+    );
+    if (navigateToWorktreeOnPortIfNeeded(w.id, targetPort)) return;
   }
-  const targetPort = portForWorktreeBranch(
-    isProdWorktreeBranch(w.branch, defaultBranch.value),
-    network.value,
-  );
-  if (navigateToWorktreeOnPortIfNeeded(w.id, targetPort, network.value)) return;
   emit("select", w);
 }
 </script>
