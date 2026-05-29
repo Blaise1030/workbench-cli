@@ -1,5 +1,69 @@
 ---
 import '../styles/global.css';
+import rawContent from '../content/landing.md?raw';
+
+// Convert markdown links [text](url) to HTML
+function parseLinks(text: string): string {
+  return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+}
+
+// Split content into sections on ~~~
+const sections = rawContent.split(/\n~~~\n/).map(s => s.trim()).filter(Boolean);
+
+// Parse each section into a typed structure
+type MetaSection = { kind: 'meta'; pairs: { key: string; value: string }[] };
+type LabelSection = { kind: 'label'; label: string; items: { text: string; isInstall?: boolean }[] };
+type ProseSection = { kind: 'prose'; label: string; paragraphs: string[] };
+type FooterSection = { kind: 'footer'; text: string };
+type Section = MetaSection | LabelSection | ProseSection | FooterSection;
+
+const parsed: Section[] = sections.map((section): Section => {
+  // Footer line
+  if (section.startsWith('~*~')) {
+    return { kind: 'footer', text: section };
+  }
+
+  const lines = section.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Metadata block: all lines are KEY: VALUE with no leading label
+  const isAllMeta = lines.every(l => /^[A-Z ]+:/.test(l) && !l.endsWith(':'));
+  if (isAllMeta) {
+    return {
+      kind: 'meta',
+      pairs: lines.map(l => {
+        const colon = l.indexOf(':');
+        return { key: l.slice(0, colon).trim(), value: l.slice(colon + 1).trim() };
+      }),
+    };
+  }
+
+  // LABEL: section
+  const firstLine = lines[0];
+  if (firstLine && /^[A-Z ]+:$/.test(firstLine)) {
+    const label = firstLine.slice(0, -1);
+    const rest = lines.slice(1);
+    // List items
+    if (rest.every(l => l.startsWith('- '))) {
+      return {
+        kind: 'label',
+        label,
+        items: rest.map(l => ({
+          text: parseLinks(l.slice(2)),
+          isInstall: l.startsWith('- curl'),
+        })),
+      };
+    }
+    // Prose paragraphs
+    return {
+      kind: 'prose',
+      label,
+      paragraphs: rest.map(l => parseLinks(l)),
+    };
+  }
+
+  // Fallback: treat as prose with no label
+  return { kind: 'prose', label: '', paragraphs: lines.map(l => parseLinks(l)) };
+});
 
 const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh';
 ---
@@ -17,72 +81,60 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
     <div class="layout">
       <div class="content">
 
-      <div class="brand">WORKBENCH <span class="cursor" aria-hidden="true"></span></div>
+        <div class="brand">WORKBENCH <span class="cursor" aria-hidden="true"></span></div>
 
-      <div class="divider">~~~</div>
+        {parsed.map((section) => (
+          <>
+            <div class="divider">~~~</div>
 
-      <div class="row"><span class="label">PRODUCT:</span> <span class="muted">GUI WORKSPACE MANAGER FOR AI-DRIVEN DEVELOPMENT</span></div>
-      <div class="row"><span class="label">STATUS:</span> <span class="muted">AVAILABLE</span></div>
-      <div class="row"><span class="label">VERSION:</span> <span class="muted">0.1.0</span></div>
-      <div class="row"><span class="label">PLATFORM:</span> <span class="muted">MACOS</span></div>
+            {section.kind === 'meta' && (
+              <div class="meta-block">
+                {section.pairs.map(({ key, value }) => (
+                  <div class="row">
+                    <span class="label">{key}:</span>{' '}
+                    <span class="muted">{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
-      <div class="divider">~~~</div>
+            {section.kind === 'prose' && (
+              <div class="prose-block">
+                {section.label && <div class="row"><span class="label">{section.label}:</span></div>}
+                {section.paragraphs.map(p => (
+                  <p class="prose" set:html={p} />
+                ))}
+              </div>
+            )}
 
-      <div class="row"><span class="label">ABOUT:</span></div>
-      <p class="prose">
-        Mission control for parallel AI coding. Workbench is a single GUI for every git worktree,
-        every Claude Code agent, and every running branch — all at once. No more juggling terminal
-        windows. No more losing track of which agent is working on what.
-      </p>
-      <p class="prose">
-        Built for engineers running Claude Code at scale. Keep your editor; add one place to see everything.
-      </p>
+            {section.kind === 'label' && (
+              <div class="list-block">
+                <div class="row"><span class="label">{section.label}:</span></div>
+                {section.items.map(({ text, isInstall }) => (
+                  isInstall ? (
+                    <div class="install-row">
+                      <span class="install-cmd" id="install-cmd">{installCmd}</span>
+                      <button class="copy-btn" aria-label="Copy install command">COPY</button>
+                    </div>
+                  ) : (
+                    <div class="list-item">
+                      <span class="dash"> -</span>{' '}
+                      <span set:html={text} />
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
 
-      <div class="divider">~~~</div>
+            {section.kind === 'footer' && (
+              <div class="muted">{section.text}</div>
+            )}
+          </>
+        ))}
 
-      <div class="row"><span class="label">INSTALL:</span></div>
-      <div class="install-row">
-        <span class="install-cmd" id="install-cmd">{installCmd}</span>
-        <button class="copy-btn" aria-label="Copy install command">COPY</button>
       </div>
-      <div class="list-item"><span class="dash"> -</span> <a href="https://blaise1030.github.io/workbench-cli/">Install options</a></div>
-      <div class="list-item"><span class="dash"> -</span> <a href="https://github.com/Blaise1030/workbench-cli/releases">Releases</a></div>
-
-      <div class="divider">~~~</div>
-
-      <div class="row"><span class="label">FEATURES:</span></div>
-      <div class="list-item"><span class="dash"> -</span> Parallel git worktrees, tracked in one sidebar</div>
-      <div class="list-item"><span class="dash"> -</span> Claude Code hook integration — get notified when agents stop or complete tasks</div>
-      <div class="list-item"><span class="dash"> -</span> Per-worktree terminal tabs, git panel, and file explorer</div>
-      <div class="list-item"><span class="dash"> -</span> Line-level diffs, staged/unstaged review without leaving the app</div>
-      <div class="list-item"><span class="dash"> -</span> Keybinding configuration and LAN network settings</div>
-      <div class="list-item"><span class="dash"> -</span> Single binary — no Electron, no runtime dependencies</div>
-
-      <div class="divider">~~~</div>
-
-      <div class="row"><span class="label">HOW IT COMPARES:</span></div>
-      <div class="list-item"><span class="dash"> -</span> Tower / GitHub Desktop: git GUIs, no worktree-first workflow, no agent awareness</div>
-      <div class="list-item"><span class="dash"> -</span> herdr: lives inside your terminal, not a GUI</div>
-      <div class="list-item"><span class="dash"> -</span> Cursor / VS Code: editors that run one agent at a time</div>
-      <div class="list-item"><span class="dash"> -</span> Workbench: the only GUI built for parallel agents + git worktrees together</div>
-
-      <div class="divider">~~~</div>
-
-      <div class="row"><span class="label">LINKS:</span></div>
-      <div class="list-item"><span class="dash"> -</span> <a href="/docs">Docs</a></div>
-      <div class="list-item"><span class="dash"> -</span> <a href="https://github.com/Blaise1030/workbench-cli">Source</a></div>
-      <div class="list-item"><span class="dash"> -</span> <a href="https://github.com/Blaise1030/workbench-cli/releases">Releases</a></div>
-      <div class="list-item"><span class="dash"> -</span> <a href="/changelog">Changelog</a></div>
-
-      <div class="divider">~~~</div>
-
-      <div class="muted">~*~ &copy; 2026 WORKBENCH ~*~</div>
-
-    </div><!-- .content -->
-      <div class="aside">
-        <!-- empty for now -->
-      </div>
-    </div><!-- .layout -->
+      <div class="aside"></div>
+    </div>
 
     <style>
       .layout {
@@ -91,12 +143,12 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
         min-height: 100vh;
       }
 
-      .content {
-        padding: 32px 48px;
-      }
-
       .aside {
         border-left: 1px solid hsl(var(--border));
+      }
+
+      .content {
+        padding: 32px 48px;
       }
 
       .brand {
@@ -121,32 +173,22 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
         margin: 14px 0;
       }
 
-      .row {
-        margin-bottom: 0;
-      }
+      .row { margin-bottom: 0; }
 
       .label {
         font-weight: 600;
         letter-spacing: 0.04em;
       }
 
-      .muted {
-        color: hsl(var(--muted-foreground));
-      }
+      .muted { color: hsl(var(--muted-foreground)); }
 
       .prose {
         color: hsl(var(--muted-foreground));
-        max-width: 580px;
         padding-left: 1ch;
       }
 
-      .list-item {
-        color: hsl(var(--muted-foreground));
-      }
-
-      .list-item .dash {
-        color: hsl(var(--foreground));
-      }
+      .list-item { color: hsl(var(--muted-foreground)); }
+      .list-item .dash { color: hsl(var(--foreground)); }
 
       .install-row {
         display: flex;
@@ -175,20 +217,12 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
         flex-shrink: 0;
       }
 
-      .copy-btn:hover {
-        opacity: 0.8;
-      }
+      .copy-btn:hover { opacity: 0.8; }
 
       @media (max-width: 600px) {
-        .layout {
-          grid-template-columns: 1fr;
-        }
-        .aside {
-          display: none;
-        }
-        .content {
-          padding: 24px 20px;
-        }
+        .layout { grid-template-columns: 1fr; }
+        .aside { display: none; }
+        .content { padding: 24px 20px; }
         .install-row {
           flex-direction: column;
           align-items: flex-start;
