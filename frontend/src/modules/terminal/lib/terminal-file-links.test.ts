@@ -60,4 +60,37 @@ describe("extractFilePaths", () => {
   it("does not match the worktree root itself (must be a file inside it)", () => {
     expect(extractFilePaths("/home/user/project", root)).toEqual([]);
   });
+
+  describe("relative path matching", () => {
+    const filePathSet = new Set(["src/app.ts", "docs/plans/feature.md"]);
+
+    it("matches a relative path present in the file set", () => {
+      const results = extractFilePaths("src/app.ts", root, filePathSet);
+      expect(results).toHaveLength(1);
+      expect(results[0].path).toBe("/home/user/project/src/app.ts");
+      expect(results[0].text).toBe("src/app.ts");
+      expect(results[0].startX).toBe(0);
+    });
+
+    it("does not match a relative path not in the file set", () => {
+      expect(extractFilePaths("src/other.ts", root, filePathSet)).toEqual([]);
+    });
+
+    it("does not match relative paths when filePathSet is undefined", () => {
+      expect(extractFilePaths("src/app.ts", root)).toEqual([]);
+    });
+
+    it("strips :line:col from relative paths", () => {
+      const results = extractFilePaths("src/app.ts:10:5", root, filePathSet);
+      expect(results).toHaveLength(1);
+      expect(results[0].path).toBe("/home/user/project/src/app.ts");
+      expect(results[0].text).toBe("src/app.ts:10:5");
+    });
+
+    it("does not duplicate a match already caught by absolute path matching", () => {
+      const results = extractFilePaths("/home/user/project/src/app.ts", root, filePathSet);
+      expect(results).toHaveLength(1);
+      expect(results[0].path).toBe("/home/user/project/src/app.ts");
+    });
+  });
 });

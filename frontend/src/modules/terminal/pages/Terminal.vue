@@ -124,6 +124,7 @@ onMounted(async () => {
             query: { ...route.query, file: encodeURIComponent(path) },
           });
         },
+        () => fileTreePaths.value,
       ),
     );
     fitAddon.fit();
