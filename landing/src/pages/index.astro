@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MarkdownLink from '../components/MarkdownLink.astro';
+import FeaturePan from '../components/FeaturePan.astro';
 import { installCmd, installChannelLabel, isDevPreviewBuild } from '../lib/install';
 
 const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
@@ -20,24 +21,26 @@ const links = [
 ];
 ---
 
-<Layout title="Workbench" description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux.">
+<Layout title="Workbench" description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux." fullWidth>
+
+  <div class="grid sm:grid-cols-2 gap-8 items-start">
+    <div id="left-col">
 
         <!-- Install -->
         <div class="font-semibold tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
         {isDevPreviewBuild && (
           <div class="text-[hsl(var(--muted-foreground))] pl-[1ch] text-[11px] mb-1">
             PR preview — installs this build. For the latest stable release use
-            {' '}<span class="text-[hsl(var(--foreground))]">curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh</span>
+            {' '}<span class="text-black-200">curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh</span>
           </div>
         )}
-        <div class="flex items-center gap-3 pl-[1ch] mb-1 max-sm:flex-col max-sm:items-start max-sm:gap-[6px]">
-          <span class="font-medium text-[12px] bg-muted max-sm:text-[11px] max-sm:break-all" id="install-cmd">{installCmd}</span>
+        <div class="flex items-center gap-3 pl-[1ch]">
+          <span class="font-medium text-[12px] p-1 bg-muted text-black max-sm:text-[11px] max-sm:break-all" id="install-cmd">{installCmd}</span>
           <button
             class="font-[inherit] text-[10px] tracking-[0.1em] bg-foreground text-background border-0 px-2 py-0.5 cursor-pointer rounded-[2px] shrink-0 hover:opacity-80"
             aria-label="Copy install command"
           >COPY</button>
         </div>        
-        <MarkdownLink label="Releases" href="/releases" />
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
@@ -62,27 +65,31 @@ const links = [
 
         <!-- How it compares -->
         <div class="font-semibold tracking-[0.04em]">HOW IT COMPARES:</div>
-        <div class="pl-[1ch] overflow-x-auto">
-          <table class="border-collapse w-full text-[hsl(var(--muted-foreground))] text-[12px]">
+        <div class="-mx-4 sm:-mx-8 relative mt-2">
+          <div id="compare-scroll" class="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <table class="border-collapse w-max text-[hsl(var(--muted-foreground))] text-[12px]">
             <thead>
               <tr class="text-[hsl(var(--foreground))]">
-                <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))]">FEATURE</th>
+                <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap">FEATURE</th>
                 {compareTools.map((tool, i) => (
-                  <th class={`text-center font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))]${i === 0 ? ' text-[hsl(var(--foreground))]' : ''}`}>{tool}</th>
+                  <th class={`text-center font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap${i === 0 ? ' text-[hsl(var(--foreground))]' : ''}`}>{tool}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {compareRows.map(row => (
                 <tr>
-                  <td class="pr-6 pt-1 text-[hsl(var(--foreground))] font-semibold">{row.feature}</td>
+                  <td class="pr-6 pt-1 text-[hsl(var(--foreground))] font-semibold whitespace-nowrap">{row.feature}</td>
                   {row.values.map((val, i) => (
-                    <td class={`text-center pr-6 pt-1${i === 0 ? ' text-[hsl(var(--foreground))] font-bold' : ''}`}>{val === null ? '?' : val ? '✓' : '✗'}</td>
+                    <td class={`text-center pr-6 pt-1 whitespace-nowrap${i === 0 ? ' text-[hsl(var(--foreground))] font-bold' : ''}`}>{val === null ? '?' : val ? '✓' : '✗'}</td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
+          <div id="fade-left" class="compare-table-fade compare-table-fade--left" aria-hidden="true"></div>
+          <div id="fade-right" class="compare-table-fade compare-table-fade--right" aria-hidden="true"></div>
         </div>
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
@@ -93,15 +100,51 @@ const links = [
           <MarkdownLink label={link.label} href={link.href} showHref={true} />
         ))}
 
-    <script>
-      const btn = document.querySelector('button[aria-label="Copy install command"]') as HTMLButtonElement | null;
+    </div>
+
+    <!-- Right column: sticky feature pan -->
+    <div class="sm:sticky sm:top-8 sm:h-[calc(100vh-4rem)] flex items-center">
+      <FeaturePan />
+    </div>
+
+  </div>
+
+    <script is:inline>
+      (function () {
+        const scroll = document.getElementById('compare-scroll');
+        const fadeLeft = document.getElementById('fade-left');
+        const fadeRight = document.getElementById('fade-right');
+        if (!scroll || !fadeLeft || !fadeRight) return;
+
+        function updateFades() {
+          const { scrollLeft, scrollWidth, clientWidth } = scroll;
+          const canScroll = scrollWidth > clientWidth + 1;
+          const showLeft = canScroll && scrollLeft > 2;
+          const showRight = canScroll && scrollLeft + clientWidth < scrollWidth - 2;
+          fadeLeft.classList.toggle('is-visible', showLeft);
+          fadeRight.classList.toggle('is-visible', showRight);
+          fadeLeft.setAttribute('aria-hidden', showLeft ? 'false' : 'true');
+          fadeRight.setAttribute('aria-hidden', showRight ? 'false' : 'true');
+        }
+
+        scroll.addEventListener('scroll', updateFades, { passive: true });
+        new ResizeObserver(updateFades).observe(scroll);
+        window.addEventListener('resize', updateFades, { passive: true });
+        document.fonts?.ready.then(updateFades);
+        updateFades();
+        requestAnimationFrame(updateFades);
+      })();
+
+      const btn = document.querySelector('button[aria-label="Copy install command"]');
       const cmdEl = document.getElementById('install-cmd');
       btn?.addEventListener('click', () => {
         const cmd = cmdEl?.textContent ?? '';
         navigator.clipboard.writeText(cmd).then(() => {
-          if (btn) { btn.textContent = 'COPIED'; setTimeout(() => { btn.textContent = 'COPY'; }, 1500); }
+          btn.textContent = 'COPIED';
+          setTimeout(() => { btn.textContent = 'COPY'; }, 1500);
         }).catch(() => {
-          if (btn) { btn.textContent = 'ERR'; setTimeout(() => { btn.textContent = 'COPY'; }, 1500); }
+          btn.textContent = 'ERR';
+          setTimeout(() => { btn.textContent = 'COPY'; }, 1500);
         });
       });
     </script>
