@@ -1,8 +1,6 @@
 package api
 
 import (
-	"time"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/assets"
@@ -19,13 +17,11 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 		r.Get("/health", Health(version))
 
 		r.Route("/auth", func(r chi.Router) {
-			auth.RegisterRoutes(r, &state.Token, state.Session, state.Lan, cookieSecure, auth.NewRateLimiter(10, time.Minute))
+			auth.RegisterRoutes(r, state.Session, cookieSecure)
 		})
 
 		r.Route("/settings", func(r chi.Router) {
-			settings.RegisterRoutes(r, state.Session, state.SettingsStore, state.Lan, func(enabled bool) error {
-				return nil // Phase 6 implements real LAN binding
-			})
+			settings.RegisterRoutes(r, state.Session, state.SettingsStore, state.Lan)
 		})
 
 		r.Route("/keybindings", func(r chi.Router) {
@@ -33,13 +29,10 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 		})
 
 		r.Group(func(r chi.Router) {
-				workspace.RegisterRoutes(r, state.DB, state.Session)
-			})
+			workspace.RegisterRoutes(r, state.DB, state.Session)
+		})
 	})
 
-	// WebSocket endpoint
 	r.Handle("/ws", terminal.WSHandler(state.Session, state.DB, registry))
-
-	// Static SPA — must be last
 	r.Handle("/*", assets.Handler())
 }

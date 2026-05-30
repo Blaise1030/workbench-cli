@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,6 +22,26 @@ import (
 )
 
 const version = "0.1.1"
+
+// buildAllowedHosts lists Origin header hosts permitted for state-changing API calls.
+// WORKBENCH_DEV_UI_PORT adds localhost:<port> when Vite proxies /api during dev:go.
+func buildAllowedHosts(port int, host string) []string {
+	portStr := fmt.Sprintf("%d", port)
+	hosts := []string{
+		fmt.Sprintf("localhost:%s", portStr),
+		fmt.Sprintf("127.0.0.1:%s", portStr),
+	}
+	if cfgHost := fmt.Sprintf("%s:%s", host, portStr); cfgHost != hosts[0] && cfgHost != hosts[1] {
+		hosts = append(hosts, cfgHost)
+	}
+	if devPort := strings.TrimSpace(os.Getenv("WORKBENCH_DEV_UI_PORT")); devPort != "" {
+		hosts = append(hosts,
+			fmt.Sprintf("localhost:%s", devPort),
+			fmt.Sprintf("127.0.0.1:%s", devPort),
+		)
+	}
+	return hosts
+}
 
 type Config struct {
 	Port      int
@@ -50,21 +71,10 @@ func Run(cfg Config) error {
 	if cfg.ForceHTTP {
 		openHost = "127.0.0.1"
 	}
-	portStr := fmt.Sprintf("%d", cfg.Port)
-	allowedHosts := []string{
-		fmt.Sprintf("localhost:%s", portStr),
-		fmt.Sprintf("127.0.0.1:%s", portStr),
-	}
-	if cfgHost := fmt.Sprintf("%s:%s", cfg.Host, portStr); cfgHost != fmt.Sprintf("localhost:%s", portStr) && cfgHost != fmt.Sprintf("127.0.0.1:%s", portStr) {
-		allowedHosts = append(allowedHosts, cfgHost)
-	}
+	allowedHosts := buildAllowedHosts(cfg.Port, cfg.Host)
 	api.RegisterRoutes(r, version, state, cookieSecure, registry, allowedHosts)
 
 	listenAddr := fmt.Sprintf("127.0.0.1:%d", cfg.Port)
-	if !cfg.ForceHTTP {
-		// Bind to all interfaces for HTTPS (LAN-capable)
-		listenAddr = fmt.Sprintf(":%d", cfg.Port)
-	}
 
 	ln, err := net.Listen("tcp", listenAddr)
 	if err != nil {

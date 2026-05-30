@@ -1,40 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import LanShareCard from "@/modules/settings/components/LanShareCard.vue";
 import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
 import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
 import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 import {
-  useLanSettingsQuery,
   useNetworkSettingsQuery,
   usePatchNetworkSettingsMutation,
-  useRefreshInviteMutation,
-  useSetLanMutation,
 } from "@/modules/settings/queries/settings";
 import { ApiError } from "@/lib/api-error";
 
-const { data: lanData, isPending: lanPending } = useLanSettingsQuery();
 const { data: networkData, isPending: networkPending } = useNetworkSettingsQuery();
-const setLan = useSetLanMutation();
-const refreshInvite = useRefreshInviteMutation();
 const patchNetwork = usePatchNetworkSettingsMutation();
-
-const enabled = computed(() => lanData.value?.enabled ?? false);
-const lanUrl = computed(() => lanData.value?.lanUrl);
-const inviteExpiresAt = computed(() => lanData.value?.inviteExpiresAt);
 
 const localUrl = computed(() => networkData.value?.localUrl ?? "");
 const pendingRestart = computed(() => networkData.value?.pendingRestart ?? false);
@@ -55,18 +33,8 @@ watch(
 );
 
 const error = ref("");
-const confirmEnable = ref(false);
-const confirmDisable = ref(false);
-const pendingEnable = ref<boolean | null>(null);
 
-const loading = computed(
-  () =>
-    lanPending.value ||
-    networkPending.value ||
-    setLan.isPending.value ||
-    refreshInvite.isPending.value ||
-    patchNetwork.isPending.value,
-);
+const loading = computed(() => networkPending.value || patchNetwork.isPending.value);
 
 const networkDirty = computed(() => {
   const n = networkData.value;
@@ -99,58 +67,6 @@ async function saveNetwork(): Promise<void> {
   }
 }
 
-async function applyLan(next: boolean): Promise<void> {
-  error.value = "";
-  try {
-    await setLan.mutateAsync(next);
-  } catch (err) {
-    error.value = mutationErrorMessage(err, "Failed to update LAN settings.");
-  }
-}
-
-function onSwitchChange(checked: boolean) {
-  if (loading.value) return;
-  pendingEnable.value = checked;
-  if (checked) {
-    confirmEnable.value = true;
-  } else {
-    confirmDisable.value = true;
-  }
-}
-
-async function confirmEnableAction() {
-  confirmEnable.value = false;
-  if (pendingEnable.value !== true) return;
-  await applyLan(true);
-  pendingEnable.value = null;
-}
-
-function cancelEnable() {
-  confirmEnable.value = false;
-  pendingEnable.value = null;
-}
-
-async function confirmDisableAction() {
-  confirmDisable.value = false;
-  if (pendingEnable.value !== false) return;
-  await applyLan(false);
-  pendingEnable.value = null;
-}
-
-function cancelDisable() {
-  confirmDisable.value = false;
-  pendingEnable.value = null;
-}
-
-async function onRefreshInvite() {
-  error.value = "";
-  try {
-    await refreshInvite.mutateAsync();
-  } catch (err) {
-    error.value = mutationErrorMessage(err, "Failed to regenerate link.");
-  }
-}
-
 async function copyHostsLine() {
   if (!hostsFileLine.value) return;
   try {
@@ -165,7 +81,7 @@ async function copyHostsLine() {
 <template>
   <SettingsPage
     title="Network"
-    description="Local address, port, and who can reach this terminal on your Wi‑Fi."
+    description="Local address and port for this terminal."
   >
     <div v-if="error" class="border-b border-destructive/30 bg-destructive/10 px-8 py-3 text-sm text-destructive">
       {{ error }}
@@ -233,56 +149,5 @@ async function copyHostsLine() {
         </Button>
       </div>
     </SettingsSection>
-
-    <SettingsSection title="LAN access">
-      <SettingsRow
-        label="Allow LAN access"
-        description="Let other devices on your Wi‑Fi reach this terminal."
-      >
-        <Switch
-          id="lan-switch"
-          :checked="pendingEnable ?? enabled"
-          :disabled="loading"
-          @update:checked="onSwitchChange"
-        />
-      </SettingsRow>
-    </SettingsSection>
-
-    <LanShareCard
-      v-if="enabled && lanUrl"
-      :lan-url="lanUrl"
-      :invite-expires-at="inviteExpiresAt"
-      @refresh="onRefreshInvite"
-    />
-
-    <AlertDialog :open="confirmEnable" @update:open="(v) => !v && cancelEnable()">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Enable LAN access?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Anyone on your Wi‑Fi can reach this terminal. They still need the invite link or access token to sign in.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel @click="cancelEnable">Cancel</AlertDialogCancel>
-          <AlertDialogAction @click="confirmEnableAction">Continue</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-
-    <AlertDialog :open="confirmDisable" @update:open="(v) => !v && cancelDisable()">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Stop LAN access?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Other devices will no longer be able to connect. Your local session continues.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel @click="cancelDisable">Cancel</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDisableAction">Stop</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   </SettingsPage>
 </template>

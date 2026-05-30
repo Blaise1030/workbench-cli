@@ -29,7 +29,7 @@ Options:
   -y, --yes             Install mkcert without prompting if missing
   -h, --help            Show this help
 
-LAN sharing in the UI requires mkcert (HTTPS). HTTP mode disables LAN until mkcert is installed.
+HTTPS uses mkcert for trusted local certificates. HTTP mode skips mkcert.
 Without --yes, the CLI asks before installing mkcert.
 
 Add to /etc/hosts once: 127.0.0.1 %s

@@ -7,10 +7,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "NODE_ENV=development PORT=4739 tsx watch server/index.ts",
-    "build": "node scripts/build-server.mjs && vite build --config frontend/vite.config.ts && node scripts/assert-shiki-bundle.mjs",
+    "dev": "node scripts/dev-go.mjs",
+    "build": "vite build --config frontend/vite.config.ts && node scripts/assert-shiki-bundle.mjs",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
-    "start": "NODE_ENV=production node dist/cli/index.cjs",
+    "start": "./bin/workbench-cli",
     "test": "vitest run",
     "package:release": "node scripts/package-release.mjs",
     "package:release:all": "node scripts/package-release.mjs --bundle-node",

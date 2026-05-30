@@ -12,7 +12,7 @@ import (
 func Handler() http.Handler {
 	if Public == nil {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "Frontend not built. Run: npm run build", http.StatusNotFound)
+			http.Error(w, "Frontend not built. Run: pnpm run build", http.StatusNotFound)
 		})
 	}
 
@@ -55,7 +55,7 @@ func Handler() http.Handler {
 func serveIndex(w http.ResponseWriter, r *http.Request, sub fs.FS) {
 	f, err := sub.Open("index.html")
 	if err != nil {
-		http.Error(w, "Frontend not built. Run: npm run build", http.StatusNotFound)
+		http.Error(w, "Frontend not built. Run: pnpm run build", http.StatusNotFound)
 		return
 	}
 	defer f.Close()

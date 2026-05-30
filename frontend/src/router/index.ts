@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import LoginView from "@/modules/auth/pages/LoginView.vue";
 import WorkspaceView from "@/modules/workspace/pages/WorkspaceView.vue";
 import SettingsView from "@/modules/settings/layout/SettingsView.vue";
 import GeneralSettings from "@/modules/settings/pages/GeneralSettings.vue";
@@ -9,22 +8,14 @@ import Terminal from "@/modules/terminal/pages/Terminal.vue";
 import GitPanel from "@/modules/git/pages/GitPanel.vue";
 import FileExplorerPanel from "@/modules/file-explorer/pages/FileExplorerPanel.vue";
 import { ensureLocalAuth } from "@/api/auth";
-import { lanSettingsQueryOptions } from "@/modules/settings/queries/settings";
+import { networkSettingsQueryOptions } from "@/modules/settings/queries/settings";
 import { queryClient } from "@/lib/query-client";
-import { ApiError, ensureOk } from "@/lib/api-error";
-import { isLocalHost } from "@/lib/is-local-host";
 import { rememberSettingsReturnRoute } from "@/modules/settings/lib/settings-return-route";
 const VALID_GIT_TABS = ["staged", "unstaged"] as const;
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    {
-      path: "/login",
-      name: "login",
-      component: LoginView,
-      meta: { public: true },
-    },
     {
       path: "/",
       name: "home",
@@ -83,37 +74,13 @@ router.beforeEach(async (to, from) => {
     rememberSettingsReturnRoute(from.fullPath);
   }
 
-  if (to.meta.public) {
-    if (to.name === "login" && isLocalHost()) {
-      try {
-        await ensureLocalAuth();
-        return { name: "home" };
-      } catch {
-        return true;
-      }
-    }
-    return true;
-  }
-
-  if (isLocalHost()) {
-    try {
-      await ensureLocalAuth();
-    } catch (err) {
-      return { name: "login", query: to.query };
-    }
-    queryClient.prefetchQuery(lanSettingsQueryOptions());
-    return true;
-  }
-
   try {
-    await queryClient.ensureQueryData(lanSettingsQueryOptions());
-    return true;
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 401) {
-      return { name: "login", query: to.query };
-    }
-    throw err;
+    await ensureLocalAuth();
+    queryClient.prefetchQuery(networkSettingsQueryOptions());
+  } catch {
+    // Auth failed (e.g. API down, or dev UI origin not allowed on Go). Skip prefetch.
   }
+  return true;
 });
 
 export default router;

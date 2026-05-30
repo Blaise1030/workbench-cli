@@ -6,7 +6,6 @@ import {
 } from "@tanstack/vue-query";
 import type {
   ApprovedResumePrefix,
-  LanPublicState,
   NetworkSettings,
   PatchNetworkSettings,
   TerminalSettings,
@@ -16,7 +15,6 @@ import { ensureOk } from "@/lib/api-error";
 
 export const settingsKeys = {
   all: ["settings"] as const,
-  lan: () => [...settingsKeys.all, "lan"] as const,
   network: () => [...settingsKeys.all, "network"] as const,
   terminal: () => [...settingsKeys.all, "terminal"] as const,
   resumePrefixes: () => [...settingsKeys.all, "terminal", "resume-prefixes"] as const,
@@ -28,16 +26,6 @@ export function networkSettingsQueryOptions() {
     queryFn: async () => {
       const res = await apiClient.settings.network.$get();
       return ensureOk<NetworkSettings>(res);
-    },
-  });
-}
-
-export function lanSettingsQueryOptions() {
-  return queryOptions({
-    queryKey: settingsKeys.lan(),
-    queryFn: async () => {
-      const res = await apiClient.settings.lan.$get();
-      return ensureOk<LanPublicState>(res);
     },
   });
 }
@@ -66,10 +54,6 @@ export function useNetworkSettingsQuery() {
   return useQuery(networkSettingsQueryOptions());
 }
 
-export function useLanSettingsQuery() {
-  return useQuery(lanSettingsQueryOptions());
-}
-
 export function useTerminalSettingsQuery() {
   return useQuery(terminalSettingsQueryOptions());
 }
@@ -87,32 +71,6 @@ export function usePatchNetworkSettingsMutation() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(settingsKeys.network(), data);
-    },
-  });
-}
-
-export function useSetLanMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const res = await apiClient.settings.lan.$post({ json: { enabled } });
-      return ensureOk<LanPublicState>(res);
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(settingsKeys.lan(), data);
-    },
-  });
-}
-
-export function useRefreshInviteMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      const res = await apiClient.settings.lan["refresh-invite"].$post();
-      return ensureOk<LanPublicState>(res);
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(settingsKeys.lan(), data);
     },
   });
 }

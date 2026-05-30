@@ -1,7 +1,7 @@
 /**
  * Build the Go server with embedded UI (single native binary).
  *
- *   npm run build:go
+ *   pnpm run build:go
  *   node scripts/build-go.mjs --skip-ui   # reuse existing dist/public
  */
 import { execFileSync } from "node:child_process";
@@ -22,9 +22,9 @@ if (!skipUi) {
   } else {
     console.log("Refreshing UI → dist/public …");
   }
-  execFileSync("npm", ["run", "build"], { cwd: root, stdio: "inherit" });
+  execFileSync("pnpm", ["run", "build"], { cwd: root, stdio: "inherit" });
 } else if (!existsSync(indexHtml)) {
-  console.error("dist/public/index.html missing. Run `npm run build` or drop --skip-ui.");
+  console.error("dist/public/index.html missing. Run `pnpm run build` or drop --skip-ui.");
   process.exit(1);
 }
 

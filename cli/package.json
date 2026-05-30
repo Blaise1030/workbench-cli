@@ -2,11 +2,5 @@
   "name": "@workbench/cli",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "bin": {
-    "workbench-cli": "../dist/cli/index.cjs"
-  },
-  "dependencies": {
-    "@workbench/server": "workspace:*"
-  }
+  "type": "module"
 }

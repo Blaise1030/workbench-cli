@@ -9,10 +9,8 @@
     "lib": ["ESNext", "DOM"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./frontend/src/*"],
-      "@server/*": ["./server/*"],
-      "@workbench/server": ["./server/index.ts"]
+      "@/*": ["./frontend/src/*"]
     }
   },
-  "include": ["frontend/src", "server", "cli", "frontend/vite.config.ts", "scripts"]
+  "include": ["frontend/src", "cli", "frontend/vite.config.ts", "scripts"]
 }

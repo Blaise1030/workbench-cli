@@ -18,7 +18,7 @@ const HONO_PORT = 4740;
 const GO_PORT = 4741;
 const POLL_MS = 300;
 const TIMEOUT_MS = 20_000;
-const VOLATILE_FIELDS = new Set(["createdAt", "updatedAt", "id", "sid", "expiresAt", "inviteExpiresAt"]);
+const VOLATILE_FIELDS = new Set(["createdAt", "updatedAt", "id", "sid", "expiresAt"]);
 
 async function poll(url, maxMs) {
   const deadline = Date.now() + maxMs;

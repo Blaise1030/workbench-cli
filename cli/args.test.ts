@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseCliArgs } from "./args.js";
-import { DEFAULT_NETWORK_PORT } from "../server/modules/settings/network-config.js";
+import { DEFAULT_NETWORK_PORT } from "./network-config.js";
 
 let tempHome: string;
 const originalHome = process.env.HOME;

@@ -21,7 +21,7 @@ export async function promptMkcertInstall(): Promise<boolean> {
   }
 
   console.log("\n  mkcert is not installed.");
-  console.log("  It provides trusted HTTPS certificates for localhost (and LAN sharing).");
+  console.log("  It provides trusted HTTPS certificates for localhost.");
   console.log(`  ${getMkcertInstallHint()}\n`);
 
   const rl = readline.createInterface({

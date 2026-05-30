@@ -3,7 +3,6 @@ package settings
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 
@@ -12,24 +11,12 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 )
 
-// LanProvider is the interface the settings router needs from LanManager.
-type LanProvider interface {
-	GetPublicState() LanPublicState
-	Mode() string // "localhost" or "lan"
-	Enable(lanIP string)
-	Disable()
-	RefreshInvite()
+// NetworkProvider supplies local URL and port for network settings.
+type NetworkProvider interface {
 	GetLocalURL() string
 	GetURLScheme() string
 	GetLocalHost() string
 	Port() int
-}
-
-// LanPublicState matches lanPublicStateSchema.
-type LanPublicState struct {
-	Enabled         bool    `json:"enabled"`
-	LanURL          *string `json:"lanUrl,omitempty"`
-	InviteExpiresAt *int64  `json:"inviteExpiresAt,omitempty"`
 }
 
 // NetworkSettings matches networkSettingsSchema.
@@ -44,40 +31,17 @@ type NetworkSettings struct {
 	PendingRestart bool   `json:"pendingRestart"`
 }
 
-func getLanIP() string {
-	ifaces, _ := net.Interfaces()
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
-			continue
-		}
-		addrs, _ := iface.Addrs()
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip4 := ip.To4(); ip4 != nil {
-				return ip4.String()
-			}
-		}
-	}
-	return "127.0.0.1"
-}
-
-func buildNetworkSettings(lan LanProvider) NetworkSettings {
+func buildNetworkSettings(net NetworkProvider) NetworkSettings {
 	saved := config.LoadNetworkConfig()
-	running := config.NetworkConfig{Host: lan.GetLocalHost(), Port: lan.Port()}
+	running := config.NetworkConfig{Host: net.GetLocalHost(), Port: net.Port()}
 	pendingRestart := saved.Host != running.Host || saved.Port != running.Port
 	return NetworkSettings{
 		Host:           saved.Host,
 		Port:           saved.Port,
 		ProdPort:       saved.Port,
 		NonProdPort:    config.NonProdPort(saved.Port),
-		LocalURL:       lan.GetLocalURL(),
-		Scheme:         lan.GetURLScheme(),
+		LocalURL:       net.GetLocalURL(),
+		Scheme:         net.GetURLScheme(),
 		HostsFileLine:  fmt.Sprintf("127.0.0.1 %s", saved.Host),
 		PendingRestart: pendingRestart,
 	}
@@ -91,45 +55,11 @@ func jsonResp(w http.ResponseWriter, v any, code int) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func RegisterRoutes(r chi.Router, session *auth.Session, store Store, lan LanProvider, onLanToggle func(bool) error) {
+func RegisterRoutes(r chi.Router, session *auth.Session, store Store, net NetworkProvider) {
 	r.Use(auth.RequireSession(session))
 
-	// LAN
-	r.Get("/lan", func(w http.ResponseWriter, r *http.Request) {
-		jsonResp(w, lan.GetPublicState(), http.StatusOK)
-	})
-	r.Post("/lan", func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Enabled bool `json:"enabled"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			jsonResp(w, map[string]string{"error": "Bad request"}, http.StatusBadRequest)
-			return
-		}
-		if body.Enabled {
-			if getLanIP() == "127.0.0.1" {
-				jsonResp(w, map[string]string{"error": "No network interface found"}, http.StatusServiceUnavailable)
-				return
-			}
-		}
-		if err := onLanToggle(body.Enabled); err != nil {
-			jsonResp(w, map[string]string{"error": err.Error()}, http.StatusInternalServerError)
-			return
-		}
-		jsonResp(w, lan.GetPublicState(), http.StatusOK)
-	})
-	r.Post("/lan/refresh-invite", func(w http.ResponseWriter, r *http.Request) {
-		if lan.Mode() != "lan" {
-			jsonResp(w, map[string]string{"error": "LAN is not enabled"}, http.StatusBadRequest)
-			return
-		}
-		lan.RefreshInvite()
-		jsonResp(w, lan.GetPublicState(), http.StatusOK)
-	})
-
-	// Network
 	r.Get("/network", func(w http.ResponseWriter, r *http.Request) {
-		jsonResp(w, buildNetworkSettings(lan), http.StatusOK)
+		jsonResp(w, buildNetworkSettings(net), http.StatusOK)
 	})
 	r.Patch("/network", func(w http.ResponseWriter, r *http.Request) {
 		var patch struct {
@@ -164,10 +94,9 @@ func RegisterRoutes(r chi.Router, session *auth.Session, store Store, lan LanPro
 			jsonResp(w, map[string]string{"error": err.Error()}, http.StatusInternalServerError)
 			return
 		}
-		jsonResp(w, buildNetworkSettings(lan), http.StatusOK)
+		jsonResp(w, buildNetworkSettings(net), http.StatusOK)
 	})
 
-	// Terminal settings
 	r.Get("/terminal", func(w http.ResponseWriter, r *http.Request) {
 		jsonResp(w, GetTerminalSettings(store), http.StatusOK)
 	})
@@ -180,7 +109,6 @@ func RegisterRoutes(r chi.Router, session *auth.Session, store Store, lan LanPro
 		jsonResp(w, PatchTerminalSettingsFn(store, patch), http.StatusOK)
 	})
 
-	// Resume commands
 	r.Get("/terminal/resume-commands", func(w http.ResponseWriter, r *http.Request) {
 		jsonResp(w, map[string]any{"approvedPrefixes": ListApprovedResumePrefixes(store)}, http.StatusOK)
 	})

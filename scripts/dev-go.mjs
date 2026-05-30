@@ -53,7 +53,10 @@ process.on("SIGTERM", () => shutdown(0));
 const go = run(
   "go",
   ["run", "./cmd/workbench-cli", "--http", "-p", GO_PORT, "-y"],
-  { cwd: join(ROOT, "server-go") },
+  {
+    cwd: join(ROOT, "server-go"),
+    env: { WORKBENCH_DEV_UI_PORT: VITE_PORT },
+  },
 );
 
 go.on("exit", (code, signal) => {

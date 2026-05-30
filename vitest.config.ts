@@ -10,13 +10,9 @@ export default defineConfig({
         find: "@",
         replacement: fileURLToPath(new URL("./frontend/src", import.meta.url)),
       },
-      {
-        find: "@server",
-        replacement: fileURLToPath(new URL("./server", import.meta.url)),
-      },
     ],
   },
   test: {
-    include: ["server/**/*.test.ts", "cli/**/*.test.ts", "frontend/src/**/*.test.ts"],
+    include: ["cli/**/*.test.ts", "frontend/src/**/*.test.ts"],
   },
 });

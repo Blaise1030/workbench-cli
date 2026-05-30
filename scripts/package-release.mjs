@@ -139,7 +139,7 @@ exec node "$ROOT/dist/cli/index.cjs" "$@"
 
 async function main() {
   console.log("\n  Building workbench-cli release…\n");
-  execFileSync("npm", ["run", "build"], { cwd: root, stdio: "inherit" });
+  execFileSync("pnpm", ["run", "build"], { cwd: root, stdio: "inherit" });
 
   const slug = platformSlug();
   const folderName = `workbench-cli-${slug}`;

@@ -17,7 +17,7 @@ FEATURES:
 - Claude Code hook integration — get notified when agents stop or complete tasks
 - Per-worktree terminal tabs, git panel, and file explorer
 - Line-level diffs, staged/unstaged review without leaving the app
-- Keybinding configuration and LAN network settings
+- Keybinding configuration and network settings
 - Single binary — no Electron, no runtime dependencies
 ~~~
 HOW IT COMPARES:
