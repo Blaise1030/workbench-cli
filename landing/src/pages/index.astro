@@ -1,7 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MarkdownLink from '../components/MarkdownLink.astro';
-import FeaturePan from '../components/FeaturePan.astro';
 import { installCmd, installChannelLabel, isDevPreviewBuild } from '../lib/install';
 
 const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
@@ -21,23 +20,20 @@ const links = [
 ];
 ---
 
-<Layout title="Workbench" description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux." fullWidth>
-
-  <div class="grid sm:grid-cols-2 gap-8 items-start">
-    <div id="left-col">
+<Layout title="Workbench" description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux.">
 
         <!-- Install -->
-        <div class="font-semibold tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
+        <div class="font-semibold mb-2 tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
         {isDevPreviewBuild && (
           <div class="text-[hsl(var(--muted-foreground))] pl-[1ch] text-[11px] mb-1">
             PR preview — installs this build. For the latest stable release use
             {' '}<span class="text-black-200">curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh</span>
           </div>
         )}
-        <div class="flex items-center gap-3 pl-[1ch]">
-          <span class="font-medium text-[12px] p-1 bg-muted text-black max-sm:text-[11px] max-sm:break-all" id="install-cmd">{installCmd}</span>
-          <button
-            class="font-[inherit] text-[10px] tracking-[0.1em] bg-foreground text-background border-0 px-2 py-0.5 cursor-pointer rounded-[2px] shrink-0 hover:opacity-80"
+        <div class="pl-[1ch] leading-relaxed">
+          <span class="font-medium p-1 bg-muted text-black break-all box-decoration-clone" id="install-cmd">{installCmd}</span><!--
+          --><button
+            class="inline-block align-middle ms-2 tracking-[0.1em] bg-foreground text-background border-0 px-1 cursor-pointer hover:opacity-80"
             aria-label="Copy install command"
           >COPY</button>
         </div>        
@@ -53,21 +49,21 @@ const links = [
 
         <!-- Features -->
         <div class="font-semibold tracking-[0.04em]">FEATURES:</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Parallel git worktrees with one-click switching</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Real terminal per worktree — run any agent (Claude Code, Codex, Aider, OpenCode)</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Built-in file editor with syntax highlighting</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Line-level git diffs, staged/unstaged — no app switch needed</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Command palette</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Agent notifications — get alerted when agents complete or stop</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Single binary, no Electron, no runtime dependencies</div>
+        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Parallel git worktrees with one-click switching</span></div>
+        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Real terminal per worktree — run any agent (Claude Code, Codex, Aider, OpenCode)</span></div>
+        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Built-in file editor with syntax highlighting</span></div>
+        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Line-level git diffs, staged/unstaged — no app switch needed</span></div>
+        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Command palette</span></div>
+        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Agent notifications — get alerted when agents complete or stop</span></div>
+        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Single binary, no Electron, no runtime dependencies</span></div>
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
         <!-- How it compares -->
         <div class="font-semibold tracking-[0.04em]">HOW IT COMPARES:</div>
-        <div class="-mx-4 sm:-mx-8 relative mt-2">
-          <div id="compare-scroll" class="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <table class="border-collapse w-max text-[hsl(var(--muted-foreground))] text-[12px]">
+        <div class="relative mt-2 min-w-0 max-w-full overflow-hidden">
+          <div id="compare-scroll" class="w-full min-w-0 overflow-x-auto px-[1ch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <table class="border-collapse w-full text-[hsl(var(--muted-foreground))] text-[12px]">
             <thead>
               <tr class="text-[hsl(var(--foreground))]">
                 <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap">FEATURE</th>
@@ -99,15 +95,6 @@ const links = [
         {links.map(link => (
           <MarkdownLink label={link.label} href={link.href} showHref={true} />
         ))}
-
-    </div>
-
-    <!-- Right column: sticky feature pan -->
-    <div class="sm:sticky sm:top-8 sm:h-[calc(100vh-4rem)] flex items-center">
-      <FeaturePan />
-    </div>
-
-  </div>
 
     <script is:inline>
       (function () {

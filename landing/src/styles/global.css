@@ -261,3 +261,39 @@ a:visited {
 .prose-docs li {
   margin-bottom: 0.25rem;
 }
+
+/* Compare table horizontal scroll fades */
+.compare-table-fade {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3rem;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.compare-table-fade--left {
+  left: 0;
+  background: linear-gradient(to right, oklch(1 0 0) 15%, transparent);
+}
+
+.compare-table-fade--right {
+  right: 0;
+  background: linear-gradient(to left, oklch(1 0 0) 15%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .compare-table-fade--left {
+    background: linear-gradient(to right, hsl(240 10% 3.9%) 15%, transparent);
+  }
+
+  .compare-table-fade--right {
+    background: linear-gradient(to left, hsl(240 10% 3.9%) 15%, transparent);
+  }
+}
+
+.compare-table-fade.is-visible {
+  opacity: 1;
+}

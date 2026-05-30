@@ -10,8 +10,10 @@ const { label, href, showHref = false } = Astro.props;
 const resolvedHref = withBase(href);
 ---
 
-<div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">
-  <span class="text-[hsl(var(--foreground))]"> -</span>
-  {'['}<a href={resolvedHref}>{label}</a>{']'}
-  {showHref && <span>({href})</span>}
+<div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]">
+  <span class="shrink-0 text-[hsl(var(--foreground))]"> -</span>
+  <span>
+    <span class="whitespace-nowrap">{'['}<a href={resolvedHref}>{label}</a>{']'}</span>
+    {showHref && <span>({href})</span>}
+  </span>
 </div>

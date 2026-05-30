@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import MarkdownLink from '../../components/MarkdownLink.astro';
 import { getCollection } from 'astro:content';
+import { withBase } from '../../lib/paths';
 
 const allDocs = await getCollection('docs');
 const sorted = allDocs.sort((a, b) => a.data.order - b.data.order);
@@ -10,9 +10,12 @@ const sorted = allDocs.sort((a, b) => a.data.order - b.data.order);
 <Layout title="Docs — Workbench" description="Workbench documentation">
   <div class="font-semibold tracking-[0.04em]">DOCS:</div>
   {sorted.map(entry => (
-    <div class="pl-[1ch] flex gap-2">
-      <MarkdownLink label={entry.data.title} href={`/docs/${entry.slug}`} />
-      <span class="text-[hsl(var(--muted-foreground))]">— {entry.data.description}</span>
+    <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]">
+      <span class="shrink-0 text-[hsl(var(--foreground))]"> -</span>
+      <span>
+        <span class="whitespace-nowrap">{'['}<a href={withBase(`/docs/${entry.slug}`)}>{entry.data.title}</a>{']'}</span>
+        {entry.data.description && <span> — {entry.data.description}</span>}
+      </span>
     </div>
   ))}  
 
