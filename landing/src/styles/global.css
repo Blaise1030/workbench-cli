@@ -216,20 +216,28 @@ a {
 
 .prose-docs pre {
   background: hsl(var(--muted));
+  color: hsl(var(--foreground));
   border: 1px solid hsl(var(--border));
   padding: 0.75rem 1rem;
   overflow-x: auto;
   margin-bottom: 0.75rem;
+  border-radius: var(--radius-sm);
 }
 
-.prose-docs code {
+.prose-docs pre code {
   font-family: inherit;
   font-size: inherit;
+  color: inherit;
+  background: none;
+  padding: 0;
 }
 
 .prose-docs :not(pre) > code {
   background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
   padding: 0.1em 0.3em;
+  border-radius: var(--radius-sm);
 }
 
 .prose-docs ul {
