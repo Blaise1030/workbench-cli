@@ -1,0 +1,324 @@
+name: PR Preview
+
+on:
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      dev_version: ${{ steps.version.outputs.dev_version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        run: |
+          DEV_VERSION="$(node scripts/compute-dev-version.mjs)"
+          echo "dev_version=${DEV_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=v${DEV_VERSION}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: vars
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+            name: workbench-cli-linux-x86_64
+          - goos: linux
+            goarch: arm64
+            runner: ubuntu-latest
+            name: workbench-cli-linux-aarch64
+          - goos: darwin
+            goarch: amd64
+            runner: macos-latest
+            name: workbench-cli-macos-x86_64
+          - goos: darwin
+            goarch: arm64
+            runner: macos-latest
+            name: workbench-cli-macos-aarch64
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server-go/go.mod
+          cache-dependency-path: server-go/go.sum
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run build
+
+      - name: Stage UI for go:embed
+        run: |
+          rm -rf server-go/internal/assets/public
+          mkdir -p server-go/internal/assets/public
+          cp -R dist/public/. server-go/internal/assets/public/
+          test -f server-go/internal/assets/public/index.html
+
+      - name: Build Go binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          cd server-go
+          go build \
+            -tags embed \
+            -ldflags="-s -w" \
+            -o "../dist/${{ matrix.name }}" \
+            ./cmd/workbench-cli
+
+      - name: Package tarball
+        run: |
+          chmod +x "dist/${{ matrix.name }}"
+          cd dist
+          tar czf "${{ matrix.name }}.tar.gz" "${{ matrix.name }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: dist/${{ matrix.name }}.tar.gz
+
+  register-dev-version:
+    name: Register dev version index
+    needs: vars
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Register dev version
+        env:
+          VERSION: ${{ needs.vars.outputs.dev_version }}
+        run: node scripts/register-dev-version.mjs
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(pages): register dev version ${{ needs.vars.outputs.dev_version }}"
+          file_pattern: docs/dev-versions.json
+
+  publish-dev-release:
+    name: Publish dev GitHub Release
+    needs: [vars, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Prepare install.sh for release asset
+        env:
+          VERSION: ${{ needs.vars.outputs.dev_version }}
+          TAG: ${{ needs.vars.outputs.release_tag }}
+        run: |
+          mkdir -p release-assets
+          OUT_DIR=release-assets \
+            MANIFEST_BASE="https://blaise1030.github.io/workbench-cli/${VERSION}" \
+            node scripts/prepare-versioned-install.mjs
+          cp release-assets/install.sh "artifacts/install.sh"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.vars.outputs.release_tag }}
+          name: Dev ${{ needs.vars.outputs.dev_version }} (PR #${{ github.event.pull_request.number }})
+          prerelease: true
+          make_latest: false
+          files: |
+            artifacts/*.tar.gz
+            artifacts/install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-versioned-install:
+    name: Publish versioned install to Pages
+    needs: [vars, publish-dev-release, register-dev-version]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Load dev-versions index from PR head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/${{ github.repository }}/contents/docs/dev-versions.json" \
+            -f ref="${{ github.event.pull_request.head.sha }}" \
+            --jq '.content' | tr -d '\n' | base64 --decode > docs/dev-versions.json
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Prepare new version install assets
+        env:
+          VERSION: ${{ needs.vars.outputs.dev_version }}
+          TAG: ${{ needs.vars.outputs.release_tag }}
+        run: |
+          OUT_DIR="staging/${VERSION}" node scripts/prepare-versioned-install.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter workbench-landing...
+
+      - name: Build landing site (production content from main)
+        run: pnpm --filter workbench-landing run build
+
+      - name: Merge dev version install folders
+        env:
+          VERSION: ${{ needs.vars.outputs.dev_version }}
+          OUT_DIR: staging/${{ needs.vars.outputs.dev_version }}
+        run: node scripts/merge-versioned-installs.mjs landing/dist
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: landing/dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-preview-site:
+    name: Deploy PR preview site
+    needs: [vars, publish-dev-release, publish-versioned-install]
+    runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Build versioned install into site output
+        env:
+          VERSION: ${{ needs.vars.outputs.dev_version }}
+          TAG: ${{ needs.vars.outputs.release_tag }}
+        run: |
+          OUT_DIR="landing/dist/${VERSION}" node scripts/prepare-versioned-install.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter workbench-landing...
+
+      - name: Build landing site (dev install)
+        env:
+          PUBLIC_DEV_VERSION: ${{ needs.vars.outputs.dev_version }}
+        run: pnpm --filter workbench-landing run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: landing/dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          preview: true
+
+  comment:
+    name: PR comment
+    needs: [vars, deploy-preview-site, publish-versioned-install]
+    if: always() && needs.deploy-preview-site.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          DEV_VERSION: ${{ needs.vars.outputs.dev_version }}
+          PREVIEW_URL: ${{ needs.deploy-preview-site.outputs.page_url }}
+        with:
+          script: |
+            const version = process.env.DEV_VERSION;
+            const pagesBase = 'https://blaise1030.github.io/workbench-cli';
+            const devInstall = `${pagesBase}/${version}/install.sh`;
+            const latestInstall = `${pagesBase}/install.sh`;
+            const preview = process.env.PREVIEW_URL || '(see Actions → deploy-preview-site)';
+            const body = `## PR preview
+
+            | | URL |
+            |---|---|
+            | **Preview site** | ${preview} |
+            | **Dev install** | \`${devInstall}\` |
+            | **Latest install** | \`${latestInstall}\` |
+
+            \`\`\`sh
+            curl -fsSL ${devInstall} | sh
+            \`\`\`
+
+            Dev binaries: [v${version}](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/v${version})`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '<!-- workbench-pr-preview -->';
+            const existing = comments.find((c) => c.body?.includes(marker));
+            const fullBody = `${marker}\n${body}`;
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+            }

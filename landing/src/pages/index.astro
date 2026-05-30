@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MarkdownLink from '../components/MarkdownLink.astro';
-import { installCmd, INSTALL_OPTIONS_URL } from '../lib/install';
+import { installCmd, installChannelLabel, isDevPreviewBuild } from '../lib/install';
 
 const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
 const compareRows = [
@@ -23,7 +23,13 @@ const links = [
 <Layout title="Workbench" description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux.">
 
         <!-- Install -->
-        <div class="font-semibold tracking-[0.04em]">INSTALL:</div>
+        <div class="font-semibold tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
+        {isDevPreviewBuild && (
+          <div class="text-[hsl(var(--muted-foreground))] pl-[1ch] text-[11px] mb-1">
+            PR preview — installs this build. For the latest stable release use
+            {' '}<span class="text-[hsl(var(--foreground))]">curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh</span>
+          </div>
+        )}
         <div class="flex items-center gap-3 pl-[1ch] mb-1 max-sm:flex-col max-sm:items-start max-sm:gap-[6px]">
           <span class="font-medium text-[12px] bg-muted max-sm:text-[11px] max-sm:break-all" id="install-cmd">{installCmd}</span>
           <button

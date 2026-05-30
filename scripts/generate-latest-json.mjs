@@ -9,7 +9,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const outPath = join(root, "docs", "latest.json");
+const outPath =
+  process.env.OUTPUT_PATH ?? join(root, "docs", "latest.json");
 
 const repo = process.env.GITHUB_REPOSITORY ?? "Blaise1030/workbench-cli";
 const tag = process.env.TAG ?? process.env.GITHUB_REF_NAME ?? "";

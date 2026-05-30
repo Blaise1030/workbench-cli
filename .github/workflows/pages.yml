@@ -7,7 +7,10 @@ on:
       - "landing/**"
       - "docs/install.sh"
       - "docs/latest.json"
+      - "docs/dev-versions.json"
       - "scripts/generate-latest-json.mjs"
+      - "scripts/prepare-versioned-install.mjs"
+      - "scripts/merge-versioned-installs.mjs"
       - ".github/workflows/pages.yml"
   release:
     types: [published]
@@ -57,6 +60,9 @@ jobs:
 
       - name: Build landing site
         run: pnpm --filter workbench-landing run build
+
+      - name: Merge dev version install folders
+        run: node scripts/merge-versioned-installs.mjs landing/dist
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
