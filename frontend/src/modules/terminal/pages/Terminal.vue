@@ -60,6 +60,19 @@ const dropPathOptions = computed((): DropPathOptions | undefined => {
   };
 });
 
+/** Resolve a CSS custom property to a computed color (handles color-mix). */
+function resolveCssColor(name: string): string {
+  const probe = document.createElement("span");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;background:var(" +
+    name +
+    ")";
+  document.documentElement.appendChild(probe);
+  const color = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return color;
+}
+
 function buildTheme() {
   const s = getComputedStyle(document.documentElement);
   const v = (name: string) => s.getPropertyValue(name).trim();
@@ -68,6 +81,8 @@ function buildTheme() {
     foreground: v("--foreground"),
     cursor: v("--ring"),
     cursorAccent: v("--background"),
+    selectionBackground: resolveCssColor("--terminal-selection-bg"),
+    selectionInactiveBackground: resolveCssColor("--terminal-selection-inactive-bg"),
     black: v("--card"),
     red: v("--destructive"),
     green: v("--chart-4"),
