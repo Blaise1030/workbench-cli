@@ -36,7 +36,7 @@ const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order
           <!-- Sidebar -->
           <aside class="w-44 max-sm:w-full shrink-0">
             <details open>
-              <summary class="font-semibold tracking-[0.04em] mb-2 cursor-pointer list-none">DOCS:</summary>
+              <summary class="font-semibold tracking-[0.04em] mb-2 cursor-pointer">DOCS:</summary>
               <ul>
                 {sorted.map(entry => {
                   const isActive = entry.slug === currentSlug;
