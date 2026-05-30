@@ -1,11 +1,12 @@
-import { defineConfig } from 'astro/config';
-import tailwindcss from '@tailwindcss/vite';
-import vue from '@astrojs/vue';
+import { defineConfig } from "astro/config";
+import tailwindcss from "@tailwindcss/vite";
+import vue from "@astrojs/vue";
 
-// GitHub Pages: https://blaise1030.github.io/
+// GitHub Pages project site: https://blaise1030.github.io/workbench-cli/
 export default defineConfig({
-  site: 'https://blaise1030.github.io',
-  output: 'static',
+  site: "https://blaise1030.github.io",
+  base: "/workbench-cli",
+  output: "static",
   integrations: [vue()],
   vite: {
     plugins: [tailwindcss()],

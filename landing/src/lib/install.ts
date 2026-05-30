@@ -1,7 +1,7 @@
 /** Canonical install script on GitHub Pages. */
-export const INSTALL_SCRIPT_URL = 'https://blaise1030.github.io/install.sh';
+export const INSTALL_SCRIPT_URL = 'https://blaise1030.github.io/workbench-cli/install.sh';
 
-export const INSTALL_OPTIONS_URL = 'https://blaise1030.github.io/';
+export const INSTALL_OPTIONS_URL = 'https://blaise1030.github.io/workbench-cli/';
 
 /** Install script path on this site. */
 export const INSTALL_SCRIPT_PATH = '/install.sh';

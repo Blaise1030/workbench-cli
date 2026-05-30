@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install workbench-cli from GitHub Releases (manifest served via GitHub Pages).
 #
-#   curl -fsSL https://blaise1030.github.io/install.sh | sh
+#   curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh
 #
 # Override install dir:  WORKBENCH_INSTALL_DIR=~/bin sh
 # Override manifest URL: WORKBENCH_MANIFEST_URL=https://.../latest.json sh
@@ -9,7 +9,7 @@
 set -eu
 
 BIN="workbench-cli"
-MANIFEST_URL="${WORKBENCH_MANIFEST_URL:-https://blaise1030.github.io/latest.json}"
+MANIFEST_URL="${WORKBENCH_MANIFEST_URL:-https://blaise1030.github.io/workbench-cli/latest.json}"
 INSTALL_DIR="${WORKBENCH_INSTALL_DIR:-$HOME/.local/bin}"
 
 main() {
