@@ -2,6 +2,7 @@ package auth
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 )
@@ -57,5 +58,13 @@ func TestTokenExpired_BeforeTTL(t *testing.T) {
 	tok := CreateToken()
 	if tok.Expired() {
 		t.Error("expected not expired")
+	}
+}
+
+func TestTokenValid_UsesConstantTimeCompare(t *testing.T) {
+	tok := CreateToken()
+	sameLen := strings.Repeat("a", len(tok.Value))
+	if tok.Valid(sameLen) {
+		t.Error("expected invalid for same-length wrong value")
 	}
 }

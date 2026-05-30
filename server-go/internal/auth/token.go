@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
 	"time"
 )
@@ -27,5 +28,8 @@ func (t SessionToken) Expired() bool {
 }
 
 func (t SessionToken) Valid(input string) bool {
-	return !t.Expired() && input == t.Value
+	if t.Expired() {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(input), []byte(t.Value)) == 1
 }
