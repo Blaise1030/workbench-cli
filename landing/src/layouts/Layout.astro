@@ -1,0 +1,40 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="min-h-screen px-4">
+      <div class="max-w-3xl px-4 py-8 max-sm:py-10">
+
+        <!-- Brand -->
+        <div class="font-semibold flex gap-2 items-center mb-4">
+          <h1>WORKBENCH</h1>
+          <span class="w-2 h-4 -mt-0.5 bg-foreground animate-blink" aria-hidden="true"></span>
+        </div>
+
+        <slot />
+
+        <!-- Footer -->
+        <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
+        <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
+
+      </div>
+    </div>
+  </body>
+</html>
