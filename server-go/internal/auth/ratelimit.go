@@ -25,7 +25,8 @@ func NewRateLimiter(max int, window time.Duration) *RateLimiter {
 	}
 }
 
-// Allow returns true if the IP is within its rate limit, false if it is over.
+// Allow returns true if the IP has not exceeded the rate limit within the current
+// fixed window. The window resets when the current time passes windowEnd.
 func (rl *RateLimiter) Allow(ip string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()

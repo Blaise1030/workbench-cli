@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -40,4 +41,17 @@ func TestRateLimiter_IsolatesIPs(t *testing.T) {
 	if !rl.Allow("2.2.2.2") {
 		t.Error("different IP should not be rate-limited")
 	}
+}
+
+func TestRateLimiter_ConcurrentAccess(t *testing.T) {
+	rl := NewRateLimiter(100, time.Minute)
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			rl.Allow("1.2.3.4")
+		}()
+	}
+	wg.Wait()
 }
