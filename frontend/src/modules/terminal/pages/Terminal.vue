@@ -28,6 +28,7 @@ import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import { useRouter } from "vue-router";
 import { useWorktreePanels } from "@/modules/workspace/lib/worktree-panels-storage";
 import { createFileLinkProvider } from "@/modules/terminal/lib/terminal-file-links";
+import { terminalSelectionColors } from "@/modules/terminal/lib/terminal-theme";
 import { cn } from "@/lib/utils";
 
 const props = defineProps<{
@@ -60,29 +61,16 @@ const dropPathOptions = computed((): DropPathOptions | undefined => {
   };
 });
 
-/** Resolve a CSS custom property to a computed color (handles color-mix). */
-function resolveCssColor(name: string): string {
-  const probe = document.createElement("span");
-  probe.style.cssText =
-    "position:absolute;visibility:hidden;pointer-events:none;background:var(" +
-    name +
-    ")";
-  document.documentElement.appendChild(probe);
-  const color = getComputedStyle(probe).backgroundColor;
-  probe.remove();
-  return color;
-}
-
 function buildTheme() {
   const s = getComputedStyle(document.documentElement);
   const v = (name: string) => s.getPropertyValue(name).trim();
+  const isDark = document.documentElement.classList.contains("dark");
   return {
     background: v("--background"),
     foreground: v("--foreground"),
     cursor: v("--ring"),
     cursorAccent: v("--background"),
-    selectionBackground: resolveCssColor("--terminal-selection-bg"),
-    selectionInactiveBackground: resolveCssColor("--terminal-selection-inactive-bg"),
+    ...terminalSelectionColors(isDark),
     black: v("--card"),
     red: v("--destructive"),
     green: v("--chart-4"),

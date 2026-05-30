@@ -1,31 +1,25 @@
 ---
-import '../styles/global.css';
+import Layout from '../layouts/Layout.astro';
+import MarkdownLink from '../components/MarkdownLink.astro';
 const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh';
+
+const compareColumns = ['TOOL', 'WORKTREE-FIRST', 'AGENT AWARE', 'PARALLEL AGENTS'];
+const links = [
+  { label: 'Docs',      href: '/docs' },
+  { label: 'Source',    href: 'https://github.com/Blaise1030/workbench-cli' },
+  { label: 'Releases',  href: '/releases' },
+  { label: 'Changelog', href: '/changelog' },
+];
+
+const compareRows = [
+  { tool: 'Workbench',              highlight: true,  values: [true,  true,  true]  },
+  { tool: 'Tower / GitHub Desktop', highlight: false, values: [false, false, false] },
+  { tool: 'herdr',                  highlight: false, values: [true,  true,  false] },
+  { tool: 'Cursor / VS Code',       highlight: false, values: [false, true,  false] },
+];
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Mission control for parallel AI coding. Workbench is a GUI workspace manager for engineers running multiple Claude Code agents in parallel across git worktrees." />
-    <title>Workbench</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  </head>
-  <body>
-    <div class="min-h-screen p-4">
-
-      <!-- Content column -->
-      <div class="max-w-2xl p-4">
-
-        <!-- Brand -->
-        <div class="text-[13px] font-semibold tracking-[0.08em] mb-4">
-          WORKBENCH
-          <span
-            class="inline-block w-[9px] h-[1em] bg-[hsl(var(--foreground))] align-bottom ml-[3px] animate-[blink_1.1s_step-end_infinite]"
-            aria-hidden="true"
-          ></span>
-        </div>
+<Layout title="Workbench" description="Mission control for parallel AI coding. Workbench is a GUI workspace manager for engineers running multiple Claude Code agents in parallel across git worktrees.">
 
         <!-- Meta -->
         <div><span class="font-semibold tracking-[0.04em]">PRODUCT:</span> <span class="text-[hsl(var(--muted-foreground))]">GUI WORKSPACE MANAGER FOR AI-DRIVEN DEVELOPMENT</span></div>
@@ -34,25 +28,24 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
         <div><span class="font-semibold tracking-[0.04em]">PLATFORM:</span> <span class="text-[hsl(var(--muted-foreground))]">MACOS</span></div>
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
+           <!-- Install -->
+        <div class="font-semibold tracking-[0.04em]">INSTALL:</div>
+        <div class="flex items-center gap-3 pl-[1ch] mb-1 max-sm:flex-col max-sm:items-start max-sm:gap-[6px]">
+          <span class="font-medium text-[12px] bg-muted max-sm:text-[11px] max-sm:break-all" id="install-cmd">{installCmd}</span>
+          <button
+            class="font-[inherit] text-[10px] tracking-[0.1em] bg-foreground text-background border-0 px-2 py-0.5 cursor-pointer rounded-[2px] shrink-0 hover:opacity-80"
+            aria-label="Copy install command"
+          >COPY</button>
+        </div>
+        <MarkdownLink label="Install options" href="https://blaise1030.github.io/workbench-cli/" />
+        <MarkdownLink label="Releases" href="/releases" />
+
+        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
         <!-- About -->
         <div class="font-semibold tracking-[0.04em]">ABOUT:</div>
         <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">Mission control for parallel AI coding. Workbench is a single GUI for every git worktree, every Claude Code agent, and every running branch — all at once. No more juggling terminal windows. No more losing track of which agent is working on what.</div>
         <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">Built for engineers running Claude Code at scale. Keep your editor; add one place to see everything.</div>
-
-        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
-
-        <!-- Install -->
-        <div class="font-semibold tracking-[0.04em]">INSTALL:</div>
-        <div class="flex items-center gap-3 pl-[1ch] mb-1 max-sm:flex-col max-sm:items-start max-sm:gap-[6px]">
-          <span class="font-medium text-[12px] max-sm:text-[11px] max-sm:break-all" id="install-cmd">{installCmd}</span>
-          <button
-            class="font-[inherit] text-[10px] tracking-[0.1em] bg-[hsl(var(--foreground))] text-[hsl(var(--background))] border-0 px-2 py-0.5 cursor-pointer rounded-[2px] shrink-0 hover:opacity-80"
-            aria-label="Copy install command"
-          >COPY</button>
-        </div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> <a href="https://blaise1030.github.io/workbench-cli/">Install options</a></div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> <a href="/releases">Releases</a></div>
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
@@ -69,29 +62,35 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
 
         <!-- How it compares -->
         <div class="font-semibold tracking-[0.04em]">HOW IT COMPARES:</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Tower / GitHub Desktop: git GUIs, no worktree-first workflow, no agent awareness</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> herdr: lives inside your terminal, not a GUI</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Cursor / VS Code: editors that run one agent at a time</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Workbench: the only GUI built for parallel agents + git worktrees together</div>
+        <div class="pl-[1ch] overflow-x-auto">
+          <table class="border-collapse text-[hsl(var(--muted-foreground))] text-[12px]">
+            <thead>
+              <tr class="text-[hsl(var(--foreground))]">
+                {compareColumns.map(col => (
+                  <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))]">{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {compareRows.map(row => (
+                <tr class={row.highlight ? 'text-[hsl(var(--foreground))] font-semibold' : ''}>
+                  <td class={`pr-6 pt-1${row.highlight ? ' border-b border-[hsl(var(--border))]' : ''}`}>{row.tool}</td>
+                  {row.values.map(val => (
+                    <td class={`pr-6 pt-1${row.highlight ? ' border-b border-[hsl(var(--border))]' : ''}`}>{val ? '✓' : '✗'}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
         <!-- Links -->
         <div class="font-semibold tracking-[0.04em]">LINKS:</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> <a href="/docs">Docs</a></div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> <a href="https://github.com/Blaise1030/workbench-cli">Source</a></div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> <a href="/releases">Releases</a></div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> <a href="/changelog">Changelog</a></div>
-
-        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
-
-        <!-- Footer -->
-        <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
-
-      </div>
-
-
-    </div>
+        {links.map(link => (
+          <MarkdownLink label={link.label} href={link.href} />
+        ))}
 
     <script>
       const btn = document.querySelector('button[aria-label="Copy install command"]') as HTMLButtonElement | null;
@@ -105,5 +104,4 @@ const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/instal
         });
       });
     </script>
-  </body>
-</html>
+</Layout>

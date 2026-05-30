@@ -1,5 +1,5 @@
 ---
-import '../styles/global.css';
+import Layout from '../layouts/Layout.astro';
 import MarkdownLink from '../components/MarkdownLink.astro';
 
 interface Release {
@@ -28,55 +28,30 @@ function formatDate(iso: string): string {
 }
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Workbench release history." />
-    <title>Workbench — Releases</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  </head>
-  <body>
-    <div class="min-h-screen px-4">
-      <div class="max-w-2xl px-4 py-8 max-sm:py-10">
+<Layout title="Workbench — Releases" description="Workbench release history.">
 
-        <!-- Brand -->
-        <div class="font-semibold flex gap-2 items-center mb-4">
-          <h1>WORKBENCH</h1>
-          <span class="w-2 h-4 bg-foreground animate-blink" aria-hidden="true"></span>
+  <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
+
+  <!-- Releases -->
+  <div class="font-semibold tracking-[0.04em]">RELEASES:</div>
+
+  {releases.length === 0 ? (
+    <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">No releases yet.</div>
+  ) : (
+    releases.map((release) => (
+      <div>
+        <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
+        <div>
+          <span class="font-semibold tracking-[0.04em]">VERSION:</span>
+          <span class="text-[hsl(var(--muted-foreground))]"> {release.tag_name}</span>
+          <span class="text-[hsl(var(--muted-foreground))]">{"  "}DATE: {formatDate(release.published_at)}</span>
         </div>
-
-        <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
-
-        <!-- Releases -->
-        <div class="font-semibold tracking-[0.04em]">RELEASES:</div>
-
-        {releases.length === 0 ? (
-          <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">No releases yet.</div>
-        ) : (
-          releases.map((release) => (
-            <div>
-              <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
-              <div>
-                <span class="font-semibold tracking-[0.04em]">VERSION:</span>
-                <span class="text-[hsl(var(--muted-foreground))]"> {release.tag_name}</span>
-                <span class="text-[hsl(var(--muted-foreground))]">{"  "}DATE: {formatDate(release.published_at)}</span>
-              </div>
-              {release.body && release.body.trim().split(/\r?\n/).map((line) => (
-                <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">{line}</div>
-              ))}
-              <MarkdownLink label="View on GitHub →" href={release.html_url} />
-            </div>
-          ))
-        )}
-
-        <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
-
-        <!-- Footer -->
-        <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
-
+        {release.body && release.body.trim().split(/\r?\n/).map((line) => (
+          <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">{line}</div>
+        ))}
+        <MarkdownLink label="View on GitHub" href={release.html_url} />
       </div>
-    </div>
-  </body>
-</html>
+    ))
+  )}
+
+</Layout>

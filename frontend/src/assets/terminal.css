@@ -4,14 +4,14 @@
 }
 
 :root {
-  /* Resolved in Terminal.vue via a probe element for xterm's theme API. */
-  --terminal-selection-bg: color-mix(in oklch, var(--foreground) 22%, transparent);
-  --terminal-selection-inactive-bg: color-mix(in oklch, var(--foreground) 12%, transparent);
+  /* Blue tint — visible on white; resolved to #rrggbbaa for xterm in Terminal.vue. */
+  --terminal-selection-bg: color-mix(in oklch, oklch(0.55 0.18 250) 50%, transparent);
+  --terminal-selection-inactive-bg: color-mix(in oklch, oklch(0.55 0.18 250) 30%, transparent);
 }
 
 .dark {
-  --terminal-selection-bg: color-mix(in oklch, var(--primary) 35%, transparent);
-  --terminal-selection-inactive-bg: color-mix(in oklch, var(--primary) 18%, transparent);
+  --terminal-selection-bg: color-mix(in oklch, var(--primary) 40%, transparent);
+  --terminal-selection-inactive-bg: color-mix(in oklch, var(--primary) 22%, transparent);
 }
 
 .xterm-viewport {
