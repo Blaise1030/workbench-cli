@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/assets"
@@ -16,7 +18,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 		r.Get("/health", Health(version))
 
 		r.Route("/auth", func(r chi.Router) {
-			auth.RegisterRoutes(r, &state.Token, state.Session, state.Lan, cookieSecure)
+			auth.RegisterRoutes(r, &state.Token, state.Session, state.Lan, cookieSecure, auth.NewRateLimiter(10, time.Minute))
 		})
 
 		r.Route("/settings", func(r chi.Router) {

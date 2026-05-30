@@ -38,7 +38,7 @@ func jsonErr(w http.ResponseWriter, msg string, code int) {
 }
 
 // RegisterRoutes mounts POST /local and POST / on the given router sub-path.
-func RegisterRoutes(r chi.Router, token *SessionToken, session *Session, lan LanProvider, cookieSecure bool) {
+func RegisterRoutes(r chi.Router, token *SessionToken, session *Session, lan LanProvider, cookieSecure bool, limiter *RateLimiter) {
 	r.Post("/local", func(w http.ResponseWriter, r *http.Request) {
 		if !IsLocalRequest(r) {
 			jsonErr(w, "Forbidden", http.StatusForbidden)
@@ -52,6 +52,12 @@ func RegisterRoutes(r chi.Router, token *SessionToken, session *Session, lan Lan
 	})
 
 	r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+		ip := ClientAddress(r)
+		if !limiter.Allow(ip) {
+			jsonErr(w, "Too many attempts — try again later", http.StatusTooManyRequests)
+			return
+		}
+
 		var body struct {
 			Token *string `json:"token"`
 		}
