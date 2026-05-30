@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { title, description, allDocs, currentSlug } = Astro.props;
-const sorted = [...allDocs].sort((a, b) => a.data.order - b.data.order);
+const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999));
 ---
 
 <!doctype html>
@@ -30,7 +30,7 @@ const sorted = [...allDocs].sort((a, b) => a.data.order - b.data.order);
         <div class="flex justify-between items-start mb-8">
           <div class="font-semibold leading-snug">
             <div class="flex gap-2 items-center">
-              <a href="/"><h1>WORKBENCH</h1></a>
+              <h1>WORKBENCH</h1>
               <span class="w-2 h-4 -mt-0.5 bg-foreground animate-blink" aria-hidden="true"></span>
             </div>
             <div class="text-[hsl(var(--muted-foreground))] font-normal">BROWSER-NATIVE AI WORKSPACE</div>
@@ -60,7 +60,7 @@ const sorted = [...allDocs].sort((a, b) => a.data.order - b.data.order);
                         ? 'font-semibold text-[hsl(var(--foreground))]'
                         : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}
                     >
-                      {isActive ? '> ' : '  '}{entry.data.title}
+                      <span class="inline-block w-[2ch]">{isActive ? '>' : ''}</span>{entry.data.title}
                     </a>
                   </li>
                 );
