@@ -14,5 +14,6 @@ export default defineConfig({
   },
   test: {
     include: ["cli/**/*.test.ts", "frontend/src/**/*.test.ts"],
+    setupFiles: [fileURLToPath(new URL("./vitest.setup.ts", import.meta.url))],
   },
 });
