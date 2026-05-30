@@ -1,0 +1,88 @@
+---
+import '../styles/global.css';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  title: string;
+  description: string;
+  allDocs: CollectionEntry<'docs'>[];
+  currentSlug: string;
+}
+
+const { title, description, allDocs, currentSlug } = Astro.props;
+const sorted = [...allDocs].sort((a, b) => a.data.order - b.data.order);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} — Workbench</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="min-h-screen">
+      <div class="max-w-5xl sm:px-8 px-4 py-8 max-sm:py-10">
+
+        <!-- Brand -->
+        <div class="flex justify-between items-start mb-8">
+          <div class="font-semibold leading-snug">
+            <div class="flex gap-2 items-center">
+              <a href="/"><h1>WORKBENCH</h1></a>
+              <span class="w-2 h-4 -mt-0.5 bg-foreground animate-blink" aria-hidden="true"></span>
+            </div>
+            <div class="text-[hsl(var(--muted-foreground))] font-normal">BROWSER-NATIVE AI WORKSPACE</div>
+            <div class="text-[hsl(var(--muted-foreground))] font-normal">2026</div>
+          </div>
+          <nav class="text-right font-semibold leading-snug">
+            <div>[ <a href="/docs" class="hover:underline">DOCS</a> ]</div>
+            <div>[ <a href="/releases" class="hover:underline">RELEASES</a> ]</div>
+            <div>[ <a href="https://github.com/Blaise1030/workbench-cli" class="hover:underline">SOURCE</a> ]</div>
+          </nav>
+        </div>
+
+        <!-- Two-column body -->
+        <div class="flex gap-12 max-sm:flex-col">
+
+          <!-- Sidebar -->
+          <aside class="w-44 max-sm:w-full shrink-0">
+            <div class="font-semibold tracking-[0.04em] mb-2">DOCS:</div>
+            <ul class="space-y-1">
+              {sorted.map(entry => {
+                const isActive = entry.slug === currentSlug;
+                return (
+                  <li>
+                    <a
+                      href={`/docs/${entry.slug}`}
+                      class={isActive
+                        ? 'font-semibold text-[hsl(var(--foreground))]'
+                        : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}
+                    >
+                      {isActive ? '> ' : '  '}{entry.data.title}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </aside>
+
+          <!-- Content -->
+          <main class="flex-1 min-w-0">
+            <div class="font-semibold tracking-[0.04em] mb-4">{title.toUpperCase()}:</div>
+            <div class="prose-docs text-[hsl(var(--muted-foreground))]">
+              <slot />
+            </div>
+          </main>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="text-[hsl(var(--muted-foreground))] my-8">~~~</div>
+        <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
+
+      </div>
+    </div>
+  </body>
+</html>

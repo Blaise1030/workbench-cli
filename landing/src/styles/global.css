@@ -181,3 +181,34 @@ a {
     @apply bg-background text-foreground;
   }
 }
+
+/* Docs markdown prose */
+.prose-docs h2 {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.prose-docs p {
+  margin-bottom: 0.75rem;
+}
+
+.prose-docs pre {
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+.prose-docs code {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.prose-docs :not(pre) > code {
+  background: hsl(var(--muted));
+  padding: 0.1em 0.3em;
+}
