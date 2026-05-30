@@ -229,6 +229,33 @@ func DeleteWorktree(db *sql.DB, id string) error {
 			return &WorktreeError{Msg: err.Error(), Status: 400}
 		}
 	}
+	if branch := worktreeBranchToDelete(p.RepoPath, w); branch != "" {
+		checkedOut, err := git.BranchCheckedOutInWorktree(p.RepoPath, branch)
+		if err != nil {
+			return &WorktreeError{Msg: err.Error(), Status: 400}
+		}
+		if !checkedOut {
+			if err := git.DeleteBranch(p.RepoPath, branch, true); err != nil {
+				return &WorktreeError{Msg: err.Error(), Status: 400}
+			}
+		}
+	}
 	_, err = db.Exec(`DELETE FROM worktrees WHERE id = ?`, id)
 	return err
+}
+
+// worktreeBranchToDelete returns the branch to remove after deleting an app-created worktree.
+// Worktrees created from an existing branch (no base_branch) keep their branch.
+func worktreeBranchToDelete(repoPath string, w *Worktree) string {
+	if w.Branch == nil || *w.Branch == "" {
+		return ""
+	}
+	if w.BaseBranch == nil || *w.BaseBranch == "" {
+		return ""
+	}
+	branch := *w.Branch
+	if branch == git.GetDefaultBranch(repoPath) {
+		return ""
+	}
+	return branch
 }

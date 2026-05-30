@@ -46,7 +46,7 @@ async function removeWorktree(w: Worktree) {
   const name = label(w);
   if (
     !window.confirm(
-      `Remove "${name}"? This deletes the git worktree on disk and removes its saved terminals.`,
+      `Remove "${name}"? This deletes the git worktree and its branch on disk, and removes its saved terminals.`,
     )
   ) {
     return;

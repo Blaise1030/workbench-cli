@@ -137,8 +137,12 @@ export function useDeleteWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
       await ensureOk<{ ok: true }>(res);
     },
     onSuccess: (_, worktreeId) => {
+      const pid = toValue(projectId);
       queryClient.invalidateQueries({
-        queryKey: workspaceKeys.worktrees(toValue(projectId)),
+        queryKey: workspaceKeys.worktrees(pid),
+      });
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.branches(pid),
       });
       queryClient.removeQueries({
         queryKey: workspaceKeys.worktree(worktreeId),
