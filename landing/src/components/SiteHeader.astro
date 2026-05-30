@@ -1,4 +1,5 @@
 ---
+import MarkdownLink from './MarkdownLink.astro';
 ---
 <header class="w-full sm:px-8 px-4 py-4 pb-3 max-sm:py-6">
   <div class="flex justify-between items-start">
@@ -10,10 +11,10 @@
       <div class="text-[hsl(var(--muted-foreground))] font-normal">BROWSER-NATIVE AI WORKSPACE</div>
       <div class="text-[hsl(var(--muted-foreground))] font-normal">2026</div>
     </div>
-    <nav class="text-right font-semibold leading-snug">
-      <div>[<a href="/docs" class="hover:underline">Docs</a>]</div>
-      <div>[<a href="/releases" class="hover:underline">Releases</a>]</div>
-      <div>[<a href="https://github.com/Blaise1030/workbench-cli" class="hover:underline">Source</a>]</div>
+    <nav class="font-semibold leading-snug text-right">
+      <MarkdownLink label="Docs" href="/docs" />
+      <MarkdownLink label="Releases" href="/releases" />
+      <MarkdownLink label="Source" href="https://github.com/Blaise1030/workbench-cli" />
     </nav>
   </div>
 </header>

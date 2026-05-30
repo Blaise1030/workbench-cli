@@ -3,32 +3,26 @@ import Layout from '../layouts/Layout.astro';
 import MarkdownLink from '../components/MarkdownLink.astro';
 const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh';
 
-const compareColumns = ['TOOL', 'WORKTREE-FIRST', 'AGENT AWARE', 'PARALLEL AGENTS'];
-const links = [
-  { label: 'Docs',      href: '/docs' },
-  { label: 'Source',    href: 'https://github.com/Blaise1030/workbench-cli' },
-  { label: 'Releases',  href: '/releases' },
-  { label: 'Changelog', href: '/changelog' },
-];
-
+const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
 const compareRows = [
-  { tool: 'Workbench',              highlight: true,  values: [true,  true,  true]  },
-  { tool: 'Tower / GitHub Desktop', highlight: false, values: [false, false, false] },
-  { tool: 'herdr',                  highlight: false, values: [true,  true,  false] },
-  { tool: 'Cursor / VS Code',       highlight: false, values: [false, true,  false] },
+  { feature: 'BROWSER-BASED',      values: [true,  false, false, false, false] },
+  { feature: 'LINUX',              values: [true,  true,  false, true,  true]  },
+  { feature: '<20MB',              values: [true,  true,  false, true,  null]  },
+  { feature: 'FILE EDITOR',        values: [true,  false, false, false, true]  },
+  { feature: 'GIT DIFF',          values: [true,  false, false, false, true]  },
+  { feature: 'PARALLEL WORKTREES', values: [true,  false, true,  false, true]  },
+  { feature: 'AGENT STATUS',       values: [true,  false, false, true,  null]  },
+];
+const links = [
+  { label: 'Docs',     href: '/docs' },
+  { label: 'Source',   href: 'https://github.com/Blaise1030/workbench-cli' },
+  { label: 'Releases', href: '/releases' },
 ];
 ---
 
-<Layout title="Workbench" description="Mission control for parallel AI coding. Workbench is a GUI workspace manager for engineers running multiple Claude Code agents in parallel across git worktrees.">
+<Layout title="Workbench" description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux.">
 
-        <!-- Meta -->
-        <div><span class="font-semibold tracking-[0.04em]">PRODUCT:</span> <span class="text-[hsl(var(--muted-foreground))]">GUI WORKSPACE MANAGER FOR AI-DRIVEN DEVELOPMENT</span></div>
-        <div><span class="font-semibold tracking-[0.04em]">STATUS:</span> <span class="text-[hsl(var(--muted-foreground))]">AVAILABLE</span></div>
-        <div><span class="font-semibold tracking-[0.04em]">VERSION:</span> <span class="text-[hsl(var(--muted-foreground))]">0.1.0</span></div>
-        <div><span class="font-semibold tracking-[0.04em]">PLATFORM:</span> <span class="text-[hsl(var(--muted-foreground))]">MACOS</span></div>
-
-        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
-           <!-- Install -->
+        <!-- Install -->
         <div class="font-semibold tracking-[0.04em]">INSTALL:</div>
         <div class="flex items-center gap-3 pl-[1ch] mb-1 max-sm:flex-col max-sm:items-start max-sm:gap-[6px]">
           <span class="font-medium text-[12px] bg-muted max-sm:text-[11px] max-sm:break-all" id="install-cmd">{installCmd}</span>
@@ -36,47 +30,48 @@ const compareRows = [
             class="font-[inherit] text-[10px] tracking-[0.1em] bg-foreground text-background border-0 px-2 py-0.5 cursor-pointer rounded-[2px] shrink-0 hover:opacity-80"
             aria-label="Copy install command"
           >COPY</button>
-        </div>
-        <MarkdownLink label="Install options" href="https://blaise1030.github.io/workbench-cli/" />
+        </div>        
         <MarkdownLink label="Releases" href="/releases" />
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
         <!-- About -->
         <div class="font-semibold tracking-[0.04em]">ABOUT:</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">Mission control for parallel AI coding. Workbench is a single GUI for every git worktree, every Claude Code agent, and every running branch — all at once. No more juggling terminal windows. No more losing track of which agent is working on what.</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">Built for engineers running Claude Code at scale. Keep your editor; add one place to see everything.</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">A browser tab, not another app. Workbench is a lightweight Go binary that serves your entire AI coding workspace in a browser — worktrees, terminals, file editor, and git diffs, all in one place.</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">Works with any agent: Claude Code, Codex, Aider, OpenCode, or anything that runs in a terminal. Under 20MB. No Electron. Runs on Linux.</div>
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
         <!-- Features -->
         <div class="font-semibold tracking-[0.04em]">FEATURES:</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Parallel git worktrees, tracked in one sidebar</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Claude Code hook integration — get notified when agents stop or complete tasks</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Per-worktree terminal tabs, git panel, and file explorer</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Line-level diffs, staged/unstaged review without leaving the app</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Keybinding configuration and LAN network settings</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Single binary — no Electron, no runtime dependencies</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Parallel git worktrees with one-click switching</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Real terminal per worktree — run any agent (Claude Code, Codex, Aider, OpenCode)</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Built-in file editor with syntax highlighting</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Line-level git diffs, staged/unstaged — no app switch needed</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Command palette</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Agent notifications — get alerted when agents complete or stop</div>
+        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]"><span class="text-[hsl(var(--foreground))]"> -</span> Single binary, no Electron, no runtime dependencies</div>
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
         <!-- How it compares -->
         <div class="font-semibold tracking-[0.04em]">HOW IT COMPARES:</div>
         <div class="pl-[1ch] overflow-x-auto">
-          <table class="border-collapse text-[hsl(var(--muted-foreground))] text-[12px]">
+          <table class="border-collapse w-full text-[hsl(var(--muted-foreground))] text-[12px]">
             <thead>
               <tr class="text-[hsl(var(--foreground))]">
-                {compareColumns.map(col => (
-                  <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))]">{col}</th>
+                <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))]">FEATURE</th>
+                {compareTools.map((tool, i) => (
+                  <th class={`text-center font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))]${i === 0 ? ' text-[hsl(var(--foreground))]' : ''}`}>{tool}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {compareRows.map(row => (
-                <tr class={row.highlight ? 'text-[hsl(var(--foreground))] font-semibold' : ''}>
-                  <td class={`pr-6 pt-1${row.highlight ? ' border-b border-[hsl(var(--border))]' : ''}`}>{row.tool}</td>
-                  {row.values.map(val => (
-                    <td class={`pr-6 pt-1${row.highlight ? ' border-b border-[hsl(var(--border))]' : ''}`}>{val ? '✓' : '✗'}</td>
+                <tr>
+                  <td class="pr-6 pt-1 text-[hsl(var(--foreground))] font-semibold">{row.feature}</td>
+                  {row.values.map((val, i) => (
+                    <td class={`text-center pr-6 pt-1${i === 0 ? ' text-[hsl(var(--foreground))] font-bold' : ''}`}>{val === null ? '?' : val ? '✓' : '✗'}</td>
                   ))}
                 </tr>
               ))}
@@ -89,7 +84,7 @@ const compareRows = [
         <!-- Links -->
         <div class="font-semibold tracking-[0.04em]">LINKS:</div>
         {links.map(link => (
-          <MarkdownLink label={link.label} href={link.href} />
+          <MarkdownLink label={link.label} href={link.href} showHref={true} />
         ))}
 
     <script>

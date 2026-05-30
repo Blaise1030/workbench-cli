@@ -1,0 +1,14 @@
+---
+interface Props {
+  label: string;
+  href: string;
+  showHref?: boolean;
+}
+const { label, href, showHref = false } = Astro.props;
+---
+
+<div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">
+  <span class="text-[hsl(var(--foreground))]"> -</span>
+  {'['}<a href={href}>{label}</a>{']'}
+  {showHref && <span>({href})</span>}
+</div>

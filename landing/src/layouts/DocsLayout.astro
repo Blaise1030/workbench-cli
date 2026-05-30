@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import type { CollectionEntry } from 'astro:content';
 import SiteHeader from '../components/SiteHeader.astro';
+import MarkdownLink from '../components/MarkdownLink.astro';
 
 interface Props {
   title: string;
@@ -35,19 +36,15 @@ const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order
           <!-- Sidebar -->
           <aside class="w-44 max-sm:w-full shrink-0">
             <div class="font-semibold tracking-[0.04em] mb-2">DOCS:</div>
-            <ul class="space-y-1">
+            <ul>
               {sorted.map(entry => {
                 const isActive = entry.slug === currentSlug;
                 return (
-                  <li>
-                    <a
+                  <li class={isActive ? 'font-semibold' : 'font-normal'}>
+                    <MarkdownLink
+                      label={`${isActive ? '> ' : ''}${entry.data.title}`}
                       href={`/docs/${entry.slug}`}
-                      class={isActive
-                        ? 'font-semibold text-[hsl(var(--foreground))]'
-                        : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}
-                    >
-                      <span class="inline-block w-[2ch]">{isActive ? '>' : ''}</span>{entry.data.title}
-                    </a>
+                    />
                   </li>
                 );
               })}
