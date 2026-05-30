@@ -13,8 +13,9 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
 )
 
-func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool, registry *terminal.Registry) {
+func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool, registry *terminal.Registry, serverHost string) {
 	r.Route("/api", func(r chi.Router) {
+		r.Use(auth.RequireOrigin(serverHost))
 		r.Get("/health", Health(version))
 
 		r.Route("/auth", func(r chi.Router) {

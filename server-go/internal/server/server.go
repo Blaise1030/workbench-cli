@@ -45,7 +45,13 @@ func Run(cfg Config) error {
 
 	cookieSecure := !cfg.ForceHTTP
 	r := chi.NewRouter()
-	api.RegisterRoutes(r, version, state, cookieSecure, registry)
+
+	openHost := cfg.Host
+	if cfg.ForceHTTP {
+		openHost = "127.0.0.1"
+	}
+	serverHost := fmt.Sprintf("%s:%d", openHost, cfg.Port)
+	api.RegisterRoutes(r, version, state, cookieSecure, registry, serverHost)
 
 	listenAddr := fmt.Sprintf("127.0.0.1:%d", cfg.Port)
 	if !cfg.ForceHTTP {
@@ -75,10 +81,6 @@ func Run(cfg Config) error {
 		}
 	}
 
-	openHost := cfg.Host
-	if cfg.ForceHTTP {
-		openHost = "127.0.0.1"
-	}
 	fmt.Printf("\n  → %s://%s:%d\n\n", scheme, openHost, cfg.Port)
 	slog.Info("workbench-cli started", "url", fmt.Sprintf("%s://%s:%d", scheme, openHost, cfg.Port))
 
