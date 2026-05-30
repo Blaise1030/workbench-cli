@@ -5,9 +5,10 @@ import SiteHeader from '../components/SiteHeader.astro';
 interface Props {
   title: string;
   description: string;
+  fullWidth?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, fullWidth = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -24,7 +25,7 @@ const { title, description } = Astro.props;
 
       <SiteHeader />
       <!-- Content — constrained -->
-      <div class="max-w-3xl sm:px-8 px-4 py-8 max-sm:py-10">      
+      <div class={fullWidth ? 'w-full sm:px-8 px-4 py-8 max-sm:py-10' : 'max-w-3xl sm:px-8 px-4 py-8 max-sm:py-10'}>      
         <slot />
 
         <!-- Footer -->
