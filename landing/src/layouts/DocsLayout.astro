@@ -35,20 +35,22 @@ const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order
 
           <!-- Sidebar -->
           <aside class="w-44 max-sm:w-full shrink-0">
-            <div class="font-semibold tracking-[0.04em] mb-2">DOCS:</div>
-            <ul>
-              {sorted.map(entry => {
-                const isActive = entry.slug === currentSlug;
-                return (
-                  <li class={isActive ? 'font-semibold' : 'font-normal'}>
-                    <MarkdownLink
-                      label={`${isActive ? '> ' : ''}${entry.data.title}`}
-                      href={`/docs/${entry.slug}`}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
+            <details open>
+              <summary class="font-semibold tracking-[0.04em] mb-2 cursor-pointer list-none">DOCS:</summary>
+              <ul>
+                {sorted.map(entry => {
+                  const isActive = entry.slug === currentSlug;
+                  return (
+                    <li class={isActive ? 'font-semibold' : 'font-normal'}>
+                      <MarkdownLink
+                        label={`${isActive ? '> ' : ''}${entry.data.title}`}
+                        href={`/docs/${entry.slug}`}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
           </aside>
 
           <!-- Content -->
