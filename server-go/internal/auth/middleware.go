@@ -35,12 +35,17 @@ func RequireSession(session *Session) func(http.Handler) http.Handler {
 
 // RequireOrigin returns middleware that rejects cross-origin state-changing
 // requests. It checks the Origin header on non-safe methods (POST, PUT, PATCH,
-// DELETE) and blocks any request whose origin host does not match serverHost.
-func RequireOrigin(serverHost string) func(http.Handler) http.Handler {
+// DELETE) and blocks any request whose origin host does not match one of the
+// allowedHosts.
+func RequireOrigin(allowedHosts ...string) func(http.Handler) http.Handler {
 	safeMethods := map[string]bool{
 		http.MethodGet:     true,
 		http.MethodHead:    true,
 		http.MethodOptions: true,
+	}
+	allowed := make(map[string]bool, len(allowedHosts))
+	for _, h := range allowedHosts {
+		allowed[h] = true
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +61,7 @@ func RequireOrigin(serverHost string) func(http.Handler) http.Handler {
 				return
 			}
 			u, err := url.Parse(origin)
-			if err != nil || u.Host != serverHost {
+			if err != nil || !allowed[u.Host] {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": "Forbidden"})

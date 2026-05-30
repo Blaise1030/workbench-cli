@@ -50,8 +50,15 @@ func Run(cfg Config) error {
 	if cfg.ForceHTTP {
 		openHost = "127.0.0.1"
 	}
-	serverHost := fmt.Sprintf("%s:%d", openHost, cfg.Port)
-	api.RegisterRoutes(r, version, state, cookieSecure, registry, serverHost)
+	portStr := fmt.Sprintf("%d", cfg.Port)
+	allowedHosts := []string{
+		fmt.Sprintf("localhost:%s", portStr),
+		fmt.Sprintf("127.0.0.1:%s", portStr),
+	}
+	if cfgHost := fmt.Sprintf("%s:%s", cfg.Host, portStr); cfgHost != fmt.Sprintf("localhost:%s", portStr) && cfgHost != fmt.Sprintf("127.0.0.1:%s", portStr) {
+		allowedHosts = append(allowedHosts, cfgHost)
+	}
+	api.RegisterRoutes(r, version, state, cookieSecure, registry, allowedHosts)
 
 	listenAddr := fmt.Sprintf("127.0.0.1:%d", cfg.Port)
 	if !cfg.ForceHTTP {
