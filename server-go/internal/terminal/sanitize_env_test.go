@@ -36,3 +36,25 @@ func TestSanitizeEnv_BlocksKnownSensitiveKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestSanitizeEnv_DashVariantsAndNearMisses(t *testing.T) {
+	// Dash-separated variants must be blocked (regex uses [_-]? to cover them)
+	blocked := []string{"API-KEY", "PRIVATE-KEY", "ACCESS-KEY"}
+	for _, k := range blocked {
+		env := map[string]string{k: "value"}
+		got := SanitizeEnv(env)
+		if _, present := got[k]; present {
+			t.Errorf("key %q should be filtered but was not", k)
+		}
+	}
+
+	// Safe keys that contain superficially similar substrings but don't match any pattern
+	safe := []string{"APISERVER", "ACCESSOR", "LANGUAGES"}
+	for _, k := range safe {
+		env := map[string]string{k: "value"}
+		got := SanitizeEnv(env)
+		if _, present := got[k]; !present {
+			t.Errorf("key %q should be kept but was filtered", k)
+		}
+	}
+}
