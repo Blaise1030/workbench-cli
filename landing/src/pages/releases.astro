@@ -46,11 +46,6 @@ function formatDate(iso: string): string {
           <span class="w-2 h-4 bg-foreground animate-blink" aria-hidden="true"></span>
         </div>
 
-        <!-- Back -->
-        <div class="text-[hsl(var(--muted-foreground))] mb-4">
-          <a href="/">← Back</a>
-        </div>
-
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
         <!-- Releases -->
@@ -67,7 +62,7 @@ function formatDate(iso: string): string {
                 <span class="text-[hsl(var(--muted-foreground))]"> {release.tag_name}</span>
                 <span class="text-[hsl(var(--muted-foreground))]">{"  "}DATE: {formatDate(release.published_at)}</span>
               </div>
-              {release.body && release.body.trim().split('\n').map((line) => (
+              {release.body && release.body.trim().split(/\r?\n/).map((line) => (
                 <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">{line}</div>
               ))}
               <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">
