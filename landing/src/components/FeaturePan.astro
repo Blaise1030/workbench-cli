@@ -1,0 +1,100 @@
+---
+const callouts = [
+  { label: 'WORKTREES',            top: '18%', left: '2%',  right: '',    align: 'left'  },
+  { label: 'FILE EDITOR',          top: '28%', left: '',    right: '2%',  align: 'right' },
+  { label: 'GIT DIFFS',            top: '72%', left: '2%',  right: '',    align: 'left'  },
+  { label: 'AGENT NOTIFICATIONS',  top: '62%', left: '',    right: '2%',  align: 'right' },
+  { label: '⌘K PALETTE',           top: '45%', left: '28%', right: '',    align: 'left'  },
+];
+---
+
+<div id="feature-pan" class="relative w-full h-full flex items-center justify-center">
+  <!-- Browser chrome frame -->
+  <div class="w-full rounded-[4px] border border-[hsl(var(--border))] overflow-hidden bg-[hsl(var(--background))] shadow-lg">
+    <!-- Title bar -->
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
+      <div class="flex gap-1.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-[hsl(var(--muted-foreground))] opacity-40"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-[hsl(var(--muted-foreground))] opacity-40"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-[hsl(var(--muted-foreground))] opacity-40"></span>
+      </div>
+      <span class="font-mono text-[10px] text-[hsl(var(--muted-foreground))] tracking-[0.08em] mx-auto">WORKBENCH</span>
+    </div>
+
+    <!-- Screenshot container with overflow hidden for pan -->
+    <div class="relative overflow-hidden" style="aspect-ratio: 16/10;">
+      <img
+        id="pan-image"
+        src="/assets/workbench-screenshot.png"
+        alt="Workbench UI"
+        class="w-full h-full object-cover"
+        style="transform: scale(1.15) translate(0%, 0%); transition: transform 0.5s ease; transform-origin: center center;"
+      />
+
+      <!-- Callouts — desktop only -->
+      {callouts.map((c, i) => (
+        <div
+          class="feature-callout absolute hidden sm:flex items-center gap-1 opacity-0 transition-opacity duration-300 pointer-events-none"
+          data-index={i}
+          style={`top: ${c.top}; ${c.left ? `left: ${c.left};` : ''} ${c.right ? `right: ${c.right};` : ''} flex-direction: ${c.align === 'right' ? 'row-reverse' : 'row'};`}
+        >
+          <span class="font-mono text-[9px] tracking-[0.1em] text-[hsl(var(--foreground))] bg-[hsl(var(--background))] border border-[hsl(var(--border))] px-1.5 py-0.5 rounded-[2px] whitespace-nowrap">
+            {c.label}
+          </span>
+          <span class="text-[hsl(var(--muted-foreground))] font-mono text-[10px]">─</span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Mobile callout legend -->
+  <div class="sm:hidden mt-3 flex flex-wrap gap-2">
+    {callouts.map((c) => (
+      <span class="font-mono text-[9px] tracking-[0.1em] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] px-1.5 py-0.5 rounded-[2px]">
+        {c.label}
+      </span>
+    ))}
+  </div>
+</div>
+
+<script>
+  const image = document.getElementById('pan-image') as HTMLImageElement | null;
+  const calloutEls = document.querySelectorAll<HTMLElement>('.feature-callout');
+
+  const panSteps = [
+    { x: '0%',   y: '0%'   },
+    { x: '-6%',  y: '0%'   },
+    { x: '-6%',  y: '-8%'  },
+    { x: '-3%',  y: '-12%' },
+    { x: '-4%',  y: '-5%'  },
+  ];
+
+  const leftCol = document.getElementById('left-col');
+  let activeStep = -1;
+
+  function setStep(step: number) {
+    if (step === activeStep) return;
+    activeStep = step;
+    if (image) {
+      const { x, y } = panSteps[step];
+      image.style.transform = `scale(1.15) translate(${x}, ${y})`;
+    }
+    calloutEls.forEach((el, i) => {
+      el.style.opacity = i === step ? '1' : '0';
+    });
+  }
+
+  function onScroll() {
+    if (!leftCol) return;
+    const rect = leftCol.getBoundingClientRect();
+    const total = leftCol.offsetHeight - window.innerHeight;
+    if (total <= 0) { setStep(0); return; }
+    const scrolled = -rect.top;
+    const progress = Math.max(0, Math.min(1, scrolled / total));
+    const step = Math.min(panSteps.length - 1, Math.floor(progress * panSteps.length));
+    setStep(step);
+  }
+
+  setStep(0);
+  window.addEventListener('scroll', onScroll, { passive: true });
+</script>
