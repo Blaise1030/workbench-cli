@@ -9,10 +9,12 @@ order: 1
 Run the installer in your terminal:
 
 ```sh
-curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh
+curl -fsSL https://blaise1030.github.io/install.sh | sh
 ```
 
 This downloads the Workbench binary (under 20MB) and places it on your `PATH`.
+
+Installer script: [install.sh](https://blaise1030.github.io/install.sh)
 
 ## First Launch
 

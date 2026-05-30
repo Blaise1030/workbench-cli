@@ -40,5 +40,6 @@ export function fileTreeQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
     },
     enabled: computed(() => Boolean(toValue(worktreeId))),
     staleTime: Infinity,
+    refetchOnWindowFocus: "always",
   });
 }

@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, ref, watch, onUnmounted } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useDebounceFn } from "@vueuse/core";
 import { FileIcon, FileTextIcon, FolderTreeIcon, SearchIcon } from "@lucide/vue";
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { FileTree } from "@pierre/trees";
 import {
   fileContentQueryOptions,
   fileTreeQueryOptions,
 } from "@/modules/file-explorer/queries";
 import { gitStatusQueryOptions, type GitStatusEntry } from "@/modules/git/queries";
-import { worktreeQueryOptions } from "@/modules/workspace/queries";
+import {
+  invalidateWorkspaceFs,
+  worktreeQueryOptions,
+} from "@/modules/workspace/queries";
 import CodeMirrorEditor from "@/modules/file-explorer/components/CodeMirrorEditor.vue";
 import FileTabList from "@/modules/file-explorer/components/FileTabList.vue";
 import MarkdownPreview from "@/modules/file-explorer/components/MarkdownPreview.vue";
@@ -63,6 +66,7 @@ const annotationState = inject(contextQueueAnnotationsKey, null);
 
 const route = useRoute();
 const router = useRouter();
+const queryClient = useQueryClient();
 
 const explorerState = useFileExplorerStorage(() => props.worktreeId);
 const { save, isSaving } = useFileEditorSave(() => props.worktreeId);
@@ -415,8 +419,16 @@ function teardownTree() {
   selectionReady.value = false;
 }
 
+function pathsListEqual(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 function mountTree(newPaths: string[]) {
-  if (!treeEl.value || tree || !Array.isArray(newPaths)) return;
+  if (!treeEl.value || !Array.isArray(newPaths)) return;
 
   tree = new FileTree({
     paths: newPaths,
@@ -444,9 +456,17 @@ function mountTree(newPaths: string[]) {
   selectionReady.value = true;
 }
 
+function syncTreeToPaths(pathList: string[], prevPathList?: readonly string[] | null) {
+  if (!treeEl.value) return;
+  if (tree && prevPathList && pathsListEqual(pathList, prevPathList)) return;
+  if (tree) teardownTree();
+  void nextTick(() => mountTree(pathList));
+}
+
 function tryMountTree() {
   const newPaths = filteredPaths.value;
   if (!newPaths) return;
+  if (tree) return;
   mountTree(newPaths);
 }
 
@@ -459,16 +479,22 @@ watch(
 );
 
 watch(
-  [() => paths.value, treeEl],
-  () => {
-    tryMountTree();
+  [filteredPaths, treeEl],
+  ([pathList], [prevPathList]) => {
+    if (!pathList) return;
+    if (!tree) {
+      tryMountTree();
+      return;
+    }
+    syncTreeToPaths(pathList, prevPathList ?? null);
   },
   { flush: "post" },
 );
 
 watch(showMarkdownOnly, () => {
-  teardownTree();
-  nextTick(() => tryMountTree());
+  const pathList = filteredPaths.value;
+  if (!pathList) return;
+  syncTreeToPaths(pathList);
 });
 
 watch(selectedRelativePath, (path) => {
@@ -520,6 +546,10 @@ watch(
     }
   },
 );
+
+onMounted(() => {
+  void invalidateWorkspaceFs(queryClient, props.worktreeId);
+});
 
 onUnmounted(() => {
   teardownTree();

@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MarkdownLink from '../components/MarkdownLink.astro';
-const installCmd = 'curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh';
+import { installCmd, INSTALL_OPTIONS_URL } from '../lib/install';
 
 const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
 const compareRows = [
@@ -30,7 +30,8 @@ const links = [
             class="font-[inherit] text-[10px] tracking-[0.1em] bg-foreground text-background border-0 px-2 py-0.5 cursor-pointer rounded-[2px] shrink-0 hover:opacity-80"
             aria-label="Copy install command"
           >COPY</button>
-        </div>        
+        </div>
+        <MarkdownLink label="Install options" href={INSTALL_OPTIONS_URL} showHref={true} />
         <MarkdownLink label="Releases" href="/releases" />
 
         <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>

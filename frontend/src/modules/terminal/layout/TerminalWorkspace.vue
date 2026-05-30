@@ -39,6 +39,7 @@ import {
   explorerPanelId,
   type WorktreeLastRoute,
 } from "@/modules/workspace/lib/worktree-panels-storage";
+import { gitStatusQueryOptions } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
@@ -71,6 +72,8 @@ provide(terminalSessionsKey, sessions);
 const panelsState = useWorktreePanels(() => props.worktreeId);
 const gitPanelState = useGitPanelStorage(() => props.worktreeId);
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
+/** Keep git status warm while on terminal (explorer/git panels unmount). */
+useQuery(gitStatusQueryOptions(() => props.worktreeId));
 const contextQueue = useContextQueue(() => props.worktreeId, sessions);
 provide(contextQueueKey, contextQueue);
 const contextQueueAnnotations = createContextQueueAnnotationsState(

@@ -92,5 +92,29 @@ describe("extractFilePaths", () => {
       expect(results).toHaveLength(1);
       expect(results[0].path).toBe("/home/user/project/src/app.ts");
     });
+
+    it("matches repo-root-relative paths that start with a slash", () => {
+      const paths = new Set([
+        "landing/public/assets/workbench-screenshot.png",
+        "src/app.ts",
+      ]);
+      const results = extractFilePaths(
+        "copy to /landing/public/assets/workbench-screenshot.png",
+        root,
+        paths,
+      );
+      expect(results).toHaveLength(1);
+      expect(results[0].path).toBe(
+        "/home/user/project/landing/public/assets/workbench-screenshot.png",
+      );
+      expect(results[0].text).toBe("/landing/public/assets/workbench-screenshot.png");
+    });
+
+    it("does not treat arbitrary absolute paths outside the worktree as links", () => {
+      const paths = new Set(["landing/public/assets/workbench-screenshot.png"]);
+      expect(
+        extractFilePaths("/usr/bin/node crashed", root, paths),
+      ).toEqual([]);
+    });
   });
 });

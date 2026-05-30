@@ -1,3 +1,4 @@
+import { setCustomExtension } from "@pierre/diffs";
 import type { WorkerPoolManager } from "@pierre/diffs/worker";
 import { getOrCreateWorkerPoolSingleton } from "@pierre/diffs/worker";
 import WorkerUrl from "@pierre/diffs/worker/worker.js?worker&url";
@@ -11,6 +12,9 @@ export { PIERRE_DIFF_RENDER_OPTIONS, PIERRE_DIFF_THEME };
 
 let pool: WorkerPoolManager | null = null;
 let initPromise: Promise<void> | null = null;
+
+// Astro is not in the Shiki allowlist; highlight as HTML (frontmatter + markup).
+setCustomExtension("astro", "html");
 
 /** Pierre diff worker pool with allowlisted Shiki grammars (see pierre-shiki-langs.ts). */
 export function getPierreWorkerPool(): WorkerPoolManager {

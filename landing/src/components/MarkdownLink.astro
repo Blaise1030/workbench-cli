@@ -1,14 +1,17 @@
 ---
+import { withBase } from '../lib/paths';
+
 interface Props {
   label: string;
   href: string;
   showHref?: boolean;
 }
 const { label, href, showHref = false } = Astro.props;
+const resolvedHref = withBase(href);
 ---
 
 <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">
   <span class="text-[hsl(var(--foreground))]"> -</span>
-  {'['}<a href={href}>{label}</a>{']'}
+  {'['}<a href={resolvedHref}>{label}</a>{']'}
   {showHref && <span>({href})</span>}
 </div>

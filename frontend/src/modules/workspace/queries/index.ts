@@ -1,4 +1,5 @@
 export { workspaceKeys } from "./keys";
+export { invalidateWorkspaceFs } from "./invalidate-workspace-fs";
 export type { Project, Worktree } from "./types";
 export {
   projectsQueryOptions,

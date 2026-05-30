@@ -4,7 +4,9 @@ on:
   push:
     branches: [main, master]
     paths:
-      - "docs/**"
+      - "landing/**"
+      - "docs/install.sh"
+      - "docs/latest.json"
       - "scripts/generate-latest-json.mjs"
       - ".github/workflows/pages.yml"
   release:
@@ -35,6 +37,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: landing/package.json
 
       - name: Generate latest.json from release
         if: github.event_name == 'release'
@@ -43,13 +47,21 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
         run: node scripts/generate-latest-json.mjs
 
+      - name: Install landing dependencies
+        working-directory: landing
+        run: npm install
+
+      - name: Build landing site
+        working-directory: landing
+        run: npm run build
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: landing/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

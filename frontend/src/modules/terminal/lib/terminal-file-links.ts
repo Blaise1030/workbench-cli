@@ -17,7 +17,8 @@ export interface FileLinkMatch {
 
 /**
  * Scans a single line of terminal text for file paths under worktreePath.
- * Matches absolute paths (filtered by prefix) and relative paths (filtered by filePathSet).
+ * Matches absolute paths (filtered by prefix), repo-root-relative paths with a
+ * leading slash (filtered by filePathSet), and relative paths (filtered by filePathSet).
  * Pure function — no xterm dependency, fully unit-testable.
  */
 export function extractFilePaths(
@@ -30,20 +31,42 @@ export function extractFilePaths(
   const results: FileLinkMatch[] = [];
   const seenRanges = new Set<number>();
 
+  function overlapsExisting(startX: number, endX: number): boolean {
+    return results.some((r) => startX < r.endX && endX > r.startX);
+  }
+
   for (const match of lineText.matchAll(new RegExp(ABS_PATH_RE.source, "g"))) {
     const raw = match[0].replace(/:+$/, "");
     const clean = raw.replace(LINE_COL_RE, "");
-    if (!clean.startsWith(prefix)) continue;
     const startX = match.index!;
-    seenRanges.add(startX);
-    results.push({ path: clean, text: raw, startX, endX: startX + raw.length });
+
+    if (clean.startsWith(prefix)) {
+      seenRanges.add(startX);
+      results.push({ path: clean, text: raw, startX, endX: startX + raw.length });
+      continue;
+    }
+
+    // Repo-root-relative paths often appear with a leading slash (e.g. /landing/public/foo.png).
+    if (filePathSet && filePathSet.size > 0 && clean.startsWith("/")) {
+      const relative = clean.slice(1);
+      if (filePathSet.has(relative)) {
+        seenRanges.add(startX);
+        results.push({
+          path: `${prefix}${relative}`,
+          text: raw,
+          startX,
+          endX: startX + raw.length,
+        });
+      }
+    }
   }
 
   if (filePathSet && filePathSet.size > 0) {
     for (const match of lineText.matchAll(new RegExp(REL_PATH_RE.source, "g"))) {
       const startX = match.index!;
-      if (seenRanges.has(startX)) continue;
       const raw = match[0].replace(/:+$/, "");
+      const endX = startX + raw.length;
+      if (seenRanges.has(startX) || overlapsExisting(startX, endX)) continue;
       const clean = raw.replace(LINE_COL_RE, "");
       if (!filePathSet.has(clean)) continue;
       results.push({ path: `${prefix}${clean}`, text: raw, startX, endX: startX + raw.length });

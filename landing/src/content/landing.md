@@ -8,8 +8,8 @@ Mission control for parallel AI coding. Workbench is a single GUI for every git 
 Built for engineers running Claude Code at scale. Keep your editor; add one place to see everything.
 ~~~
 INSTALL:
-- curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh
-- [Install options](https://blaise1030.github.io/workbench-cli/)
+- curl -fsSL https://blaise1030.github.io/install.sh | sh
+- [Install options](https://blaise1030.github.io/)
 - [Releases](/releases)
 ~~~
 FEATURES:

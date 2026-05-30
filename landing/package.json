@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "cp ../docs/install.sh public/install.sh && cp ../docs/latest.json public/latest.json",
     "dev": "astro dev",
+    "prebuild": "cp ../docs/install.sh public/install.sh && cp ../docs/latest.json public/latest.json",
     "build": "astro build",
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.0.0",
     "@astrojs/vue": "^5.1.4",
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",

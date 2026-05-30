@@ -85,7 +85,7 @@ async function addProject() {
       {{ addProjectError }}
     </p>
 
-    <div class="min-h-0 flex-1 overflow-y-auto px-2">
+    <div class="min-h-0 flex-1 overflow-y-auto px-1">
       <p
         v-if="!projects?.length"
         class="px-2 py-4 text-center text-sm text-muted-foreground"

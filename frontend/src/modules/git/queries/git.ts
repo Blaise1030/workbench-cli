@@ -8,6 +8,7 @@ import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 import type { GitFileAction } from "@/modules/git/lib/git-file-actions";
 import { workspaceKeys } from "@/modules/workspace/queries/keys";
+import { invalidateWorkspaceFs } from "@/modules/workspace/queries/invalidate-workspace-fs";
 import type { GitDiffScope, GitStatusEntry } from "./types";
 
 /** Poll git status while a subscriber is mounted (Git panel, file explorer tree). */
@@ -27,6 +28,7 @@ export function gitStatusQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
     staleTime: 0,
     refetchInterval: GIT_STATUS_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: false,
+    refetchOnWindowFocus: "always",
   });
 }
 
@@ -60,6 +62,7 @@ export function gitDiffQueryOptions(
     staleTime: 0,
     refetchInterval: GIT_STATUS_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: false,
+    refetchOnWindowFocus: "always",
   });
 }
 
@@ -67,9 +70,7 @@ function invalidateGitQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   worktreeId: string,
 ) {
-  queryClient.invalidateQueries({
-    queryKey: workspaceKeys.gitStatus(worktreeId),
-  });
+  void invalidateWorkspaceFs(queryClient, worktreeId);
   queryClient.invalidateQueries({
     queryKey: [...workspaceKeys.all, "git-diff", worktreeId],
   });

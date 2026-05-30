@@ -1,11 +1,11 @@
 import { defineConfig } from 'astro/config';
-import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@astrojs/vue';
 
+// GitHub Pages: https://blaise1030.github.io/
 export default defineConfig({
+  site: 'https://blaise1030.github.io',
   output: 'static',
-  adapter: cloudflare(),
   integrations: [vue()],
   vite: {
     plugins: [tailwindcss()],

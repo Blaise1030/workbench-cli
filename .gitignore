@@ -12,3 +12,5 @@ server-go/internal/assets/public/
 node-compile-cache/
 tsx-501
 .playwright-mcp/
+.superpowers/
+docs/superpowers/

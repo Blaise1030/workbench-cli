@@ -37,6 +37,7 @@
   --muted-foreground: oklch(0.556 0 0);
   --border: oklch(0.922 0 0);
   --link: 263 70% 60%;
+  --link-visited: 217 91% 45%;
   --radius: 0.625rem;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -75,6 +76,7 @@
     --muted-foreground: 240 5% 64.9%;
     --border: 240 3.7% 15.9%;
     --link: 263 70% 72%;
+    --link-visited: 217 91% 65%;
   }
 }
 
@@ -95,7 +97,7 @@ a {
 }
 
 a:visited {
-  color: hsl(var(--link));
+  color: hsl(var(--link-visited));
 }
 
 @keyframes blink {
