@@ -1,0 +1,22 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import MarkdownLink from '../../components/MarkdownLink.astro';
+import { getCollection } from 'astro:content';
+
+const allDocs = await getCollection('docs');
+const sorted = allDocs.sort((a, b) => a.data.order - b.data.order);
+---
+
+<Layout title="Docs — Workbench" description="Workbench documentation">
+
+  <div class="font-semibold tracking-[0.04em]">DOCS:</div>
+  {sorted.map(entry => (
+    <div class="pl-[1ch] flex gap-2">
+      <MarkdownLink label={entry.data.title} href={`/docs/${entry.slug}`} />
+      <span class="text-[hsl(var(--muted-foreground))]">— {entry.data.description}</span>
+    </div>
+  ))}
+
+  <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
+
+</Layout>
