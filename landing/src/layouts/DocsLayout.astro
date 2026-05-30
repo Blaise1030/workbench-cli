@@ -23,11 +23,11 @@ const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
-    <div class="min-h-screen">
-      <div class="max-w-5xl sm:px-8 px-4 py-8 max-sm:py-10">
+    <div class="min-h-screen flex flex-col">
 
-        <!-- Brand -->
-        <div class="flex justify-between items-start mb-8">
+      <!-- Brand — full width -->
+      <div class="w-full sm:px-8 px-4 py-8 max-sm:py-10">
+        <div class="flex justify-between items-start">
           <div class="font-semibold leading-snug">
             <div class="flex gap-2 items-center">
               <h1>WORKBENCH</h1>
@@ -42,8 +42,10 @@ const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order
             <div>[ <a href="https://github.com/Blaise1030/workbench-cli" class="hover:underline">SOURCE</a> ]</div>
           </nav>
         </div>
+      </div>
 
-        <!-- Two-column body -->
+      <!-- Two-column body — constrained -->
+      <div class="max-w-5xl w-full sm:px-8 px-4 pb-8 flex-1">
         <div class="flex gap-12 max-sm:flex-col">
 
           <!-- Sidebar -->
@@ -77,12 +79,14 @@ const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order
           </main>
 
         </div>
-
-        <!-- Footer -->
-        <div class="text-[hsl(var(--muted-foreground))] my-8">~~~</div>
-        <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
-
       </div>
+
+      <!-- Footer — full width -->
+      <div class="w-full sm:px-8 px-4 pb-8">
+        <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
+        <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
+      </div>
+
     </div>
   </body>
 </html>
