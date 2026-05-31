@@ -1,0 +1,66 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - heading "WORKBENCH" [level=1] [ref=e7]
+          - generic [ref=e9]: BROWSER-NATIVE AI WORKSPACE
+          - generic [ref=e10]: "2026"
+        - navigation [ref=e11]:
+          - generic [ref=e12]
+          - generic [ref=e17]
+          - generic [ref=e22]
+    - generic [ref=e27]: ~~~
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: "INSTALL:"
+          - generic [ref=e32]
+          - generic [ref=e34]: ~~~
+          - generic [ref=e35]: "ABOUT:"
+          - generic [ref=e36]: A browser tab, not another app. Workbench is a lightweight Go binary that serves your entire AI coding workspace in a browser — worktrees, terminals, file editor, and git diffs, all in one place.
+          - generic [ref=e37]: "Works with any agent: Claude Code, Codex, Aider, OpenCode, or anything that runs in a terminal. Under 20MB. No Electron. Runs on Linux."
+          - generic [ref=e38]: ~~~
+          - generic [ref=e39]: "FEATURES:"
+          - generic [ref=e40]
+          - generic [ref=e43]
+          - generic [ref=e46]
+          - generic [ref=e49]
+          - generic [ref=e52]
+          - generic [ref=e55]
+          - generic [ref=e58]
+          - generic [ref=e61]: ~~~
+          - generic [ref=e62]: "HOW IT COMPARES:"
+          - table [ref=e65]
+        - generic [ref=e125]:
+          - generic [ref=e126]
+          - generic [ref=e131]
+      - generic [ref=e146]:
+        - generic [ref=e147]: ~~~
+        - generic [ref=e148]: "LINKS:"
+        - generic [ref=e149]:
+          - generic [ref=e150]: "-"
+          - generic [ref=e151]
+        - generic [ref=e154]:
+          - generic [ref=e155]: "-"
+          - generic [ref=e156]
+        - generic [ref=e159]:
+          - generic [ref=e160]: "-"
+          - generic [ref=e161]
+        - generic [ref=e164]: ~~~
+        - generic [ref=e165]: ~*~ © 2026 WORKBENCH ~*~
+  - generic [ref=e168]:
+    - button "Menu" [ref=e169]:
+      - img [ref=e171]
+      - generic: Menu
+    - button "Inspect" [ref=e175]:
+      - img [ref=e177]
+      - generic: Inspect
+    - button "Audit" [ref=e179]:
+      - generic [ref=e180]:
+        - img [ref=e181]
+        - img [ref=e184]
+      - generic: Audit
+    - button "Settings" [ref=e187]:
+      - img [ref=e189]
+      - generic: Settings
