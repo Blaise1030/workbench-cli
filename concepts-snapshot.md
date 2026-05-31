@@ -1,0 +1,124 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - heading "WORKBENCH" [level=1] [ref=e7]
+          - generic [ref=e9]: BROWSER-NATIVE AI WORKSPACE
+          - generic [ref=e10]: "2026"
+        - navigation [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]: "-"
+            - generic [ref=e15]:
+              - text: "["
+              - link "Home" [ref=e16] [cursor=pointer]:
+                - /url: /workbench-cli/
+              - text: "]"
+          - generic [ref=e17]:
+            - generic [ref=e18]: "-"
+            - generic [ref=e20]:
+              - text: "["
+              - link "Releases" [ref=e21] [cursor=pointer]:
+                - /url: /workbench-cli/releases
+              - text: "]"
+          - generic [ref=e22]:
+            - generic [ref=e23]: "-"
+            - generic [ref=e25]:
+              - text: "["
+              - link "Source" [ref=e26] [cursor=pointer]:
+                - /url: https://github.com/Blaise1030/workbench-cli
+              - text: "]"
+          - generic [ref=e27]:
+            - generic [ref=e28]: "-"
+            - group "Color theme" [ref=e29]:
+              - generic [ref=e30]: "["
+              - button "DARK" [ref=e31] [cursor=pointer]
+              - generic [ref=e32]: /
+              - button "LIGHT" [pressed] [ref=e33] [cursor=pointer]
+              - generic [ref=e34]: "]"
+    - generic [ref=e35]: ~~~
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - complementary [ref=e38]:
+          - group [ref=e39]:
+            - generic "DOCS:" [ref=e40] [cursor=pointer]
+            - list [ref=e41]:
+              - listitem [ref=e42]:
+                - generic [ref=e43]:
+                  - generic [ref=e44]: "-"
+                  - generic [ref=e46]:
+                    - text: "["
+                    - link "Getting Started" [ref=e47] [cursor=pointer]:
+                      - /url: /workbench-cli/docs/getting-started
+                    - text: "]"
+              - listitem [ref=e48]:
+                - generic [ref=e49]:
+                  - generic [ref=e50]: "-"
+                  - generic [ref=e52]:
+                    - text: "["
+                    - link "> Concepts" [ref=e53] [cursor=pointer]:
+                      - /url: /workbench-cli/docs/concepts
+                    - text: "]"
+        - main [ref=e54]:
+          - generic [ref=e55]: "CONCEPTS:"
+          - generic [ref=e56]:
+            - heading "Workspaces" [level=2] [ref=e57]
+            - paragraph [ref=e58]: A workspace is the top-level container for your work session. It holds all your tabs, panes, and worktree state. Workbench saves workspace state automatically so you can pick up where you left off.
+            - heading "Tabs" [level=2] [ref=e59]
+            - paragraph [ref=e60]: Tabs live inside a workspace and let you group related panes together. Give a tab a name that reflects what you are working on — a feature, a bug, or a review.
+            - heading "Panes" [level=2] [ref=e61]
+            - paragraph [ref=e62]: A pane is an individual terminal inside a tab. You can split a tab into multiple panes and run a separate process in each one — an agent in one pane, a test runner in another.
+            - heading "Worktrees" [level=2] [ref=e63]
+            - paragraph [ref=e64]: Workbench makes parallel git worktrees first-class. Each worktree gets its own set of panes so you can run an agent on a feature branch while keeping your main branch clean. Switch between worktrees with one click.
+            - heading "File Editor" [level=2] [ref=e65]
+            - paragraph [ref=e66]: The built-in file editor opens files directly from the terminal without leaving the browser. It includes syntax highlighting for common languages.
+            - heading "Git Diff" [level=2] [ref=e67]
+            - paragraph [ref=e68]: The git diff view shows staged and unstaged changes line-by-line. You can review what an agent has changed without switching to another app.
+            - heading "Agent Status" [level=2] [ref=e69]
+            - paragraph [ref=e70]: "Workbench tracks the status of agent processes running in your panes — idle, running, or done. You can wait on a specific status using the CLI:"
+            - code [ref=e72]: workbench wait agent-status --status done
+      - generic [ref=e73]:
+        - generic [ref=e74]: ~~~
+        - generic [ref=e75]: "LINKS:"
+        - generic [ref=e76]:
+          - generic [ref=e77]: "-"
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - text: "["
+              - link "Docs" [ref=e80] [cursor=pointer]:
+                - /url: /workbench-cli/docs
+              - text: "]"
+            - text: (/docs)
+        - generic [ref=e81]:
+          - generic [ref=e82]: "-"
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - text: "["
+              - link "Source" [ref=e85] [cursor=pointer]:
+                - /url: https://github.com/Blaise1030/workbench-cli
+              - text: "]"
+            - text: (https://github.com/Blaise1030/workbench-cli)
+        - generic [ref=e86]:
+          - generic [ref=e87]: "-"
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - text: "["
+              - link "Releases" [ref=e90] [cursor=pointer]:
+                - /url: /workbench-cli/releases
+              - text: "]"
+            - text: (/releases)
+        - generic [ref=e91]: ~~~
+        - generic [ref=e92]: ~*~ © 2026 WORKBENCH ~*~
+  - generic [ref=e95]:
+    - button "Menu" [ref=e96]:
+      - img [ref=e98]
+      - generic: Menu
+    - button "Inspect" [ref=e102]:
+      - img [ref=e104]
+      - generic: Inspect
+    - button "Audit" [ref=e106]:
+      - img [ref=e108]
+      - generic: Audit
+    - button "Settings" [ref=e111]:
+      - img [ref=e113]
+      - generic: Settings

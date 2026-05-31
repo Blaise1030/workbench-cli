@@ -3,31 +3,31 @@ import Layout from '../layouts/Layout.astro';
 import FeaturePan from '../components/FeaturePan.astro';
 import { installCmd, installChannelLabel, isDevPreviewBuild } from '../lib/install';
 
-const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
+const compareTools = ['Workbench', 'tmux', 'Conductor', 'OpenCode', 'herdr', 'cmux'];
 const compareRows = [
-  { feature: 'BROWSER-BASED',      values: [true,  false, false, false, false] },
-  { feature: 'LINUX',              values: [true,  true,  false, true,  true]  },
-  { feature: '<20MB',              values: [true,  true,  false, true,  null]  },
-  { feature: 'FILE EDITOR',        values: [true,  false, false, false, true]  },
-  { feature: 'GIT DIFF',           values: [true,  false, false, false, true]  },
-  { feature: 'PARALLEL WORKTREES', values: [true,  false, true,  false, true]  },
-  { feature: 'AGENT STATUS',       values: [true,  false, false, true,  null]  },
+  { feature: 'BROWSER-BASED',      values: [true,  false, false, false, false, false] },
+  { feature: 'MACOS',              values: [true,  true,  false, true,  true,  true]  },
+  { feature: '<20MB',              values: [true,  true,  false, null,  true,  null]  },
+  { feature: 'FILE EDITOR',        values: [true,  false, false, false, false, false] },
+  { feature: 'GIT DIFF',           values: [true,  false, false, false, false, false] },
+  { feature: 'WORKTREES', values: [true,  false, true,  false, false, true]  },
+  { feature: 'AGENT STATUS',       values: [true,  false, false, true,  true,  true]  },
 ];
 ---
 
 <Layout
   title="Workbench"
-  description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux."
+  description="Run your coding agents side by side, right where work happens. Workbench is a 20MB Go binary that serves terminals, worktrees, file editor, and git diffs in a browser tab — localhost only, your code never leaves your machine."
   fullWidth
 >
 
 <!-- Hero -->
 <div class="max-w-2xl mx-auto px-4 gap-2 flex flex-col sm:px-0">
   <div class="font-semibold tracking-[0.04em] text-base">
-    A BROWSER TAB, NOT ANOTHER APP.
+    RUN CODING AGENTS SIDE BY SIDE, WHERE WORK TRULY HAPPENS.
   </div>
   <div class="text-[hsl(var(--muted-foreground))] text-justify">
-    Lightweight Go binary for AI coding — worktrees, terminals, file editor, and git diffs in one place. Works with any agent. Under 20MB. No Electron. Runs on Linux.
+    Your docs, GitHub, Slack — they all live in the browser. Now your agents do too. Workbench is a 20MB Go binary that serves terminals, worktrees, file editor, and git diffs in a single browser tab. Localhost only. Your code never leaves your machine.
   </div>
   <!-- Install -->
   <div id="install" class="font-semibold tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
@@ -38,7 +38,7 @@ const compareRows = [
     </div>
   )}
   <div class="leading-relaxed">
-    <span class="font-medium p-1 bg-muted text-black break-all box-decoration-clone" id="install-cmd">{installCmd}</span><!--
+    <span class="font-medium p-1 bg-muted text-muted-foreground break-all box-decoration-clone" id="install-cmd">{installCmd}</span><!--
     --><button
       class="inline-block align-middle ms-2 tracking-[0.1em] bg-foreground text-background border-0 px-1 cursor-pointer hover:opacity-80"
       aria-label="Copy install command"
@@ -53,14 +53,14 @@ const compareRows = [
   <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Line-level git diffs</span> — staged/unstaged, no app switch needed</div>
   <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Command palette</span> — fuzzy-search commands, files, and worktrees</div>
   <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Agent notifications</span> — get alerted when agents complete or stop</div>
-  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Single binary</span> — no Electron, no runtime dependencies</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Single binary</span> — no Electron, no runtime deps. Serves from localhost — your code never leaves your machine</div>
   <div class="text-[hsl(var(--muted-foreground))] my-[4px]">~~~</div>
 </div>
 
 <!-- Full-width feature showcase -->
 <br/>
 <br/>
-<div class="max-w-6xl mx-auto">
+<div class="w-full max-w-5xl mx-auto px-4 sm:px-0">
   <FeaturePan />
 </div>
 
@@ -74,8 +74,8 @@ const compareRows = [
 
   <!-- About -->
   <div class="font-semibold tracking-[0.04em]">ABOUT:</div>
-  <div class="text-[hsl(var(--muted-foreground))] text-justify">AI coding agents move fast. Switching between your terminal, editor, Git UI, and documentation on the browser doesn't. Every context switch breaks flow, and when you're running multiple agents across parallel worktrees, the overhead adds up.</div>
-  <div class="text-[hsl(var(--muted-foreground))] text-justify">Workbench eliminates that friction. A single lightweight binary that brings terminals, file editing, Git diffs, and worktrees into one browser tab—no Electron, no heavyweight IDE, nothing new to learn. Open a tab and stay in flow.</div>
+  <div class="text-[hsl(var(--muted-foreground))] text-justify">Your browser is already where work happens — Slack, GitHub, Linear, docs. Everything except your agents. Every time you alt-tab to a terminal or editor, you're breaking the flow that makes parallel agents worth running in the first place.</div>
+  <div class="text-[hsl(var(--muted-foreground))] text-justify">Workbench puts your agents where everything else already is. A 20MB Go binary that serves terminals, worktrees, file editing, and git diffs in a single browser tab. Localhost only — no account, no cloud, no Electron. Your code never leaves your machine.</div>
 
   <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
@@ -85,10 +85,10 @@ const compareRows = [
 </div>
 
 <!-- Compare table: max-w-2xl -->
-<div class="max-w-2xl mx-auto px-4 sm:px-0 my-2">
-  <div class="relative overflow-hidden">
-    <div id="compare-scroll" class="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <table class="border-collapse w-full table-fixed text-[hsl(var(--muted-foreground))] text-[12px]">
+<div class="max-w-2xl w-full min-w-0 mx-auto px-4 sm:px-0 my-2">
+  <div class="relative">
+    <div id="compare-scroll" class="w-full overflow-x-auto sm:overflow-x-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <table class="border-collapse text-[hsl(var(--muted-foreground))] text-[12px] min-w-[540px] sm:min-w-0 sm:w-full sm:table-fixed">
         <thead>
           <tr class="text-[hsl(var(--foreground))]">
             <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap">FEATURE</th>
@@ -137,7 +137,7 @@ const compareRows = [
 
   <details open class="mt-2 group">
     <summary class="font-semibold tracking-[0.04em] cursor-pointer list-none flex gap-1"><span class="text-[hsl(var(--muted-foreground))] group-open:hidden">+</span><span class="text-[hsl(var(--muted-foreground))] hidden group-open:inline">-</span>What OS does it support?</summary>
-    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">Linux, with macOS support planned. The binary is under 20MB and has no runtime dependencies.</div>
+    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">macOS. Linux and Windows support coming. The binary is under 20MB and has no runtime dependencies.</div>
   </details>
 
   <details open class="mt-2 group">

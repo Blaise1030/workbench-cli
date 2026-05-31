@@ -1,0 +1,130 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - heading "WORKBENCH" [level=1] [ref=e7]
+          - generic [ref=e9]: BROWSER-NATIVE AI WORKSPACE
+          - generic [ref=e10]: "2026"
+        - navigation [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]: "-"
+            - generic [ref=e15]:
+              - text: "["
+              - link "Home" [ref=e16] [cursor=pointer]:
+                - /url: /workbench-cli/
+              - text: "]"
+          - generic [ref=e17]:
+            - generic [ref=e18]: "-"
+            - generic [ref=e20]:
+              - text: "["
+              - link "Releases" [ref=e21] [cursor=pointer]:
+                - /url: /workbench-cli/releases
+              - text: "]"
+          - generic [ref=e22]:
+            - generic [ref=e23]: "-"
+            - generic [ref=e25]:
+              - text: "["
+              - link "Source" [ref=e26] [cursor=pointer]:
+                - /url: https://github.com/Blaise1030/workbench-cli
+              - text: "]"
+          - generic [ref=e27]:
+            - generic [ref=e28]: "-"
+            - group "Color theme" [ref=e29]:
+              - generic [ref=e30]: "["
+              - button "DARK" [ref=e31] [cursor=pointer]
+              - generic [ref=e32]: /
+              - button "LIGHT" [pressed] [ref=e33] [cursor=pointer]
+              - generic [ref=e34]: "]"
+    - generic [ref=e35]: ~~~
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - complementary [ref=e38]:
+          - group [ref=e39]:
+            - generic "DOCS:" [ref=e40] [cursor=pointer]
+            - list [ref=e41]:
+              - listitem [ref=e42]:
+                - generic [ref=e43]:
+                  - generic [ref=e44]: "-"
+                  - generic [ref=e46]:
+                    - text: "["
+                    - link "> Getting Started" [ref=e47] [cursor=pointer]:
+                      - /url: /workbench-cli/docs/getting-started
+                    - text: "]"
+              - listitem [ref=e48]:
+                - generic [ref=e49]:
+                  - generic [ref=e50]: "-"
+                  - generic [ref=e52]:
+                    - text: "["
+                    - link "Concepts" [ref=e53] [cursor=pointer]:
+                      - /url: /workbench-cli/docs/concepts
+                    - text: "]"
+        - main [ref=e54]:
+          - generic [ref=e55]: "GETTING STARTED:"
+          - generic [ref=e56]:
+            - heading "Install" [level=2] [ref=e57]
+            - paragraph [ref=e58]: "Run the installer in your terminal:"
+            - code [ref=e60]: curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh
+            - paragraph [ref=e61]:
+              - text: This downloads the Workbench binary (under 20MB) and places it on your
+              - code [ref=e62]: PATH
+              - text: .
+            - paragraph [ref=e63]:
+              - text: "Installer script:"
+              - link "install.sh" [ref=e64] [cursor=pointer]:
+                - /url: https://blaise1030.github.io/workbench-cli/install.sh
+            - heading "First Launch" [level=2] [ref=e65]
+            - paragraph [ref=e66]: "Navigate to your project directory and start Workbench:"
+            - code [ref=e68]: cd your-project workbench
+            - paragraph [ref=e69]:
+              - text: Workbench starts a local server and prints the URL — typically
+              - code [ref=e70]: http://localhost:3000
+              - text: .
+            - heading "Open in Browser" [level=2] [ref=e71]
+            - paragraph [ref=e72]: Open the printed URL in any modern browser. You will see the Workbench workspace with a terminal pane ready to use.
+            - paragraph [ref=e73]: "No configuration required. Workbench works with any AI agent that runs in a terminal: Claude Code, Codex, Aider, OpenCode, or anything else."
+      - generic [ref=e74]:
+        - generic [ref=e75]: ~~~
+        - generic [ref=e76]: "LINKS:"
+        - generic [ref=e77]:
+          - generic [ref=e78]: "-"
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - text: "["
+              - link "Docs" [ref=e81] [cursor=pointer]:
+                - /url: /workbench-cli/docs
+              - text: "]"
+            - text: (/docs)
+        - generic [ref=e82]:
+          - generic [ref=e83]: "-"
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - text: "["
+              - link "Source" [ref=e86] [cursor=pointer]:
+                - /url: https://github.com/Blaise1030/workbench-cli
+              - text: "]"
+            - text: (https://github.com/Blaise1030/workbench-cli)
+        - generic [ref=e87]:
+          - generic [ref=e88]: "-"
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - text: "["
+              - link "Releases" [ref=e91] [cursor=pointer]:
+                - /url: /workbench-cli/releases
+              - text: "]"
+            - text: (/releases)
+        - generic [ref=e92]: ~~~
+        - generic [ref=e93]: ~*~ © 2026 WORKBENCH ~*~
+  - generic [ref=e96]:
+    - button "Menu" [ref=e97]:
+      - img [ref=e99]
+      - generic: Menu
+    - button "Inspect" [ref=e103]:
+      - img [ref=e105]
+      - generic: Inspect
+    - button "Audit" [ref=e107]:
+      - img [ref=e109]
+      - generic: Audit
+    - button "Settings" [ref=e112]:
+      - img [ref=e114]
+      - generic: Settings

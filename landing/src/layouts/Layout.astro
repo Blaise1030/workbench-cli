@@ -21,7 +21,31 @@ const { title, description, fullWidth = false, forceDark = false } = Astro.props
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <title>{title}</title>
-    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <link
+      id="workbench-favicon"
+      rel="icon"
+      type="image/svg+xml"
+      href={withBase('/favicon-dark.svg')}
+      data-base={import.meta.env.BASE_URL.replace(/\/$/, '')}
+    />
+    <script is:inline>
+      const stored = localStorage.getItem('theme');
+      let dark = false;
+      if (stored === 'dark') {
+        dark = true;
+        document.documentElement.classList.add('dark');
+      } else if (stored === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        dark = true;
+        document.documentElement.classList.add('dark');
+      }
+      const favicon = document.getElementById('workbench-favicon');
+      if (favicon) {
+        const base = favicon.getAttribute('data-base') || '';
+        favicon.setAttribute('href', base + (dark ? '/favicon-dark.svg' : '/favicon-light.svg'));
+      }
+    </script>
   </head>
   <body>
     <div class="min-h-screen flex flex-col">

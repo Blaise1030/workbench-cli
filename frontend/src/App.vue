@@ -7,8 +7,10 @@
 import { onMounted, onUnmounted } from 'vue'
 import AppCommandPalette from '@/modules/command-palette/AppCommandPalette.vue'
 import { useWorkbenchDocumentTitle } from '@/modules/workspace/hooks/use-workbench-document-title'
+import { useAppColorMode } from '@/shared/hooks/useAppColorMode'
 
 useWorkbenchDocumentTitle()
+useAppColorMode()
 
 function handleBeforeUnload(e: BeforeUnloadEvent) {
   e.preventDefault()

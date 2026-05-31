@@ -21,7 +21,71 @@ const isReleases = path.startsWith('/releases') || path.startsWith(import.meta.e
       {!isDocs && <MarkdownLink label="Docs" href="/docs" />}
       {!isReleases && <MarkdownLink label="Releases" href="/releases" />}
       <MarkdownLink label="Source" href="https://github.com/Blaise1030/workbench-cli" />
+      <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]">
+        <span class="shrink-0 text-[hsl(var(--foreground))]"> -</span>
+        <span
+          class="inline-flex items-center leading-none whitespace-nowrap"
+          role="group"
+          aria-label="Color theme"
+        >
+          <span class="text-[hsl(var(--foreground))]">[</span>
+          <button
+            type="button"
+            id="theme-dark"
+            class="theme-seg cursor-pointer bg-transparent border-0 p-0 font-inherit font-semibold tracking-[0.04em] outline-none text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+            aria-pressed="false"
+          >DARK</button>
+          <span class="text-[hsl(var(--muted-foreground))]" aria-hidden="true">/</span>
+          <button
+            type="button"
+            id="theme-light"
+            class="theme-seg cursor-pointer bg-transparent border-0 p-0 font-inherit font-semibold tracking-[0.04em] outline-none text-[hsl(var(--foreground))] hover:text-[hsl(var(--foreground))]"
+            aria-pressed="true"
+          >LIGHT</button>
+          <span class="text-[hsl(var(--foreground))]">]</span>
+        </span>
+      </div>
     </nav>
   </div>
 </header>
 <div class="sm:px-8 px-4 text-[hsl(var(--muted-foreground))] mt-4">~~~</div>
+
+<script is:inline>
+  (function () {
+    const darkBtn = document.getElementById('theme-dark');
+    const lightBtn = document.getElementById('theme-light');
+    if (!darkBtn || !lightBtn) return;
+
+    const selected = 'text-[hsl(var(--foreground))]';
+    const unselected = 'text-[hsl(var(--muted-foreground))]';
+
+    function setSegment(el, on) {
+      el.classList.toggle(selected, on);
+      el.classList.toggle(unselected, !on);
+      el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+
+    function syncFavicon(dark) {
+      const link = document.getElementById('workbench-favicon');
+      if (!link) return;
+      const base = link.getAttribute('data-base') || '';
+      link.setAttribute('href', base + (dark ? '/favicon-dark.svg' : '/favicon-light.svg'));
+    }
+
+    function setTheme(dark) {
+      document.documentElement.classList.toggle('dark', dark);
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+      setSegment(darkBtn, dark);
+      setSegment(lightBtn, !dark);
+      syncFavicon(dark);
+    }
+
+    function syncFromDom() {
+      setTheme(document.documentElement.classList.contains('dark'));
+    }
+
+    darkBtn.addEventListener('click', () => setTheme(true));
+    lightBtn.addEventListener('click', () => setTheme(false));
+    syncFromDom();
+  })();
+</script>
