@@ -58,22 +58,32 @@ Run:
 ./bin/workbench-cli
 ```
 
-### CI releases
+### CI releases (unified pipeline)
 
-On tag `v*`, `.github/workflows/release-go.yml` builds matrix:
+1. **Release Please** (on merge to `main`) opens/merges release PRs and creates a Git tag (`v*`; legacy tags `workbench-v*` still work).
+2. **Release** workflow (`.github/workflows/release-go.yml`) on tag push:
+   - builds matrix tarballs,
+   - uploads them to the GitHub Release for that tag,
+   - redeploys GitHub Pages with an updated root `latest.json`.
 
-| Platform | Binary |
+| Platform | Asset |
 |----------|--------|
-| `darwin/arm64` | `workbench-cli-darwin-arm64.tar.gz` |
-| `darwin/amd64` | `workbench-cli-darwin-amd64.tar.gz` |
-| `linux/arm64` | `workbench-cli-linux-arm64.tar.gz` |
-| `linux/amd64` | `workbench-cli-linux-amd64.tar.gz` |
+| `darwin/arm64` | `workbench-cli-macos-aarch64.tar.gz` |
+| `darwin/amd64` | `workbench-cli-macos-x86_64.tar.gz` |
+| `linux/arm64` | `workbench-cli-linux-aarch64.tar.gz` |
+| `linux/amd64` | `workbench-cli-linux-x86_64.tar.gz` |
 
-Each tarball contains a single executable. Attach to GitHub Releases with `softprops/action-gh-release`.
+Each tarball contains a single executable named `workbench-cli-<platform>`.
+
+**Recover a release without binaries** (e.g. `workbench-v0.2.0`):
+
+```bash
+gh workflow run Release --ref workbench-v0.2.0 -f tag=workbench-v0.2.0
+```
 
 ### Install via GitHub Pages (Herdr-style)
 
-After the first release, enable **GitHub Pages** in the repo settings: **Source → GitHub Actions**.
+Enable **GitHub Pages**: **Source → GitHub Actions**.
 
 Users install with:
 
@@ -81,7 +91,7 @@ Users install with:
 curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh
 ```
 
-The install script reads `latest.json` from the same Pages site; that manifest is regenerated on every `v*` tag release (`.github/workflows/release-go.yml` → `pages` job).
+The install script fetches `latest.json` from the same site. That manifest is written **after** binaries are uploaded (end of the Release workflow), so `curl | sh` never points at assets that are still missing.
 
 ## Node tarball (legacy — ~80–140 MB)
 

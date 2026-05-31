@@ -12,66 +12,9 @@ on:
       - "scripts/prepare-versioned-install.mjs"
       - "scripts/merge-versioned-installs.mjs"
       - ".github/workflows/pages.yml"
-  release:
-    types: [published]
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Generate latest.json from release
-        if: github.event_name == 'release'
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: node scripts/generate-latest-json.mjs
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter workbench-landing...
-
-      - name: Build landing site
-        run: pnpm --filter workbench-landing run build
-
-      - name: Merge dev version install folders
-        run: node scripts/merge-versioned-installs.mjs landing/dist
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: landing/dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+    uses: ./.github/workflows/deploy-pages.yml

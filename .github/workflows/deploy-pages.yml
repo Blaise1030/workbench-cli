@@ -1,0 +1,71 @@
+# Reusable GitHub Pages deploy for landing + install manifest.
+# Called from pages.yml (docs/landing pushes) and release-go.yml (after binaries upload).
+name: Deploy Pages (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: "Git tag for latest.json (e.g. v0.2.0). Omit to use committed docs/latest.json."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Generate latest.json from release tag
+        if: inputs.release_tag != ''
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+        run: node scripts/generate-latest-json.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter workbench-landing...
+
+      - name: Build landing site
+        run: pnpm --filter workbench-landing run build
+
+      - name: Merge dev version install folders
+        run: node scripts/merge-versioned-installs.mjs landing/dist
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: landing/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

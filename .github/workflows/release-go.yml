@@ -1,10 +1,20 @@
 name: Release
 
+# Stable release pipeline:
+#   1. Release Please merges a release PR → creates tag (v* from now on; workbench-v* legacy).
+#   2. This workflow builds Go binaries and uploads them to that GitHub Release.
+#   3. deploy-pages refreshes latest.json on GitHub Pages so `curl | sh` installs that version.
 on:
   push:
     tags:
       - "v*"
+      - "workbench-v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (default: tag that triggered the run)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -38,14 +48,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Verify tag matches package version
         if: github.event_name == 'push'
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          REF="${GITHUB_REF_NAME}"
+          TAG_VERSION="${REF#v}"
+          TAG_VERSION="${TAG_VERSION#workbench-v}"
           if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-            echo "error: tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            echo "error: tag $REF does not match package.json version $PKG_VERSION"
             exit 1
           fi
 
@@ -105,14 +119,26 @@ jobs:
           path: dist/${{ matrix.name }}.tar.gz
 
   release:
-    name: Publish GitHub Release
+    name: Upload binaries to GitHub Release
     needs: build
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
     steps:
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "release_tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "release_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "error: workflow_dispatch requires inputs.tag (e.g. workbench-v0.2.0)" >&2
+            exit 1
+          fi
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -122,6 +148,19 @@ jobs:
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
           files: artifacts/*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-pages:
+    name: Refresh install manifest on GitHub Pages
+    needs: release
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy-pages.yml
+    with:
+      release_tag: ${{ needs.release.outputs.release_tag }}
+    secrets: inherit
