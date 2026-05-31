@@ -6,7 +6,7 @@ import { installCmd, installChannelLabel, isDevPreviewBuild } from '../lib/insta
 const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
 const compareRows = [
   { feature: 'BROWSER-BASED',      values: [true,  false, false, false, false] },
-  { feature: 'LINUX',              values: [true,  true,  false, true,  true]  },
+  { feature: 'MACOS',              values: [true,  true,  false, null,  null]  },
   { feature: '<20MB',              values: [true,  true,  false, true,  null]  },
   { feature: 'FILE EDITOR',        values: [true,  false, false, false, true]  },
   { feature: 'GIT DIFF',           values: [true,  false, false, false, true]  },
@@ -17,7 +17,7 @@ const compareRows = [
 
 <Layout
   title="Workbench"
-  description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux."
+  description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on macOS. Linux/Windows coming. Serves from localhost — your code never leaves your machine."
   fullWidth
 >
 
@@ -27,7 +27,7 @@ const compareRows = [
     A BROWSER TAB, NOT ANOTHER APP.
   </div>
   <div class="text-[hsl(var(--muted-foreground))] text-justify">
-    Lightweight Go binary for AI coding — worktrees, terminals, file editor, and git diffs in one place. Works with any agent. Under 20MB. No Electron. Runs on Linux.
+    Lightweight Go binary for AI coding — worktrees, terminals, file editor, and git diffs in one place. Works with any agent. Under 20MB. No Electron. Runs on macOS. Linux/Windows coming. Serves from localhost — your code never leaves your machine.
   </div>
   <!-- Install -->
   <div id="install" class="font-semibold tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
@@ -137,7 +137,7 @@ const compareRows = [
 
   <details open class="mt-2 group">
     <summary class="font-semibold tracking-[0.04em] cursor-pointer list-none flex gap-1"><span class="text-[hsl(var(--muted-foreground))] group-open:hidden">+</span><span class="text-[hsl(var(--muted-foreground))] hidden group-open:inline">-</span>What OS does it support?</summary>
-    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">Linux, with macOS support planned. The binary is under 20MB and has no runtime dependencies.</div>
+    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">macOS. Linux and Windows support coming. The binary is under 20MB, has no runtime dependencies, and serves from localhost — your code never leaves your machine.</div>
   </details>
 
   <details open class="mt-2 group">
