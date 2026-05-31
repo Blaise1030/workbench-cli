@@ -6,15 +6,16 @@ interface Props {
   title: string;
   description: string;
   fullWidth?: boolean;
+  forceDark?: boolean;
 }
 
 import { withBase } from '../lib/paths';
 
-const { title, description, fullWidth = false } = Astro.props;
+const { title, description, fullWidth = false, forceDark = false } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class={forceDark ? 'dark' : ''}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -23,16 +24,23 @@ const { title, description, fullWidth = false } = Astro.props;
     <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
   </head>
   <body>
-    <div class="min-h-screen">
+    <div class="min-h-screen flex flex-col">
 
       <SiteHeader />
       <!-- Content — constrained -->
-      <div class={fullWidth ? 'w-full min-w-0 overflow-x-hidden sm:px-8 px-4 py-4' : 'max-w-3xl min-w-0 overflow-x-hidden sm:px-8 px-4 py-4'}>      
+      <div class={fullWidth ? 'w-full min-w-0 sm:px-8 py-4 flex-1 flex flex-col' : 'max-w-3xl min-w-0 sm:px-8 py-4 flex-1 flex flex-col'}>
         <slot />
 
         <!-- Footer -->
-        <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
-        <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
+        <div class="px-4 sm:px-0 mt-auto">
+          <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
+          <div class="font-semibold tracking-[0.04em]">LINKS:</div>
+          <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span><span class="whitespace-nowrap">[<a href={withBase('/docs')}>Docs</a>]</span> <span>(/docs)</span></span></div>
+          <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span><span class="whitespace-nowrap">[<a href="https://github.com/Blaise1030/workbench-cli">Source</a>]</span> <span>(https://github.com/Blaise1030/workbench-cli)</span></span></div>
+          <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span><span class="whitespace-nowrap">[<a href={withBase('/releases')}>Releases</a>]</span> <span>(/releases)</span></span></div>
+          <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
+          <div class="text-[hsl(var(--muted-foreground))]">~*~ © 2026 WORKBENCH ~*~</div>
+        </div>
 
       </div>
     </div>

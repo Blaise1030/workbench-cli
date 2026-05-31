@@ -1,101 +1,79 @@
 ---
-const callouts = [
-  { label: 'WORKTREES',            top: '18%', left: '2%',  right: '',    align: 'left'  },
-  { label: 'FILE EDITOR',          top: '28%', left: '',    right: '2%',  align: 'right' },
-  { label: 'GIT DIFFS',            top: '72%', left: '2%',  right: '',    align: 'left'  },
-  { label: 'AGENT NOTIFICATIONS',  top: '62%', left: '',    right: '2%',  align: 'right' },
-  { label: '⌘K PALETTE',           top: '45%', left: '28%', right: '',    align: 'left'  },
+import { Image } from 'astro:assets';
+import prometheusPainting from '../assets/prometheus-painting.png';
+
+const base = import.meta.env.BASE_URL;
+
+const tabs = [
+  { label: 'WORKTREES',   src: `${base}/assets/workbench-screenshot.png` },
+  { label: 'FILE EDITOR', src: `${base}/assets/screenshot-git-diff.png` },
+  { label: 'CMD PALETTE', src: `${base}/assets/screenshot-command-palette.png` },
+  { label: 'AGENT PLAN',  src: `${base}/assets/screenshot-session-restore.png` },
 ];
+
+const id = `feature-pan-${Math.random().toString(36).slice(2, 7)}`;
 ---
 
-<div id="feature-pan" class="relative w-full h-full flex items-center justify-center">
-  <!-- Browser chrome frame -->
-  <div class="w-full rounded-[4px] border border-[hsl(var(--border))] overflow-hidden bg-[hsl(var(--background))] shadow-lg">
-    <!-- Title bar -->
-    <div class="flex items-center gap-2 px-3 py-2 border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
-      <div class="flex gap-1.5">
-        <span class="w-2.5 h-2.5 rounded-full bg-[hsl(var(--muted-foreground))] opacity-40"></span>
-        <span class="w-2.5 h-2.5 rounded-full bg-[hsl(var(--muted-foreground))] opacity-40"></span>
-        <span class="w-2.5 h-2.5 rounded-full bg-[hsl(var(--muted-foreground))] opacity-40"></span>
-      </div>
-      <span class="font-mono text-[10px] text-[hsl(var(--muted-foreground))] tracking-[0.08em] mx-auto">WORKBENCH</span>
-    </div>
-
-    <!-- Screenshot container with overflow hidden for pan -->
-    <div class="relative overflow-hidden" style="aspect-ratio: 16/10;">
-      <img
-        id="pan-image"
-        src="/assets/workbench-screenshot.png"
-        alt="Workbench UI"
-        class="w-full h-full object-cover"
-        style="transform: scale(1.15) translate(0%, 0%); transition: transform 0.5s ease; transform-origin: center center;"
-      />
-
-      <!-- Callouts — desktop only -->
-      {callouts.map((c, i) => (
-        <div
-          class="feature-callout absolute hidden sm:flex items-center gap-1 opacity-0 transition-opacity duration-300 pointer-events-none"
-          data-index={i}
-          style={`top: ${c.top}; ${c.left ? `left: ${c.left};` : ''} ${c.right ? `right: ${c.right};` : ''} flex-direction: ${c.align === 'right' ? 'row-reverse' : 'row'};`}
-        >
-          <span class="font-mono text-[9px] tracking-[0.1em] text-[hsl(var(--foreground))] bg-[hsl(var(--background))] border border-[hsl(var(--border))] px-1.5 py-0.5 rounded-[2px] whitespace-nowrap">
-            {c.label}
-          </span>
-          <span class="text-[hsl(var(--muted-foreground))] font-mono text-[10px]">─</span>
-        </div>
-      ))}
-    </div>
-  </div>
-
-  <!-- Mobile callout legend -->
-  <div class="sm:hidden mt-3 flex flex-wrap gap-2">
-    {callouts.map((c) => (
-      <span class="font-mono text-[9px] tracking-[0.1em] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] px-1.5 py-0.5 rounded-[2px]">
-        {c.label}
-      </span>
+<div class="w-full" id={id}>
+  <!-- Tabs -->
+  <div class="flex gap-3 max-w-2xl mx-auto sm:px-0 px-4 mb-1.5 font-mono text-[10px] tracking-[0.08em] flex-wrap justify-center" style="position:relative;z-index:1;">
+    {tabs.map((t, i) => (
+      <button
+        class="tab-btn shrink-0 cursor-pointer select-none transition-colors text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+        data-index={i}
+      >
+        {t.label}
+      </button>
     ))}
+  </div>
+  <!-- Painting background + browser -->
+  <div class="p-2 sm:p-6 overflow-hidden" style="position:relative;">
+    <Image
+      src={prometheusPainting}
+      alt=""
+      format="webp"
+      aria-hidden="true"
+      style="position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center;"
+    />
+    <div class="rounded-[6px] overflow-hidden shadow-2xl" style="position:relative;z-index:2;">
+      <div class="flex items-center gap-1 px-2 py-1 bg-muted border-b">
+        <div class="flex gap-1.5 shrink-0">
+          <span class="w-2.5 h-2.5 rounded-full border"></span>
+          <span class="w-2.5 h-2.5 rounded-full border"></span>
+          <span class="w-2.5 h-2.5 rounded-full border"></span>
+        </div>
+        <div class="flex-1 flex items-center gap-1.5 bg-background border rounded-[4px] px-2 py-0.5 ml-1">
+          <svg width="9" height="9" viewBox="0 0 16 16" fill="none" class="shrink-0 opacity-40"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 4v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="font-mono text-[9px] text-foreground">localhost:4739</span>
+        </div>
+      </div>
+      <div class="relative w-full">
+        {tabs.map((t, i) => (
+          <img
+            src={t.src}
+            alt={t.label}
+            class={`tab-img w-full block ${i === 0 ? '' : 'hidden'}`}
+            data-index={i}
+          />
+        ))}
+      </div>
+    </div>
   </div>
 </div>
 
-<script>
-  const image = document.getElementById('pan-image') as HTMLImageElement | null;
-  const calloutEls = document.querySelectorAll<HTMLElement>('.feature-callout');
+<script define:vars={{ id }}>
+  const root = document.getElementById(id);
+  const btns = root.querySelectorAll('.tab-btn');
+  const imgs = root.querySelectorAll('.tab-img');
 
-  const panSteps = [
-    { x: '0%',   y: '0%'   },
-    { x: '-6%',  y: '0%'   },
-    { x: '-6%',  y: '-8%'  },
-    { x: '-3%',  y: '-12%' },
-    { x: '-4%',  y: '-5%'  },
-  ];
-
-  // Requires a sibling element with id="left-col" to drive scroll progress
-  const leftCol = document.getElementById('left-col');
-  let activeStep = -1;
-
-  function setStep(step: number) {
-    if (step === activeStep) return;
-    activeStep = step;
-    if (image) {
-      const { x, y } = panSteps[step];
-      image.style.transform = `scale(1.15) translate(${x}, ${y})`;
-    }
-    calloutEls.forEach((el, i) => {
-      el.style.opacity = i === step ? '1' : '0';
+  function activate(idx) {
+    btns.forEach((b, i) => {
+      b.style.color = i === idx ? 'hsl(var(--foreground))' : '';
+      b.style.textDecoration = i === idx ? 'underline' : '';
     });
+    imgs.forEach((img, i) => img.classList.toggle('hidden', i !== idx));
   }
 
-  function onScroll() {
-    if (!leftCol) return;
-    const rect = leftCol.getBoundingClientRect();
-    const total = leftCol.offsetHeight - window.innerHeight;
-    if (total <= 0) { setStep(0); return; }
-    const scrolled = -rect.top;
-    const progress = Math.max(0, Math.min(1, scrolled / total));
-    const step = Math.min(panSteps.length - 1, Math.floor(progress * panSteps.length));
-    setStep(step);
-  }
-
-  setStep(0);
-  window.addEventListener('scroll', onScroll, { passive: true });
+  activate(0);
+  btns.forEach(btn => btn.addEventListener('click', () => activate(Number(btn.dataset.index))));
 </script>

@@ -30,8 +30,6 @@ function formatDate(iso: string): string {
 
 <Layout title="Workbench — Releases" description="Workbench release history.">
 
-  <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
-
   <!-- Releases -->
   <div class="font-semibold tracking-[0.04em]">RELEASES:</div>
 
@@ -39,8 +37,7 @@ function formatDate(iso: string): string {
     <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">No releases yet.</div>
   ) : (
     releases.map((release) => (
-      <div>
-        <div class="text-[hsl(var(--muted-foreground))] my-2">~~~</div>
+      <div class="py-3">        
         <div>
           <span class="font-semibold tracking-[0.04em]">VERSION:</span>
           <span class="text-[hsl(var(--muted-foreground))]"> {release.tag_name}</span>

@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import MarkdownLink from '../components/MarkdownLink.astro';
+import FeaturePan from '../components/FeaturePan.astro';
 import { installCmd, installChannelLabel, isDevPreviewBuild } from '../lib/install';
 
 const compareTools = ['Workbench', 'tmux', 'Conductor', 'herdr', 'T3 Code'];
@@ -9,92 +9,143 @@ const compareRows = [
   { feature: 'LINUX',              values: [true,  true,  false, true,  true]  },
   { feature: '<20MB',              values: [true,  true,  false, true,  null]  },
   { feature: 'FILE EDITOR',        values: [true,  false, false, false, true]  },
-  { feature: 'GIT DIFF',          values: [true,  false, false, false, true]  },
+  { feature: 'GIT DIFF',           values: [true,  false, false, false, true]  },
   { feature: 'PARALLEL WORKTREES', values: [true,  false, true,  false, true]  },
   { feature: 'AGENT STATUS',       values: [true,  false, false, true,  null]  },
 ];
-const links = [
-  { label: 'Docs',     href: '/docs' },
-  { label: 'Source',   href: 'https://github.com/Blaise1030/workbench-cli' },
-  { label: 'Releases', href: '/releases' },
-];
 ---
 
-<Layout title="Workbench" description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux.">
+<Layout
+  title="Workbench"
+  description="A browser tab, not another app. Workbench is a lightweight workspace for AI coding agents — worktrees, terminals, file editor, and git diffs in one place. Under 20MB. Runs on Linux."
+  fullWidth
+>
 
-        <!-- Install -->
-        <div class="font-semibold mb-2 tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
-        {isDevPreviewBuild && (
-          <div class="text-[hsl(var(--muted-foreground))] pl-[1ch] text-[11px] mb-1">
-            PR preview — installs this build. For the latest stable release use
-            {' '}<span class="text-black-200">curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh</span>
-          </div>
-        )}
-        <div class="pl-[1ch] leading-relaxed">
-          <span class="font-medium p-1 bg-muted text-black break-all box-decoration-clone" id="install-cmd">{installCmd}</span><!--
-          --><button
-            class="inline-block align-middle ms-2 tracking-[0.1em] bg-foreground text-background border-0 px-1 cursor-pointer hover:opacity-80"
-            aria-label="Copy install command"
-          >COPY</button>
-        </div>        
+<!-- Hero -->
+<div class="max-w-2xl mx-auto px-4 gap-2 flex flex-col sm:px-0">
+  <div class="font-semibold tracking-[0.04em]">
+    A BROWSER TAB, NOT ANOTHER APP.
+  </div>
+  <div class="text-[hsl(var(--muted-foreground))] text-justify">
+    Lightweight Go binary for AI coding — worktrees, terminals, file editor, and git diffs in one place. Works with any agent. Under 20MB. No Electron. Runs on Linux.
+  </div>
+  <!-- Install -->
+  <div id="install" class="font-semibold tracking-[0.04em]">INSTALL{isDevPreviewBuild ? ` (${installChannelLabel})` : ''}:</div>
+  {isDevPreviewBuild && (
+    <div class="text-[hsl(var(--muted-foreground))] text-[11px] mb-1">
+      PR preview — installs this build. For the latest stable release use
+      {' '}<span>curl -fsSL https://blaise1030.github.io/workbench-cli/install.sh | sh</span>
+    </div>
+  )}
+  <div class="leading-relaxed">
+    <span class="font-medium p-1 bg-muted text-black break-all box-decoration-clone" id="install-cmd">{installCmd}</span><!--
+    --><button
+      class="inline-block align-middle ms-2 tracking-[0.1em] bg-foreground text-background border-0 px-1 cursor-pointer hover:opacity-80"
+      aria-label="Copy install command"
+    >COPY</button>
+  </div>
+  <!-- Features -->
+  <div class="text-[hsl(var(--muted-foreground))] my-[4px]">~~~</div>
+  <div class="font-semibold tracking-[0.04em]">FEATURES:</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Parallel git worktrees</span> — with one-click switching</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Real terminal per worktree</span> — run any agent (Claude Code, Codex, Aider, OpenCode)</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Built-in file editor</span> — with syntax highlighting</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Line-level git diffs</span> — staged/unstaged, no app switch needed</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Command palette</span> — fuzzy-search commands, files, and worktrees</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Agent notifications</span> — get alerted when agents complete or stop</div>
+  <div class="text-[hsl(var(--muted-foreground))]"><span class="font-semibold text-[hsl(var(--foreground))]">Single binary</span> — no Electron, no runtime dependencies</div>
+  <div class="text-[hsl(var(--muted-foreground))] my-[4px]">~~~</div>
+</div>
 
-        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
+<!-- Full-width feature showcase -->
+<br/>
+<br/>
+<div class="max-w-6xl mx-auto">
+  <FeaturePan />
+</div>
 
-        <!-- About -->
-        <div class="font-semibold tracking-[0.04em]">ABOUT:</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">A browser tab, not another app. Workbench is a lightweight Go binary that serves your entire AI coding workspace in a browser — worktrees, terminals, file editor, and git diffs, all in one place.</div>
-        <div class="text-[hsl(var(--muted-foreground))] pl-[1ch]">Works with any agent: Claude Code, Codex, Aider, OpenCode, or anything that runs in a terminal. Under 20MB. No Electron. Runs on Linux.</div>
+<br/>
+<br/>
 
-        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
+<!-- Detail sections -->
+<div class="max-w-2xl mx-auto px-4 sm:px-0">  
 
-        <!-- Features -->
-        <div class="font-semibold tracking-[0.04em]">FEATURES:</div>
-        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Parallel git worktrees with one-click switching</span></div>
-        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Real terminal per worktree — run any agent (Claude Code, Codex, Aider, OpenCode)</span></div>
-        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Built-in file editor with syntax highlighting</span></div>
-        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Line-level git diffs, staged/unstaged — no app switch needed</span></div>
-        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Command palette</span></div>
-        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Agent notifications — get alerted when agents complete or stop</span></div>
-        <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]"><span class="shrink-0 text-[hsl(var(--foreground))]"> -</span><span>Single binary, no Electron, no runtime dependencies</span></div>
+  <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
-        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
+  <!-- About -->
+  <div class="font-semibold tracking-[0.04em]">ABOUT:</div>
+  <div class="text-[hsl(var(--muted-foreground))] text-justify">AI coding agents move fast. Switching between your terminal, editor, Git UI, and documentation on the browser doesn't. Every context switch breaks flow, and when you're running multiple agents across parallel worktrees, the overhead adds up.</div>
+  <div class="text-[hsl(var(--muted-foreground))] text-justify">Workbench eliminates that friction. A single lightweight binary that brings terminals, file editing, Git diffs, and worktrees into one browser tab—no Electron, no heavyweight IDE, nothing new to learn. Open a tab and stay in flow.</div>
 
-        <!-- How it compares -->
-        <div class="font-semibold tracking-[0.04em]">HOW IT COMPARES:</div>
-        <div class="relative mt-2 min-w-0 max-w-full overflow-hidden">
-          <div id="compare-scroll" class="w-full min-w-0 overflow-x-auto px-[1ch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <table class="border-collapse w-full text-[hsl(var(--muted-foreground))] text-[12px]">
-            <thead>
-              <tr class="text-[hsl(var(--foreground))]">
-                <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap">FEATURE</th>
-                {compareTools.map((tool, i) => (
-                  <th class={`text-center font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap${i === 0 ? ' text-[hsl(var(--foreground))]' : ''}`}>{tool}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {compareRows.map(row => (
-                <tr>
-                  <td class="pr-6 pt-1 text-[hsl(var(--foreground))] font-semibold whitespace-nowrap">{row.feature}</td>
-                  {row.values.map((val, i) => (
-                    <td class={`text-center pr-6 pt-1 whitespace-nowrap${i === 0 ? ' text-[hsl(var(--foreground))] font-bold' : ''}`}>{val === null ? '?' : val ? '✓' : '✗'}</td>
-                  ))}
-                </tr>
+  <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
+
+  <!-- How it compares -->
+  <div class="font-semibold tracking-[0.04em]">HOW IT COMPARES:</div>
+
+</div>
+
+<!-- Compare table: max-w-2xl -->
+<div class="max-w-2xl mx-auto px-4 sm:px-0 my-2">
+  <div class="relative overflow-hidden">
+    <div id="compare-scroll" class="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <table class="border-collapse w-full table-fixed text-[hsl(var(--muted-foreground))] text-[12px]">
+        <thead>
+          <tr class="text-[hsl(var(--foreground))]">
+            <th class="text-left font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap">FEATURE</th>
+            {compareTools.map((tool, i) => (
+              <th class={`text-center font-semibold pr-6 pb-1 border-b border-[hsl(var(--border))] whitespace-nowrap${i === 0 ? ' text-[hsl(var(--foreground))]' : ''}`}>{tool}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {compareRows.map(row => (
+            <tr>
+              <td class="pr-6 pt-1 text-[hsl(var(--foreground))] font-semibold whitespace-nowrap">{row.feature}</td>
+              {row.values.map((val, i) => (
+                <td class={`text-center pr-6 pt-1 whitespace-nowrap${i === 0 ? ' text-[hsl(var(--foreground))] font-bold' : ''}`}>{val === null ? '?' : val ? '✓' : '✗'}</td>
               ))}
-            </tbody>
-          </table>
-          </div>
-          <div id="fade-left" class="compare-table-fade compare-table-fade--left" aria-hidden="true"></div>
-          <div id="fade-right" class="compare-table-fade compare-table-fade--right" aria-hidden="true"></div>
-        </div>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div id="fade-left" class="compare-table-fade compare-table-fade--left" aria-hidden="true"></div>
+    <div id="fade-right" class="compare-table-fade compare-table-fade--right" aria-hidden="true"></div>
+  </div>
+</div>
 
-        <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
+<div class="max-w-2xl mx-auto px-4 sm:px-0">
+  <div class="text-[hsl(var(--muted-foreground))] my-[14px]">~~~</div>
 
-        <!-- Links -->
-        <div class="font-semibold tracking-[0.04em]">LINKS:</div>
-        {links.map(link => (
-          <MarkdownLink label={link.label} href={link.href} showHref={true} />
-        ))}
+  <!-- FAQ -->
+  <div class="font-semibold tracking-[0.04em]">FAQ:</div>
+
+  <details open class="mt-2 group">
+    <summary class="font-semibold tracking-[0.04em] cursor-pointer list-none flex gap-1"><span class="text-[hsl(var(--muted-foreground))] group-open:hidden">+</span><span class="text-[hsl(var(--muted-foreground))] hidden group-open:inline">-</span>What is Workbench?</summary>
+    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">A lightweight Go binary that serves your entire AI coding workspace in a browser tab — worktrees, terminals, file editor, and git diffs, all in one place. No Electron. No separate app to install.</div>
+  </details>
+
+  <details open class="mt-2 group">
+    <summary class="font-semibold tracking-[0.04em] cursor-pointer list-none flex gap-1"><span class="text-[hsl(var(--muted-foreground))] group-open:hidden">+</span><span class="text-[hsl(var(--muted-foreground))] hidden group-open:inline">-</span>What agents does it work with?</summary>
+    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">All of them. Workbench runs a real terminal per worktree, so any agent that runs in a terminal works out of the box: Claude Code, Codex, Aider, OpenCode, Goose, and anything else you can launch from the command line.</div>
+  </details>
+
+  <details open class="mt-2 group">
+    <summary class="font-semibold tracking-[0.04em] cursor-pointer list-none flex gap-1"><span class="text-[hsl(var(--muted-foreground))] group-open:hidden">+</span><span class="text-[hsl(var(--muted-foreground))] hidden group-open:inline">-</span>How does it differ from tmux?</summary>
+    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">tmux multiplexes terminals in the terminal. Workbench gives you a full browser-based UI with parallel git worktrees, a built-in file editor, git diffs, and agent status — all without leaving your browser tab.</div>
+  </details>
+
+  <details open class="mt-2 group">
+    <summary class="font-semibold tracking-[0.04em] cursor-pointer list-none flex gap-1"><span class="text-[hsl(var(--muted-foreground))] group-open:hidden">+</span><span class="text-[hsl(var(--muted-foreground))] hidden group-open:inline">-</span>What OS does it support?</summary>
+    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">Linux, with macOS support planned. The binary is under 20MB and has no runtime dependencies.</div>
+  </details>
+
+  <details open class="mt-2 group">
+    <summary class="font-semibold tracking-[0.04em] cursor-pointer list-none flex gap-1"><span class="text-[hsl(var(--muted-foreground))] group-open:hidden">+</span><span class="text-[hsl(var(--muted-foreground))] hidden group-open:inline">-</span>Is it free?</summary>
+    <div class="text-[hsl(var(--muted-foreground))] mt-1 pl-[2ch] text-justify">Yes. Workbench is free and open source. Source code is available on <a href="https://github.com/Blaise1030/workbench-cli">GitHub</a>.</div>
+  </details>
+
+</div>
 
     <script is:inline>
       (function () {
@@ -121,6 +172,20 @@ const links = [
         updateFades();
         requestAnimationFrame(updateFades);
       })();
+
+      // hero copy button
+      const heroBtn = document.querySelector('button[aria-label="Copy install command hero"]');
+      const heroCmdEl = document.getElementById('install-cmd-hero');
+      heroBtn?.addEventListener('click', () => {
+        const cmd = heroCmdEl?.textContent ?? '';
+        navigator.clipboard.writeText(cmd).then(() => {
+          heroBtn.textContent = 'COPIED';
+          setTimeout(() => { heroBtn.textContent = 'COPY'; }, 1500);
+        }).catch(() => {
+          heroBtn.textContent = 'ERR';
+          setTimeout(() => { heroBtn.textContent = 'COPY'; }, 1500);
+        });
+      });
 
       const btn = document.querySelector('button[aria-label="Copy install command"]');
       const cmdEl = document.getElementById('install-cmd');

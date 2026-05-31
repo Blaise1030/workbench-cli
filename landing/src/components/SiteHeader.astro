@@ -1,5 +1,10 @@
 ---
 import MarkdownLink from './MarkdownLink.astro';
+
+const path = Astro.url.pathname;
+const isHome = path === '/' || path === '/workbench-cli/' || path === import.meta.env.BASE_URL || path === import.meta.env.BASE_URL + '/';
+const isDocs = path.startsWith('/docs') || path.startsWith(import.meta.env.BASE_URL + '/docs');
+const isReleases = path.startsWith('/releases') || path.startsWith(import.meta.env.BASE_URL + '/releases');
 ---
 <header class="w-full sm:px-8 px-4 py-4 pb-3 max-sm:py-6">
   <div class="flex justify-between items-start">
@@ -12,8 +17,9 @@ import MarkdownLink from './MarkdownLink.astro';
       <div class="text-[hsl(var(--muted-foreground))] font-normal">2026</div>
     </div>
     <nav class="font-semibold leading-snug text-right">
-      <MarkdownLink label="Docs" href="/docs" />
-      <MarkdownLink label="Releases" href="/releases" />
+      {!isHome && <MarkdownLink label="Home" href="/" />}
+      {!isDocs && <MarkdownLink label="Docs" href="/docs" />}
+      {!isReleases && <MarkdownLink label="Releases" href="/releases" />}
       <MarkdownLink label="Source" href="https://github.com/Blaise1030/workbench-cli" />
     </nav>
   </div>
