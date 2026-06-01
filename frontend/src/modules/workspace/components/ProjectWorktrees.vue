@@ -84,19 +84,18 @@ async function removeWorktree(w: Worktree) {
           <SidebarMenuSubButton
             as-child
             :is-active="activeWorktreeId === w.id"
-            :class="
-              cn(
-                'w-fit max-w-full whitespace-nowrap [&>span:last-child]:truncate-none',
-                !w.isLinked && 'opacity-60',
-              )
-            "
+            :class="cn('w-fit', !w.isLinked && 'opacity-60')"
           >
-            <RouterLink :to="worktreePath(w.id)" @click="rememberWorktree(w.id)">
-              <GitBranchIcon />
-              <span>{{ label(w) }}</span>
+            <RouterLink
+              :to="worktreePath(w.id)"
+              class="flex min-w-0 flex-nowrap items-center gap-2"
+              @click="rememberWorktree(w.id)"
+            >
+              <GitBranchIcon class="shrink-0" />
+              <span class="shrink-0 whitespace-nowrap">{{ label(w) }}</span>
               <span
                 v-if="!w.isLinked"
-                class="text-[10px] uppercase text-muted-foreground"
+                class="shrink-0 whitespace-nowrap text-[10px] uppercase text-muted-foreground"
               >
                 missing
               </span>
