@@ -104,6 +104,27 @@ export function usePickProjectFolderMutation() {
   });
 }
 
+export function useCheckoutBranchMutation(projectId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (branch: string) => {
+      const res = await fetch(`/api/projects/${toValue(projectId)}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ branch }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as any).error ?? "Checkout failed");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.worktrees(toValue(projectId)) });
+    },
+  });
+}
+
 export function useCreateWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
   const queryClient = useQueryClient();
   return useMutation({

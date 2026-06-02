@@ -128,6 +128,27 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 		jsonResp(w, map[string]any{"branches": branches, "defaultBranch": defaultBranch}, http.StatusOK)
 	})
 
+	r.Post("/projects/{id}/checkout", func(w http.ResponseWriter, r *http.Request) {
+		p, err := GetProject(db, chi.URLParam(r, "id"))
+		if err != nil || p == nil {
+			wsErr(w, "Project not found", http.StatusNotFound)
+			return
+		}
+		var body struct {
+			Branch string `json:"branch"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Branch) == "" {
+			wsErr(w, "branch is required", http.StatusBadRequest)
+			return
+		}
+		if _, err := git.Run(p.RepoPath, []string{"checkout", body.Branch}); err != nil {
+			wsErr(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_ = syncWorktreesForProject(db, p.ID)
+		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+	})
+
 	// Worktrees under project
 	r.Get("/projects/{id}/worktrees", func(w http.ResponseWriter, r *http.Request) {
 		wts, err := ListWorktreesByProject(db, chi.URLParam(r, "id"))

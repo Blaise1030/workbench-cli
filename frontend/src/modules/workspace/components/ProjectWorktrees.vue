@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
-import { GitBranchIcon, Trash2Icon } from "@lucide/vue";
+import { CheckIcon, ChevronsUpDownIcon, GitBranchIcon, Trash2Icon } from "@lucide/vue";
 import {
   SidebarMenuSub,
   SidebarMenuSubButton,
@@ -14,7 +15,20 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Button } from "@/components/ui/button";
 import {
+  Combobox,
+  ComboboxAnchor,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+  ComboboxViewport,
+} from "@/components/ui/combobox";
+import {
+  branchesQueryOptions,
+  useCheckoutBranchMutation,
   useDeleteWorktreeMutation,
   worktreesQueryOptions,
   type Worktree,
@@ -26,16 +40,45 @@ import NewWorktreeDialog from "@/modules/workspace/components/NewWorktreeDialog.
 
 const props = defineProps<{
   projectId: string;
+  repoPath: string;
   activeWorktreeId?: string;
 }>();
 
 const router = useRouter();
 
-const { data: worktrees } = useQuery(
+const { data: worktreesRaw } = useQuery(
   worktreesQueryOptions(() => props.projectId),
 );
+
+const worktrees = computed(() => {
+  if (!worktreesRaw.value) return [];
+  const main = worktreesRaw.value.find((w) => w.path === props.repoPath);
+  const rest = worktreesRaw.value.filter((w) => w.path !== props.repoPath);
+  return main ? [main, ...rest] : rest;
+});
+
+function isMain(w: Worktree) {
+  return w.path === props.repoPath;
+}
+
 const deleteWorktree = useDeleteWorktreeMutation(() => props.projectId);
+const checkoutBranch = useCheckoutBranchMutation(() => props.projectId);
 const { unreadByWorktree } = useNotifications();
+
+const mainWorktree = computed(() => worktrees.value.find((w) => isMain(w)));
+const currentBranch = computed(() => mainWorktree.value?.branch ?? null);
+
+const switcherOpen = ref(false);
+
+const { data: branchData } = useQuery({
+  ...branchesQueryOptions(() => props.projectId),
+  enabled: computed(() => switcherOpen.value),
+});
+
+async function selectBranch(branch: string) {
+  await checkoutBranch.mutateAsync(branch);
+  switcherOpen.value = false;
+}
 
 function label(w: Worktree) {
   return w.branch ?? w.path.split("/").pop() ?? "worktree";
@@ -56,8 +99,7 @@ async function removeWorktree(w: Worktree) {
   }
 
   const wasActive = props.activeWorktreeId === w.id;
-  const siblings =
-    worktrees.value?.filter((other) => other.id !== w.id) ?? [];
+  const siblings = worktrees.value?.filter((other) => other.id !== w.id) ?? [];
 
   try {
     await deleteWorktree.mutateAsync(w.id);
@@ -81,7 +123,48 @@ async function removeWorktree(w: Worktree) {
 
 <template>
   <SidebarMenuSub>
-    <SidebarMenuSubItem v-for="w in worktrees" :key="w.id">
+    <SidebarMenuSubItem v-for="w in worktrees" :key="w.id" class="flex items-center gap-0.5">
+      <Combobox
+        v-if="isMain(w)"
+        v-model:open="switcherOpen"
+        :filter-function="(list, term) => (list as string[]).filter(b => b.toLowerCase().includes(term.toLowerCase()))"
+      >
+        <ComboboxAnchor as-child>
+          <ComboboxTrigger as-child>
+            <Button
+              :variant="activeWorktreeId === w.id ? 'secondary' : 'ghost'"
+              size="icon-sm"
+              class="shrink-0"
+              title="Switch branch"
+            >
+              <ChevronsUpDownIcon class="size-3.5" />
+            </Button>
+          </ComboboxTrigger>
+        </ComboboxAnchor>
+        <ComboboxList align="start" :side-offset="4" class="w-100">
+          <div class="px-2 pt-2">
+            <ComboboxInput placeholder="Search branches..." auto-focus group-class="bg-input" />
+          </div>
+          <ComboboxEmpty>No branches found.</ComboboxEmpty>
+          <ComboboxViewport class="max-h-48">
+            <ComboboxItem
+              v-for="branch in (branchData?.branches ?? [])"
+              :key="branch"
+              :value="branch"
+              :disabled="checkoutBranch.isPending.value"
+              class="py-1 text-sm"
+              @select="selectBranch(branch)"
+            >
+              <CheckIcon
+                class="size-3.5 shrink-0"
+                :class="branch === currentBranch ? 'opacity-100' : 'opacity-0'"
+              />
+              <span class="truncate" :title="branch">{{ branch }}</span>
+            </ComboboxItem>
+          </ComboboxViewport>
+        </ComboboxList>
+      </Combobox>
+
       <ContextMenu>
         <ContextMenuTrigger as-child>
           <SidebarMenuSubButton
@@ -94,10 +177,10 @@ async function removeWorktree(w: Worktree) {
               class="flex min-w-0 flex-nowrap items-center gap-2"
               @click="rememberWorktree(w.id)"
             >
-              <GitBranchIcon class="shrink-0" />
-              <span class="shrink-0 whitespace-nowrap">{{ label(w) }}</span>
+              <GitBranchIcon v-if="!isMain(w)" class="shrink-0" />
+              <span :class="isMain(w) ? 'truncate' : 'shrink-0 whitespace-nowrap'">{{ label(w) }}</span>
               <span
-                v-if="!w.isLinked"
+                v-if="!isMain(w) && !w.isLinked"
                 class="shrink-0 whitespace-nowrap text-[10px] uppercase text-muted-foreground"
               >
                 missing
@@ -109,7 +192,11 @@ async function removeWorktree(w: Worktree) {
           </SidebarMenuSubButton>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem variant="destructive" @select="removeWorktree(w)">
+          <ContextMenuItem
+            variant="destructive"
+            :disabled="isMain(w)"
+            @select="removeWorktree(w)"
+          >
             <Trash2Icon />
             Remove worktree
           </ContextMenuItem>

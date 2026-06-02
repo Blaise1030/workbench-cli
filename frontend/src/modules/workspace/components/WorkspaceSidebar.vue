@@ -108,7 +108,7 @@ async function addProject() {
         <SidebarMenuItem
           v-for="project in projects"
           :key="project.id"
-          class="mb-0.5"
+          class="mb-0"
         >
           <Collapsible
             :open="expandedProjects[project.id] ?? true"
@@ -130,6 +130,7 @@ async function addProject() {
             <CollapsibleContent>
               <ProjectWorktrees
                 :project-id="project.id"
+                :repo-path="project.repoPath"
                 :active-worktree-id="activeWorktreeId"
               />
             </CollapsibleContent>
