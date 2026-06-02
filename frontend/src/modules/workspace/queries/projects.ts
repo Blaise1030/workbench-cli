@@ -51,6 +51,7 @@ export function worktreesQueryOptions(projectId: MaybeRefOrGetter<string>) {
       return data.worktrees;
     },
     enabled: computed(() => Boolean(toValue(projectId))),
+    refetchInterval: 5000,
   });
 }
 

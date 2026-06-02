@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import WorkspaceView from "@/modules/workspace/pages/WorkspaceView.vue";
 import SettingsView from "@/modules/settings/layout/SettingsView.vue";
-import GeneralSettings from "@/modules/settings/pages/GeneralSettings.vue";
+import AgentsSettings from "@/modules/settings/pages/AgentsSettings.vue";
 import NetworkSettings from "@/modules/settings/pages/NetworkSettings.vue";
 import KeybindingsSettings from "@/modules/settings/pages/KeybindingsSettings.vue";
 import Terminal from "@/modules/terminal/pages/Terminal.vue";
@@ -59,9 +59,9 @@ const router = createRouter({
       path: "/settings",
       name: "settings",
       component: SettingsView,
-      redirect: { name: "settings-general" },
+      redirect: { name: "settings-agents" },
       children: [
-        { path: "general", name: "settings-general", component: GeneralSettings },
+        { path: "agents", name: "settings-agents", component: AgentsSettings },
         { path: "network", name: "settings-network", component: NetworkSettings },
         { path: "keybindings", name: "settings-keybindings", component: KeybindingsSettings },
       ],

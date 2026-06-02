@@ -40,7 +40,7 @@ export function useGlobalWorkspaceKeybindings(worktreeId: MaybeRefOrGetter<strin
 
       if (matched === "settings.open") {
         rememberSettingsReturnRoute(route.fullPath);
-        void router.push({ name: "settings-general" });
+        void router.push({ name: "settings-agents" });
         return;
       }
 

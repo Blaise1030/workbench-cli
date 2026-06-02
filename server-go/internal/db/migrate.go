@@ -41,6 +41,16 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY NOT NULL,
+  worktree_id TEXT REFERENCES worktrees(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  body TEXT NOT NULL,
+  read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
 `
 
 var addColumns = []struct {
@@ -50,6 +60,7 @@ var addColumns = []struct {
 	{"terminals", "resume_trusted", "INTEGER NOT NULL DEFAULT 0"},
 	{"terminals", "agent_kind", "TEXT"},
 	{"terminals", "agent_session_id", "TEXT"},
+	{"notifications", "terminal_id", "TEXT REFERENCES terminals(id) ON DELETE SET NULL"},
 }
 
 func Migrate(db *sql.DB) error {

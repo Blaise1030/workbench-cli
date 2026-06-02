@@ -65,7 +65,7 @@ func WSHandler(session *auth.Session, db *sql.DB, registry *Registry) http.Handl
 			done: make(chan struct{}),
 		}
 
-		registry.Attach(terminalID, client, wt.Path, t.ResumeCommand, t.ResumeTrusted, t.AgentKind, t.AgentSessionID, skipReplay)
+		registry.Attach(terminalID, wt.ID, client, wt.Path, t.ResumeCommand, t.ResumeTrusted, t.AgentKind, t.AgentSessionID, skipReplay)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

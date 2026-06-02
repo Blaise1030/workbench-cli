@@ -7,6 +7,10 @@ import (
 )
 
 func Execute(argv []string) error {
+	if len(argv) > 0 && argv[0] == "notify" {
+		return RunNotify(argv[1:])
+	}
+
 	cfg, err := ParseArgs(argv)
 	if err != nil {
 		return fmt.Errorf("argument error: %w", err)

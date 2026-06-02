@@ -70,10 +70,10 @@ const router = useRouter();
 const gitState = useGitPanelStorage(() => props.worktreeId);
 
 function resolveActiveTab(): GitPanelTabScope {
-  const fromRoute = normalizeGitPanelTabScope(route.query.tab);
-  if (fromRoute) return fromRoute;
   const stored = normalizeGitPanelTabScope(gitState.value.activeTab);
   if (stored) return stored;
+  const fromRoute = normalizeGitPanelTabScope(route.query.tab);
+  if (fromRoute) return fromRoute;
   return GIT_PANEL_DEFAULT_TAB;
 }
 
@@ -128,6 +128,15 @@ watch(activeTab, (tab) => {
     router.replace({ query: { ...route.query, tab } });
   }
 });
+
+watch(
+  () => props.worktreeId,
+  () => {
+    const tab = normalizeGitPanelTabScope(gitState.value.activeTab) ?? GIT_PANEL_DEFAULT_TAB;
+    activeTab.value = tab;
+    router.replace({ query: { ...route.query, tab } });
+  },
+);
 
 const showBackgrounds = ref(true);
 const showLineNumbers = ref(true);

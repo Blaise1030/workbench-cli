@@ -5,7 +5,9 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarMenuBadge,
 } from "@/components/ui/sidebar";
+import { useNotifications } from "@/modules/notifications/hooks/use-notifications";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -33,6 +35,7 @@ const { data: worktrees } = useQuery(
   worktreesQueryOptions(() => props.projectId),
 );
 const deleteWorktree = useDeleteWorktreeMutation(() => props.projectId);
+const { unreadByWorktree } = useNotifications();
 
 function label(w: Worktree) {
   return w.branch ?? w.path.split("/").pop() ?? "worktree";
@@ -100,6 +103,9 @@ async function removeWorktree(w: Worktree) {
                 missing
               </span>
             </RouterLink>
+            <SidebarMenuBadge v-if="(unreadByWorktree[w.id] ?? 0) > 0">
+              {{ unreadByWorktree[w.id] }}
+            </SidebarMenuBadge>
           </SidebarMenuSubButton>
         </ContextMenuTrigger>
         <ContextMenuContent>

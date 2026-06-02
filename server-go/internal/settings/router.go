@@ -130,4 +130,68 @@ func RegisterRoutes(r chi.Router, session *auth.Session, store Store, net Networ
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
 	})
+
+	agentsStore := NewAgentsStore()
+
+	r.Get("/agents", func(w http.ResponseWriter, r *http.Request) {
+		saved := config.LoadNetworkConfig()
+		jsonResp(w, GetAgentsResponse(agentsStore, saved.Port), http.StatusOK)
+	})
+	r.Patch("/agents", func(w http.ResponseWriter, r *http.Request) {
+		var patch PatchAgentsRequest
+		if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+			jsonResp(w, map[string]string{"error": "Bad request"}, http.StatusBadRequest)
+			return
+		}
+		if len(patch.Agents) == 0 {
+			jsonResp(w, map[string]string{"error": "No changes provided"}, http.StatusBadRequest)
+			return
+		}
+		if _, err := agentsStore.Patch(patch); err != nil {
+			jsonResp(w, map[string]string{"error": err.Error()}, http.StatusInternalServerError)
+			return
+		}
+		saved := config.LoadNetworkConfig()
+		jsonResp(w, GetAgentsResponse(agentsStore, saved.Port), http.StatusOK)
+	})
+	r.Post("/agents", func(w http.ResponseWriter, r *http.Request) {
+		var input CreateWorkbenchAgent
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+			jsonResp(w, map[string]string{"error": "Bad request"}, http.StatusBadRequest)
+			return
+		}
+		agent, err := agentsStore.Create(input)
+		if err != nil {
+			jsonResp(w, map[string]string{"error": err.Error()}, http.StatusBadRequest)
+			return
+		}
+		saved := config.LoadNetworkConfig()
+		jsonResp(w, map[string]any{
+			"agent":    agent,
+			"settings": GetAgentsResponse(agentsStore, saved.Port),
+		}, http.StatusCreated)
+	})
+	r.Delete("/agents/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		if err := agentsStore.Delete(id); err != nil {
+			jsonResp(w, map[string]string{"error": err.Error()}, http.StatusBadRequest)
+			return
+		}
+		saved := config.LoadNetworkConfig()
+		jsonResp(w, GetAgentsResponse(agentsStore, saved.Port), http.StatusOK)
+	})
+	r.Post("/agents/{id}/apply-hooks", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		saved := config.LoadNetworkConfig()
+		path, backup, err := ApplyAgentNotifyHooks(agentsStore, id, saved.Port)
+		if err != nil {
+			jsonResp(w, map[string]string{"error": err.Error()}, http.StatusBadRequest)
+			return
+		}
+		jsonResp(w, map[string]any{
+			"ok":         true,
+			"configPath": path,
+			"backupPath": backup,
+		}, http.StatusOK)
+	})
 }

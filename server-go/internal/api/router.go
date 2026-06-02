@@ -6,6 +6,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/assets"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/keybindings"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/notifications"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
@@ -13,23 +14,34 @@ import (
 
 func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool, registry *terminal.Registry, allowedHosts []string) {
 	r.Route("/api", func(r chi.Router) {
-		r.Use(auth.RequireOrigin(allowedHosts...))
-		r.Get("/health", Health(version))
+		// Public loopback hook (e.g. Claude hooks) — must bypass the origin guard.
+		notifications.RegisterHookRoute(r, state.DB)
 
-		r.Route("/auth", func(r chi.Router) {
-			auth.RegisterRoutes(r, state.Session, cookieSecure)
-		})
-
-		r.Route("/settings", func(r chi.Router) {
-			settings.RegisterRoutes(r, state.Session, state.SettingsStore, state.Lan)
-		})
-
-		r.Route("/keybindings", func(r chi.Router) {
-			keybindings.RegisterRoutes(r, state.Session)
-		})
-
+		// Origin-guarded routes live in their own group so the middleware is
+		// declared before any route on that (inline) mux.
 		r.Group(func(r chi.Router) {
-			workspace.RegisterRoutes(r, state.DB, state.Session)
+			r.Use(auth.RequireOrigin(allowedHosts...))
+			r.Get("/health", Health(version))
+
+			r.Route("/auth", func(r chi.Router) {
+				auth.RegisterRoutes(r, state.Session, cookieSecure)
+			})
+
+			r.Route("/settings", func(r chi.Router) {
+				settings.RegisterRoutes(r, state.Session, state.SettingsStore, state.Lan)
+			})
+
+			r.Route("/keybindings", func(r chi.Router) {
+				keybindings.RegisterRoutes(r, state.Session)
+			})
+
+			r.Route("/notifications", func(r chi.Router) {
+				notifications.RegisterRoutes(r, state.DB, state.Session)
+			})
+
+			r.Group(func(r chi.Router) {
+				workspace.RegisterRoutes(r, state.DB, state.Session)
+			})
 		})
 	})
 

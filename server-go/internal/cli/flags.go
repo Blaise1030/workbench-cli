@@ -21,6 +21,7 @@ var helpText = fmt.Sprintf(`workbench-cli — local dev workbench in the browser
 
 Usage:
   workbench-cli [options]
+  workbench-cli notify --title <text> --body <text>
 
 Options:
   -p, --port <number>   Port (default: %d, or PORT env, or ~/.workbench/config.json)

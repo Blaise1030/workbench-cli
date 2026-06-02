@@ -31,6 +31,7 @@ type clientConn struct {
 }
 
 type ptyEntry struct {
+	worktreeID     string
 	cwd            string
 	resumeCommand  *string
 	resumeTrusted  bool
@@ -53,14 +54,16 @@ type Registry struct {
 	mu      sync.RWMutex
 	entries map[string]*ptyEntry
 
-	capBytes    int
-	idleTTL     time.Duration
+	capBytes      int
+	idleTTL       time.Duration
+	serverPort    int
 	onCmdComplete func(terminalID string, report OscCommandReport)
 }
 
 type RegistryConfig struct {
 	CapBytes      int
 	IdleTTL       time.Duration
+	ServerPort    int
 	OnCmdComplete func(terminalID string, report OscCommandReport)
 }
 
@@ -77,6 +80,7 @@ func NewRegistry(cfg RegistryConfig) *Registry {
 		entries:       make(map[string]*ptyEntry),
 		capBytes:      capBytes,
 		idleTTL:       idleTTL,
+		serverPort:    cfg.ServerPort,
 		onCmdComplete: cfg.OnCmdComplete,
 	}
 }
@@ -94,13 +98,17 @@ func processEnv() map[string]string {
 	return env
 }
 
-func (reg *Registry) getOrCreate(terminalID string, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string) *ptyEntry {
+func (reg *Registry) getOrCreate(terminalID, worktreeID, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string) *ptyEntry {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 	if e, ok := reg.entries[terminalID]; ok {
+		if worktreeID != "" {
+			e.worktreeID = worktreeID
+		}
 		return e
 	}
 	e := &ptyEntry{
+		worktreeID:     worktreeID,
 		cwd:            cwd,
 		resumeCommand:  resumeCommand,
 		resumeTrusted:  resumeTrusted,
@@ -116,8 +124,8 @@ func (reg *Registry) getOrCreate(terminalID string, cwd string, resumeCommand *s
 
 // Attach connects a client to a terminal.
 // skipReplay: don't send ring contents (reconnect case).
-func (reg *Registry) Attach(terminalID string, conn *clientConn, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string, skipReplay bool) {
-	e := reg.getOrCreate(terminalID, cwd, resumeCommand, resumeTrusted, agentKind, agentSessionID)
+func (reg *Registry) Attach(terminalID, worktreeID string, conn *clientConn, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string, skipReplay bool) {
+	e := reg.getOrCreate(terminalID, worktreeID, cwd, resumeCommand, resumeTrusted, agentKind, agentSessionID)
 
 	// Load from disk if not yet loaded
 	if e.ring.ByteLen() == 0 {
@@ -224,6 +232,7 @@ func (reg *Registry) spawnPTY(terminalID string, e *ptyEntry, cols, rows uint16)
 	baseEnv := processEnv()
 	sanitized := SanitizeEnv(baseEnv)
 	spawnCfg := ShellIntegrationSpawn(shellPath, sanitized)
+	ApplyWorkbenchEnv(spawnCfg.Env, terminalID, e.worktreeID, reg.serverPort)
 
 	envSlice := make([]string, 0, len(spawnCfg.Env))
 	for k, v := range spawnCfg.Env {
