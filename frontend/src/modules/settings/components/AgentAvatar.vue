@@ -20,7 +20,7 @@ const props = withDefaults(
 );
 
 const useInlineBuiltin = computed(
-  () => !props.icon?.trim() && INLINE_BUILTIN_IDS.has(props.agentId),
+  () => INLINE_BUILTIN_IDS.has(props.agentId),
 );
 
 const src = computed(() => props.icon?.trim() || undefined);

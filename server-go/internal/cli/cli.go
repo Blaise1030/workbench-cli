@@ -10,6 +10,12 @@ func Execute(argv []string) error {
 	if len(argv) > 0 && argv[0] == "notify" {
 		return RunNotify(argv[1:])
 	}
+	if len(argv) > 0 && argv[0] == "status" {
+		return RunStatus(argv[1:])
+	}
+	if len(argv) > 0 && argv[0] == "register" {
+		return RunRegister(argv[1:])
+	}
 
 	cfg, err := ParseArgs(argv)
 	if err != nil {

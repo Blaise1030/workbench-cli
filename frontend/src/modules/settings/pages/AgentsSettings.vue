@@ -188,7 +188,7 @@ async function removeAgent(id: string) {
 <template>
   <SettingsPage
     title="Agents"
-    description="Configure coding agents: start and resume commands, and optional notify hooks that call workbench-cli. Saved to ~/.workbench/agents.json."
+    description="Configure coding agents: start and resume commands, and hooks that call workbench-cli to register sessions and send notifications. Saved to ~/.workbench/agents.json."
   >
     <template #actions>
       <Dialog v-model:open="addDialogOpen">
@@ -356,11 +356,13 @@ async function removeAgent(id: string) {
               <div class="space-y-3">
                 <Item variant="outline">
                   <ItemContent>
-                    <ItemTitle>Notify hooks</ItemTitle>
+                    <ItemTitle>Agent hooks</ItemTitle>
                     <ItemDescription>
-                      When enabled, hooks call
-                      <code>workbench-cli notify</code> using session env from the
-                      Workbench terminal tab (see
+                      When enabled, a <code>PreToolUse</code> hook calls
+                      <code>workbench-cli register</code> to bind the session to this terminal,
+                      and the selected events below call <code>workbench-cli notify</code> to
+                      send notifications. Both use the session env injected by the Workbench
+                      terminal tab (see
                       <a
                         href="https://cmux.com/docs/notifications"
                         target="_blank"

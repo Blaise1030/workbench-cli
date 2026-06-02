@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import {
-  createTerminalSessionsStore,
   terminalSessionsKey,
+  useTerminalSessions,
 } from "@/modules/terminal/hooks/terminal-sessions";
 import {
   useCreateTerminalMutation,
@@ -58,7 +58,7 @@ const props = defineProps<{
 const route = useRoute();
 const router = useRouter();
 const { colorMode } = useAppColorMode();
-const sessions = createTerminalSessionsStore();
+const sessions = useTerminalSessions();
 
 /** Remount terminal emulator when theme changes so xterm picks up new CSS tokens. */
 const routerViewKey = computed(() => {
@@ -67,7 +67,6 @@ const routerViewKey = computed(() => {
   }
   return route.fullPath;
 });
-provide(terminalSessionsKey, sessions);
 
 const panelsState = useWorktreePanels(() => props.worktreeId);
 const gitPanelState = useGitPanelStorage(() => props.worktreeId);

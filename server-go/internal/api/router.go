@@ -1,6 +1,10 @@
 package api
 
 import (
+	"encoding/json"
+	"net/http"
+	"strings"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/assets"
@@ -12,10 +16,74 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
 )
 
+func writeJSON(w http.ResponseWriter, v any, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	if code != http.StatusOK {
+		w.WriteHeader(code)
+	}
+	_ = json.NewEncoder(w).Encode(v)
+}
+
 func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool, registry *terminal.Registry, allowedHosts []string) {
 	r.Route("/api", func(r chi.Router) {
 		// Public loopback hook (e.g. Claude hooks) — must bypass the origin guard.
 		notifications.RegisterHookRoute(r, state.DB)
+
+		// Loopback-only agent registration (called by workbench-cli register hook).
+		r.Post("/register", func(w http.ResponseWriter, req *http.Request) {
+			if !auth.IsLocalRequest(req) {
+				writeJSON(w, map[string]string{"error": "Forbidden"}, http.StatusForbidden)
+				return
+			}
+			var body struct {
+				TerminalID string `json:"terminalId"`
+				Source     string `json:"source"`
+				SessionID  string `json:"sessionId"`
+				State      string `json:"state"`
+			}
+			if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+				writeJSON(w, map[string]string{"error": "Bad request"}, http.StatusBadRequest)
+				return
+			}
+			body.TerminalID = strings.TrimSpace(body.TerminalID)
+			body.Source = strings.TrimSpace(body.Source)
+			if body.TerminalID == "" || body.Source == "" {
+				writeJSON(w, map[string]string{"error": "terminalId and source are required"}, http.StatusBadRequest)
+				return
+			}
+			if err := workspace.UpdateTerminalAgentSession(state.DB, body.TerminalID, body.Source, body.SessionID); err != nil {
+				writeJSON(w, map[string]string{"error": err.Error()}, http.StatusInternalServerError)
+				return
+			}
+			if body.State != "" {
+				registry.SetAgentStatus(body.TerminalID, body.State)
+			}
+			writeJSON(w, map[string]bool{"ok": true}, http.StatusOK)
+		})
+
+		// Loopback-only agent status update (called by wterm status hook).
+		r.Post("/agent-status", func(w http.ResponseWriter, req *http.Request) {
+			if !auth.IsLocalRequest(req) {
+				writeJSON(w, map[string]string{"error": "Forbidden"}, http.StatusForbidden)
+				return
+			}
+			var body struct {
+				TerminalID string `json:"terminalId"`
+				State      string `json:"state"`
+			}
+			if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+				writeJSON(w, map[string]string{"error": "Bad request"}, http.StatusBadRequest)
+				return
+			}
+			body.TerminalID = strings.TrimSpace(body.TerminalID)
+			body.State = strings.TrimSpace(body.State)
+			if body.TerminalID == "" || body.State == "" {
+				writeJSON(w, map[string]string{"error": "terminalId and state are required"}, http.StatusBadRequest)
+				return
+			}
+			registry.SetAgentStatus(body.TerminalID, body.State)
+			writeJSON(w, map[string]bool{"ok": true}, http.StatusOK)
+		})
 
 		// Origin-guarded routes live in their own group so the middleware is
 		// declared before any route on that (inline) mux.
@@ -37,6 +105,25 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 
 			r.Route("/notifications", func(r chi.Router) {
 				notifications.RegisterRoutes(r, state.DB, state.Session)
+			})
+
+			r.Get("/sessions", func(w http.ResponseWriter, req *http.Request) {
+				terminals, err := workspace.ListAgentTerminals(state.DB)
+				if err != nil {
+					writeJSON(w, map[string]string{"error": err.Error()}, http.StatusInternalServerError)
+					return
+				}
+				type sessionResp struct {
+					workspace.Terminal
+					AgentStatus string `json:"agentStatus"`
+					IsAlive     bool   `json:"isAlive"`
+				}
+				sessions := make([]sessionResp, 0, len(terminals))
+				for _, t := range terminals {
+					status, alive := registry.GetAgentStatus(t.ID)
+					sessions = append(sessions, sessionResp{t, status, alive})
+				}
+				writeJSON(w, map[string]any{"sessions": sessions}, http.StatusOK)
 			})
 
 			r.Group(func(r chi.Router) {

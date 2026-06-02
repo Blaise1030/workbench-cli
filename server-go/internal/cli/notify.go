@@ -58,6 +58,7 @@ func RunNotify(argv []string) error {
 	if terminalID == "" {
 		terminalID = strings.TrimSpace(os.Getenv(terminal.EnvWorkbenchTerminal))
 	}
+	terminalName := strings.TrimSpace(os.Getenv(terminal.EnvWorkbenchTerminalName))
 
 	title = strings.TrimSpace(title)
 	body = strings.TrimSpace(body)
@@ -66,7 +67,7 @@ func RunNotify(argv []string) error {
 	}
 
 	port := notifyPort()
-	url := fmt.Sprintf("http://127.0.0.1:%d/api/notifications/hook", port)
+	url := fmt.Sprintf("http://127.0.0.1:%d/api/notify", port)
 
 	payload := map[string]string{
 		"title": title,
@@ -77,6 +78,9 @@ func RunNotify(argv []string) error {
 	}
 	if terminalID != "" {
 		payload["terminalId"] = terminalID
+	}
+	if terminalName != "" {
+		payload["subtitle"] = terminalName
 	}
 	raw, _ := json.Marshal(payload)
 

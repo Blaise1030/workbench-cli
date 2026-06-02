@@ -86,9 +86,9 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 }
 
 // RegisterHookRoute allows loopback clients (e.g. Claude hooks) to POST without a session.
-// Must be registered before auth.RequireOrigin middleware.
+// Path is /notify (not under /notifications) to avoid chi sub-router prefix capture.
 func RegisterHookRoute(r chi.Router, db *sql.DB) {
-	r.Post("/notifications/hook", func(w http.ResponseWriter, req *http.Request) {
+	r.Post("/notify", func(w http.ResponseWriter, req *http.Request) {
 		if !auth.IsLocalRequest(req) {
 			jsonResp(w, map[string]string{"error": "Forbidden"}, http.StatusForbidden)
 			return

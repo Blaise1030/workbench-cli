@@ -62,9 +62,16 @@ func Run(cfg Config) error {
 
 	ts := settings.GetTerminalSettings(state.SettingsStore)
 	registry := terminal.NewRegistry(terminal.RegistryConfig{
-		CapBytes:   settings.ScrollbackCapBytes(ts.ScrollbackCapKb),
-		IdleTTL:    time.Duration(settings.PtyIdleTtlMs(ts.PtyIdleTtlHours)) * time.Millisecond,
-		ServerPort: cfg.Port,
+		CapBytes:             settings.ScrollbackCapBytes(ts.ScrollbackCapKb),
+		IdleTTL:              time.Duration(settings.PtyIdleTtlMs(ts.PtyIdleTtlHours)) * time.Millisecond,
+		ServerPort:           cfg.Port,
+		AutoResumeAgentSessions: func() bool {
+			return settings.GetTerminalSettings(state.SettingsStore).AutoResumeAgentSessions
+		},
+		AgentHooksEnabled: func(kind string) bool {
+			return settings.GetBool(state.SettingsStore, "terminal.agentHooks."+kind+".enabled", true)
+		},
+		BuildAgentResumeArgv: agents.BuildResumeArgv,
 		OnCmdComplete: func(terminalID string, report terminal.OscCommandReport) {
 			t, wt, err := workspace.GetTerminalWithWorktree(state.DB, terminalID)
 			if err != nil || t == nil || wt == nil {

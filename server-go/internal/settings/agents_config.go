@@ -24,6 +24,12 @@ type ClaudeHookCommand struct {
 	Command string `json:"command"`
 }
 
+// BuildRegisterCommand returns a shell command that registers the agent session via workbench-cli.
+// The session ID is read from stdin (Claude Code hook payload format).
+func BuildRegisterCommand(agentID string) string {
+	return fmt.Sprintf("workbench-cli register --source %s --state running", agentID)
+}
+
 // BuildNotifyCommand returns a shell command that posts to workbench-cli notify.
 // Worktree/terminal/port are expanded from WORKBENCH_* env vars injected at PTY spawn.
 func BuildNotifyCommand(_ int, title, body string) string {
@@ -478,6 +484,9 @@ func buildAgentManifest(a WorkbenchAgent, port int) AgentManifest {
 
 	if a.ID == "claude" || (a.CanApplyHooks && strings.Contains(a.ConfigPath, ".claude")) {
 		hooks := map[string][]ClaudeHookCommand{}
+		// Register hook: fires on first tool use to bind the session to this terminal.
+		hooks["PreToolUse"] = []ClaudeHookCommand{{Type: "command", Command: BuildRegisterCommand(a.ID)}}
+		// Notify hooks: one entry per enabled event.
 		for evID, on := range a.Hooks.Events {
 			if !on {
 				continue
