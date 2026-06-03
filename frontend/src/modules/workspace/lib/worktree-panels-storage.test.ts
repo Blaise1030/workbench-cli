@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildWorkspaceQuery,
+  clampSplitTerminalSize,
   clientPanelsFromState,
   explorerPanelId,
   gitPanelId,
+  migrateWorktreeLayoutToProject,
+  SPLIT_TERMINAL_DEFAULT_SIZE,
+  SPLIT_TERMINAL_MAX_SIZE,
+  SPLIT_TERMINAL_MIN_SIZE,
 } from "./worktree-panels-storage.js";
 
 const WORKTREE = "wt-1";
@@ -51,5 +57,58 @@ describe("worktree-panels-storage", () => {
       explorer: false,
     });
     expect(panelsNone).toEqual([]);
+  });
+
+  it("buildWorkspaceQuery includes tab and file from storage", () => {
+    const query = buildWorkspaceQuery(
+      "/repo/wt",
+      { activeTab: "staged" },
+      { lastFilePath: "src/a.ts" },
+    );
+    expect(query.tab).toBe("staged");
+    expect(query.file).toBe(encodeURIComponent("/repo/wt/src/a.ts"));
+  });
+
+  it("buildWorkspaceQuery includes tab only when no file", () => {
+    const query = buildWorkspaceQuery("/repo/wt", { activeTab: "unstaged" }, {});
+    expect(query).toEqual({ tab: "unstaged" });
+  });
+
+  it("buildWorkspaceQuery omits file without worktree path", () => {
+    const query = buildWorkspaceQuery(undefined, {}, { lastFilePath: "a.ts" });
+    expect(query).toEqual({ tab: "unstaged" });
+  });
+
+  it("buildWorkspaceQuery normalizes legacy untracked tab", () => {
+    const query = buildWorkspaceQuery(
+      "/wt",
+      { activeTab: "untracked" as "unstaged" },
+      {},
+    );
+    expect(query.tab).toBe("unstaged");
+  });
+
+  it("clampSplitTerminalSize enforces bounds", () => {
+    expect(clampSplitTerminalSize(10)).toBe(SPLIT_TERMINAL_MIN_SIZE);
+    expect(clampSplitTerminalSize(90)).toBe(SPLIT_TERMINAL_MAX_SIZE);
+    expect(clampSplitTerminalSize(55.4)).toBe(55);
+    expect(clampSplitTerminalSize(SPLIT_TERMINAL_DEFAULT_SIZE)).toBe(
+      SPLIT_TERMINAL_DEFAULT_SIZE,
+    );
+  });
+
+  it("migrateWorktreeLayoutToProject copies legacy worktree prefs once", () => {
+    const migrated = migrateWorktreeLayoutToProject(
+      { git: true, explorer: false, layoutMode: "split", splitTerminalSize: 42 },
+      {},
+    );
+    expect(migrated).toEqual({ layoutMode: "split", splitTerminalSize: 42 });
+
+    expect(
+      migrateWorktreeLayoutToProject(
+        { git: false, explorer: false, layoutMode: "page" },
+        { layoutMode: "split", splitTerminalSize: 50 },
+      ),
+    ).toBeNull();
   });
 });

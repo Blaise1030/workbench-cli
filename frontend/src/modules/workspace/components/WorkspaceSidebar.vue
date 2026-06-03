@@ -4,9 +4,11 @@ import { computed, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import {
   ChevronRightIcon,
+  Columns2Icon,
   FolderGit2Icon,
   FolderPlusIcon,
   SettingsIcon,
+  SquareIcon,
 } from "@lucide/vue";
 import AgentKindIcon from "@/modules/workspace/components/AgentKindIcon.vue";
 import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
@@ -40,6 +42,7 @@ import {
 import { useSessionsQuery } from "@/modules/sessions/queries";
 import { useRoute } from "vue-router";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
+import { useWorktreeLayoutMode } from "@/modules/workspace/hooks/use-worktree-layout-mode";
 
 const STORAGE_KEY_EXPANDED_PROJECTS = "workbench:workspace-projects-expanded";
 const STORAGE_KEY_AGENTS_PANEL_SIZE = "workbench:workspace-sidebar-agents-size";
@@ -101,9 +104,13 @@ const worktreeContextMap = computed(() => {
   return map;
 });
 
-defineProps<{
+const props = defineProps<{
   activeWorktreeId?: string;
 }>();
+
+const worktreeLayout = useWorktreeLayoutMode(
+  () => props.activeWorktreeId ?? "",
+);
 
 watch(
   projects,
@@ -167,8 +174,32 @@ function sessionTitle(id: string, fallback: string): string {
           <div class="flex min-h-full flex-col">
             <div class="flex flex-1 flex-col px-1 pt-1">
               <!-- Header — sticky, fades into project list below -->
-              <div class="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-gradient-to-b from-background to-transparent pb-3 pt-1">
+              <div class="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-gradient-to-b from-background to-transparent py-1">
                 <div class="flex items-center ml-auto">
+                  <Button
+                    v-if="activeWorktreeId"
+                    variant="ghost"
+                    size="icon-xs"
+                    :aria-label="
+                      worktreeLayout.layoutMode.value === 'split'
+                        ? 'Page layout'
+                        : 'Split layout'
+                    "
+                    :aria-pressed="worktreeLayout.layoutMode.value === 'split'"
+                    @click="worktreeLayout.toggleLayoutMode()"
+                  >
+                    <Columns2Icon
+                      v-if="worktreeLayout.layoutMode.value === 'page'"
+                    />
+                    <SquareIcon v-else />
+                    <span class="sr-only">
+                      {{
+                        worktreeLayout.layoutMode.value === "split"
+                          ? "Page layout"
+                          : "Split layout"
+                      }}
+                    </span>
+                  </Button>
                   <ThemeToggle />
                   <Button variant="ghost" size="icon-xs" as-child>
                     <RouterLink to="/settings" aria-label="Settings">

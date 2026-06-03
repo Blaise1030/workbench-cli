@@ -68,6 +68,8 @@ const props = defineProps<{
 const route = useRoute();
 const router = useRouter();
 
+const ownsRoute = computed(() => route.name === "git");
+
 const gitState = useGitPanelStorage(() => props.worktreeId);
 
 function resolveActiveTab(): GitPanelTabScope {
@@ -98,6 +100,7 @@ function setCollapsedIdsForTab(tab: GitPanelTabScope, ids: string[]) {
 watch(
   () => route.query.tab,
   (tab) => {
+    if (!ownsRoute.value) return;
     const normalized = normalizeGitPanelTabScope(tab);
     if (normalized) {
       if (tab !== normalized) {
@@ -125,7 +128,7 @@ watch(activeTab, (tab) => {
   if (gitState.value.activeTab !== tab) {
     gitState.value = { ...gitState.value, activeTab: tab };
   }
-  if (route.query.tab !== tab) {
+  if (ownsRoute.value && route.query.tab !== tab) {
     router.replace({ query: { ...route.query, tab } });
   }
 });
@@ -135,7 +138,9 @@ watch(
   () => {
     const tab = normalizeGitPanelTabScope(gitState.value.activeTab) ?? GIT_PANEL_DEFAULT_TAB;
     activeTab.value = tab;
-    router.replace({ query: { ...route.query, tab } });
+    if (ownsRoute.value) {
+      router.replace({ query: { ...route.query, tab } });
+    }
   },
 );
 

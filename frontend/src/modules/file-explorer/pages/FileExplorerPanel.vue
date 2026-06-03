@@ -15,6 +15,7 @@ import {
   worktreeQueryOptions,
 } from "@/modules/workspace/queries";
 import CodeMirrorEditor from "@/modules/file-explorer/components/CodeMirrorEditor.vue";
+import FileExplorerTreePanelBridge from "@/modules/file-explorer/components/FileExplorerTreePanelBridge.vue";
 import FileTabList from "@/modules/file-explorer/components/FileTabList.vue";
 import MarkdownPreview from "@/modules/file-explorer/components/MarkdownPreview.vue";
 import {
@@ -68,6 +69,8 @@ const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
 
+const ownsRoute = computed(() => route.name === "explorer");
+
 const explorerState = useFileExplorerStorage(() => props.worktreeId);
 const { save, isSaving } = useFileEditorSave(() => props.worktreeId);
 
@@ -86,8 +89,15 @@ const markdownPreview = computed({
 });
 
 const treeEl = ref<HTMLElement | null>(null);
-const treePanelRef = ref<{ collapse: () => void; expand: () => void } | null>(null);
-const treeCollapsed = ref(false);
+const treePanelBridgeRef = ref<InstanceType<typeof FileExplorerTreePanelBridge> | null>(
+  null,
+);
+const treeCollapsed = computed({
+  get: () => explorerState.value.treeCollapsed ?? false,
+  set: (val: boolean) => {
+    explorerState.value = { ...explorerState.value, treeCollapsed: val };
+  },
+});
 const editorRef = ref<{ triggerSave: () => void; getScrollTop: () => number; openSearch: () => void } | null>(null);
 const editorScrollPosition = ref(0);
 const selectionReady = ref(false);
@@ -108,7 +118,12 @@ const treeDefaultSize = computed(() =>
     explorerState.value.treeSize ?? FILE_EXPLORER_DEFAULT_TREE_SIZE,
   ),
 );
-const previewDefaultSize = computed(() => 100 - treeDefaultSize.value);
+const treePanelDefaultSize = computed(() =>
+  treeCollapsed.value ? 0 : treeDefaultSize.value,
+);
+const previewDefaultSize = computed(() =>
+  treeCollapsed.value ? 100 : 100 - treeDefaultSize.value,
+);
 
 const persistTreeSize = useDebounceFn((size: number) => {
   explorerState.value = {
@@ -136,14 +151,18 @@ const filteredPaths = computed(() => {
 });
 
 const selectedRelativePath = computed(() => {
-  const encoded = route.query.file;
-  if (typeof encoded !== "string" || !encoded) return null;
-  const worktreePath = worktree.value?.path;
-  if (!worktreePath) return null;
-  const fullPath = decodeURIComponent(encoded);
-  const prefix = worktreePath.endsWith("/") ? worktreePath : `${worktreePath}/`;
-  if (!fullPath.startsWith(prefix)) return null;
-  return fullPath.slice(prefix.length);
+  if (ownsRoute.value) {
+    const encoded = route.query.file;
+    if (typeof encoded === "string" && encoded) {
+      const worktreePath = worktree.value?.path;
+      if (!worktreePath) return null;
+      const fullPath = decodeURIComponent(encoded);
+      const prefix = worktreePath.endsWith("/") ? worktreePath : `${worktreePath}/`;
+      if (!fullPath.startsWith(prefix)) return null;
+      return fullPath.slice(prefix.length);
+    }
+  }
+  return explorerState.value.lastFilePath ?? null;
 });
 
 const showMarkdownPreview = computed(
@@ -157,8 +176,13 @@ useExplorerContextQueueBridge({
   contextQueue,
   relativePath: selectedRelativePath,
   worktreePath: () => worktree.value?.path,
-  fileQuery: () =>
-    typeof route.query.file === "string" ? route.query.file : undefined,
+  fileQuery: () => {
+    if (typeof route.query.file === "string") return route.query.file;
+    const rel = explorerState.value.lastFilePath;
+    const wt = worktree.value?.path;
+    if (!rel || !wt) return undefined;
+    return encodeURIComponent(getFullPath(rel));
+  },
 });
 
 const openFileTabs = computed(() =>
@@ -175,6 +199,7 @@ function persistOpenFiles(nextOpenFiles: string[], lastFilePath?: string) {
 
 function navigateToFile(relativePath: string) {
   if (!worktree.value?.path) return;
+  if (!ownsRoute.value) return;
   router.replace({
     query: {
       ...route.query,
@@ -216,9 +241,11 @@ function doCloseTab(relativePath: string) {
     doOpenFileInTab(fallback);
     return;
   }
-  const query = { ...route.query };
-  delete query.file;
-  router.replace({ query });
+  if (ownsRoute.value) {
+    const query = { ...route.query };
+    delete query.file;
+    router.replace({ query });
+  }
 }
 
 function closeFileTabHandler(relativePath: string) {
@@ -347,25 +374,32 @@ function initialExpandedPaths(): string[] {
 
 function restoreLastFileFromStorage() {
   const relativePath = explorerState.value.lastFilePath;
-  if (!relativePath || route.query.file || !worktree.value?.path) return;
+  if (!relativePath || !worktree.value?.path) return;
+  if (ownsRoute.value && route.query.file) return;
   const pathSet = paths.value;
   if (pathSet && !pathSet.includes(relativePath)) return;
   if (!explorerState.value.openFiles?.length) {
     persistOpenFiles(seedOpenFiles(undefined, relativePath), relativePath);
   }
-  navigateToFile(relativePath);
+  if (ownsRoute.value) {
+    navigateToFile(relativePath);
+  }
 }
 
 function syncSelectionToUrl(selectedPaths: string[]) {
   if (!selectionReady.value || syncingTreeSelection.value) return;
   const selected = selectedPaths[0];
-  const currentFile = route.query.file;
   if (selected) {
     if (!isPreviewableFile(selected)) return;
+    if (!ownsRoute.value) {
+      openFileInTab(selected);
+      return;
+    }
+    const currentFile = route.query.file;
     const encoded = encodeURIComponent(getFullPath(selected));
     if (currentFile === encoded) return;
     openFileInTab(selected);
-  } else if (currentFile !== undefined) {
+  } else if (ownsRoute.value && route.query.file !== undefined) {
     const query = { ...route.query };
     delete query.file;
     router.replace({ query });
@@ -509,7 +543,11 @@ watch(
     if (tabs.length === 0 || active) return;
     const preferred = explorerState.value.lastFilePath ?? tabs[0];
     if (!preferred || !paths.value?.includes(preferred)) return;
-    navigateToFile(preferred);
+    if (ownsRoute.value) {
+      navigateToFile(preferred);
+    } else {
+      doOpenFileInTab(preferred);
+    }
   },
   { immediate: true },
 );
@@ -604,12 +642,10 @@ function handleSearchFromTab() {
 }
 
 function toggleTree() {
-  const panel = treePanelRef.value;
-  if (!panel) return;
   if (treeCollapsed.value) {
-    panel.expand();
+    treePanelBridgeRef.value?.expand();
   } else {
-    panel.collapse();
+    treePanelBridgeRef.value?.collapse();
   }
 }
 </script>
@@ -716,15 +752,18 @@ function toggleTree() {
 
       <ResizablePanel
         id="file-explorer-tree"
-        ref="treePanelRef"
-        :default-size="treeDefaultSize"
+        v-slot="treePanel"
+        :default-size="treePanelDefaultSize"
         :min-size="FILE_EXPLORER_MIN_TREE_SIZE"
         :max-size="FILE_EXPLORER_MAX_TREE_SIZE"
         collapsible
         :collapsed-size="0"
-        @collapse="treeCollapsed = true"
-        @expand="treeCollapsed = false"
       >
+        <FileExplorerTreePanelBridge
+          ref="treePanelBridgeRef"
+          v-bind="treePanel"
+          v-model:stored-collapsed="treeCollapsed"
+        />
         <div class="flex h-full min-h-0 flex-col">
           <div class="flex shrink-0 items-center justify-end px-1 py-0.5">
             <Button

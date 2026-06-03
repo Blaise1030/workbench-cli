@@ -4,6 +4,8 @@ import { computed, type MaybeRefOrGetter, toValue } from "vue";
 export interface FileExplorerWorktreeState {
   /** Tree panel size as a percentage of the split (15–55). */
   treeSize?: number;
+  /** Whether the file tree sidebar is collapsed. */
+  treeCollapsed?: boolean;
   /** Path relative to the worktree root. */
   lastFilePath?: string;
   /** Open file tabs (relative paths), in tab order. Scoped per worktree. */
