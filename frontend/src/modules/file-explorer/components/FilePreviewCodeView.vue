@@ -18,6 +18,7 @@ import {
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
 import contextQueueAnnotationShadowStyles from "@/modules/context-queue/lib/context-queue-annotations-shadow.css?inline";
+import pierreShadcnShadowStyles from "@/shared/lib/pierre-shadcn-shadow.css?inline";
 import {
   contextQueueAnnotationsKey,
   contextQueueKey,
@@ -74,7 +75,7 @@ function viewOptions() {
     disableBackground: false,
     disableLineNumbers: false,
     overflow: "scroll" as const,
-    unsafeCSS: contextQueueAnnotationShadowStyles,
+    unsafeCSS: `${pierreShadcnShadowStyles}\n${contextQueueAnnotationShadowStyles}`,
     ...pierreContextQueueOptions,
     ...pierreCodeViewOptions,
     onPostRender: (

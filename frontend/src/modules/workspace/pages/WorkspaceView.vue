@@ -11,8 +11,6 @@ import {
 import { useQuery } from "@tanstack/vue-query";
 import { queryClient } from "@/lib/query-client";
 import { useGlobalWorkspaceKeybindings } from "@/modules/keyboard/hooks/useGlobalWorkspaceKeybindings";
-import { useNotifications } from "@/modules/notifications/hooks/use-notifications";
-import { useMarkNotificationReadMutation } from "@/modules/notifications/queries/notifications";
 
 const route = useRoute();
 const router = useRouter();
@@ -28,18 +26,6 @@ watch(
 );
 
 useGlobalWorkspaceKeybindings(worktreeId);
-
-const { notifications } = useNotifications();
-const markRead = useMarkNotificationReadMutation();
-
-watch(worktreeId, (id) => {
-  if (!id) return;
-  for (const n of notifications.value) {
-    if (n.worktreeId === id && !n.read) {
-      void markRead.mutate(n.id);
-    }
-  }
-});
 
 const { data: projects } = useQuery(projectsQueryOptions());
 

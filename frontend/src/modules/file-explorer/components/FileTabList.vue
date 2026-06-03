@@ -8,6 +8,7 @@ import {
   CodeIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
+  SearchIcon,
 } from "@lucide/vue";
 import { cn } from "@/lib/utils";
 import { basename } from "@/modules/file-explorer/lib/file-tabs";
@@ -42,6 +43,7 @@ const emit = defineEmits<{
   select: [relativePath: string];
   close: [relativePath: string];
   save: [];
+  search: [];
   toggleTree: [];
   toggleMarkdownPreview: [];
 }>();
@@ -142,6 +144,15 @@ function closeClass(relativePath: string) {
     >
       <EyeIcon v-if="!markdownPreview" class="size-3.5" />
       <CodeIcon v-else class="size-3.5" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      aria-label="Find in file"
+      class="text-muted-foreground"
+      @click="emit('search')"
+    >
+      <SearchIcon class="size-3.5" />
     </Button>
     <Button
       variant="ghost"

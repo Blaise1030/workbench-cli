@@ -2,19 +2,30 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/assets"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/keybindings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/notifications"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
 )
+
+func publishEvent(bus *events.Bus, topics ...string) {
+	if bus == nil {
+		return
+	}
+	data, _ := json.Marshal(map[string][]string{"topics": topics})
+	bus.Publish(string(data))
+}
 
 func writeJSON(w http.ResponseWriter, v any, code int) {
 	w.Header().Set("Content-Type", "application/json")
@@ -27,7 +38,7 @@ func writeJSON(w http.ResponseWriter, v any, code int) {
 func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool, registry *terminal.Registry, allowedHosts []string) {
 	r.Route("/api", func(r chi.Router) {
 		// Public loopback hook (e.g. Claude hooks) — must bypass the origin guard.
-		notifications.RegisterHookRoute(r, state.DB)
+		notifications.RegisterHookRoute(r, state.DB, state.EventBus)
 
 		// Loopback-only agent registration (called by workbench-cli register hook).
 		r.Post("/register", func(w http.ResponseWriter, req *http.Request) {
@@ -59,6 +70,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 				registry.SetAgentStatus(body.TerminalID, body.State)
 			}
 			writeJSON(w, map[string]bool{"ok": true}, http.StatusOK)
+			publishEvent(state.EventBus, "sessions")
 		})
 
 		// Loopback-only agent status update (called by wterm status hook).
@@ -83,6 +95,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 			}
 			registry.SetAgentStatus(body.TerminalID, body.State)
 			writeJSON(w, map[string]bool{"ok": true}, http.StatusOK)
+			publishEvent(state.EventBus, "sessions")
 		})
 
 		// Origin-guarded routes live in their own group so the middleware is
@@ -90,6 +103,44 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 		r.Group(func(r chi.Router) {
 			r.Use(auth.RequireOrigin(allowedHosts...))
 			r.Get("/health", Health(version))
+
+			r.With(auth.RequireSession(state.Session)).Get("/events", func(w http.ResponseWriter, req *http.Request) {
+				flusher, ok := w.(http.Flusher)
+				if !ok {
+					http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "text/event-stream")
+				w.Header().Set("Cache-Control", "no-cache")
+				w.Header().Set("Connection", "keep-alive")
+				w.Header().Set("X-Accel-Buffering", "no")
+
+				ch := state.EventBus.Subscribe()
+				defer state.EventBus.Unsubscribe(ch)
+
+				// Send a real data event so clients can confirm the connection is live.
+				fmt.Fprint(w, "data: {\"topics\":[]}\n\n")
+				flusher.Flush()
+
+				ticker := time.NewTicker(30 * time.Second)
+				defer ticker.Stop()
+
+				for {
+					select {
+					case <-req.Context().Done():
+						return
+					case msg, ok := <-ch:
+						if !ok {
+							return
+						}
+						fmt.Fprintf(w, "data: %s\n\n", msg)
+						flusher.Flush()
+					case <-ticker.C:
+						fmt.Fprint(w, ": heartbeat\n\n")
+						flusher.Flush()
+					}
+				}
+			})
 
 			r.Route("/auth", func(r chi.Router) {
 				auth.RegisterRoutes(r, state.Session, cookieSecure)
@@ -104,7 +155,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 			})
 
 			r.Route("/notifications", func(r chi.Router) {
-				notifications.RegisterRoutes(r, state.DB, state.Session)
+				notifications.RegisterRoutes(r, state.DB, state.Session, state.EventBus)
 			})
 
 			r.Get("/sessions", func(w http.ResponseWriter, req *http.Request) {
@@ -127,7 +178,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 			})
 
 			r.Group(func(r chi.Router) {
-				workspace.RegisterRoutes(r, state.DB, state.Session)
+				workspace.RegisterRoutes(r, state.DB, state.Session, state.EventBus)
 			})
 		})
 	})

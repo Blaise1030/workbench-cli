@@ -9,7 +9,8 @@ export function sessionsQueryOptions() {
   return queryOptions({
     queryKey: sessionKeys.all,
     queryFn: fetchSessions,
-    refetchInterval: 3_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 }
 

@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
-import { CheckIcon, ChevronsUpDownIcon, GitBranchIcon, Trash2Icon } from "@lucide/vue";
+import { ChevronsUpDownIcon, GitBranchIcon, Trash2Icon } from "@lucide/vue";
 import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarMenuBadge,
 } from "@/components/ui/sidebar";
-import { useNotifications } from "@/modules/notifications/hooks/use-notifications";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -16,16 +14,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Button } from "@/components/ui/button";
-import {
-  Combobox,
-  ComboboxAnchor,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxTrigger,
-  ComboboxViewport,
-} from "@/components/ui/combobox";
+import BranchCombobox from "@/modules/workspace/components/BranchCombobox.vue";
 import {
   branchesQueryOptions,
   useCheckoutBranchMutation,
@@ -63,7 +52,6 @@ function isMain(w: Worktree) {
 
 const deleteWorktree = useDeleteWorktreeMutation(() => props.projectId);
 const checkoutBranch = useCheckoutBranchMutation(() => props.projectId);
-const { unreadByWorktree } = useNotifications();
 
 const mainWorktree = computed(() => worktrees.value.find((w) => isMain(w)));
 const currentBranch = computed(() => mainWorktree.value?.branch ?? null);
@@ -124,46 +112,26 @@ async function removeWorktree(w: Worktree) {
 <template>
   <SidebarMenuSub>
     <SidebarMenuSubItem v-for="w in worktrees" :key="w.id" class="flex items-center gap-0.5">
-      <Combobox
+      <BranchCombobox
         v-if="isMain(w)"
+        :model-value="currentBranch ?? ''"
         v-model:open="switcherOpen"
-        :filter-function="(list, term) => (list as string[]).filter(b => b.toLowerCase().includes(term.toLowerCase()))"
+        :branches="branchData?.branches ?? []"
+        :disabled="checkoutBranch.isPending.value"
+        list-class="w-100"
+        @update:model-value="selectBranch"
       >
-        <ComboboxAnchor as-child>
-          <ComboboxTrigger as-child>
-            <Button
-              :variant="activeWorktreeId === w.id ? 'secondary' : 'ghost'"
-              size="icon-sm"
-              class="shrink-0"
-              title="Switch branch"
-            >
-              <ChevronsUpDownIcon class="size-3.5" />
-            </Button>
-          </ComboboxTrigger>
-        </ComboboxAnchor>
-        <ComboboxList align="start" :side-offset="4" class="w-100">
-          <div class="px-2 pt-2">
-            <ComboboxInput placeholder="Search branches..." auto-focus group-class="bg-input" />
-          </div>
-          <ComboboxEmpty>No branches found.</ComboboxEmpty>
-          <ComboboxViewport class="max-h-48">
-            <ComboboxItem
-              v-for="branch in (branchData?.branches ?? [])"
-              :key="branch"
-              :value="branch"
-              :disabled="checkoutBranch.isPending.value"
-              class="py-1 text-sm"
-              @select="selectBranch(branch)"
-            >
-              <CheckIcon
-                class="size-3.5 shrink-0"
-                :class="branch === currentBranch ? 'opacity-100' : 'opacity-0'"
-              />
-              <span class="truncate" :title="branch">{{ branch }}</span>
-            </ComboboxItem>
-          </ComboboxViewport>
-        </ComboboxList>
-      </Combobox>
+        <template #trigger>
+          <Button
+            :variant="activeWorktreeId === w.id ? 'secondary' : 'ghost'"
+            size="icon-sm"
+            class="shrink-0"
+            title="Switch branch"
+          >
+            <ChevronsUpDownIcon class="size-3.5" />
+          </Button>
+        </template>
+      </BranchCombobox>
 
       <ContextMenu>
         <ContextMenuTrigger as-child>
@@ -186,9 +154,6 @@ async function removeWorktree(w: Worktree) {
                 missing
               </span>
             </RouterLink>
-            <SidebarMenuBadge v-if="(unreadByWorktree[w.id] ?? 0) > 0">
-              {{ unreadByWorktree[w.id] }}
-            </SidebarMenuBadge>
           </SidebarMenuSubButton>
         </ContextMenuTrigger>
         <ContextMenuContent>

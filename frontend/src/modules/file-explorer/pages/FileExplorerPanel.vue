@@ -88,7 +88,8 @@ const markdownPreview = computed({
 const treeEl = ref<HTMLElement | null>(null);
 const treePanelRef = ref<{ collapse: () => void; expand: () => void } | null>(null);
 const treeCollapsed = ref(false);
-const editorRef = ref<{ triggerSave: () => void } | null>(null);
+const editorRef = ref<{ triggerSave: () => void; getScrollTop: () => number; openSearch: () => void } | null>(null);
+const editorScrollPosition = ref(0);
 const selectionReady = ref(false);
 const syncingTreeSelection = ref(false);
 let tree: InstanceType<typeof FileTree> | null = null;
@@ -547,6 +548,24 @@ watch(
   },
 );
 
+watch(
+  selectedRelativePath,
+  (newPath, oldPath) => {
+    if (oldPath && editorRef.value) {
+      const top = editorRef.value.getScrollTop();
+      if (top > 0) {
+        explorerState.value = {
+          ...explorerState.value,
+          scrollPositions: { ...explorerState.value.scrollPositions, [oldPath]: top },
+        };
+      }
+    }
+    editorScrollPosition.value = newPath
+      ? (explorerState.value.scrollPositions?.[newPath] ?? 0)
+      : 0;
+  },
+);
+
 onMounted(() => {
   void invalidateWorkspaceFs(queryClient, props.worktreeId);
 });
@@ -578,6 +597,10 @@ function handleEditorChange(isDirty: boolean) {
 
 function handleSaveFromTab() {
   editorRef.value?.triggerSave();
+}
+
+function handleSearchFromTab() {
+  editorRef.value?.openSearch();
 }
 
 function toggleTree() {
@@ -625,6 +648,7 @@ function toggleTree() {
             @select="openFileInTab"
             @close="closeFileTabHandler"
             @save="handleSaveFromTab"
+            @search="handleSearchFromTab"
             @toggle-tree="toggleTree"
             @toggle-markdown-preview="markdownPreview = !markdownPreview"
           />
@@ -663,6 +687,7 @@ function toggleTree() {
               ref="editorRef"
               :file-path="fileContent.path"
               :content="fileContent.content"
+              :scroll-top="editorScrollPosition"
               class="min-h-0 flex-1"
               @save="handleEditorSave"
               @change="handleEditorChange"

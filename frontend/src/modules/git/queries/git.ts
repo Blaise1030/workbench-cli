@@ -12,7 +12,7 @@ import { invalidateWorkspaceFs } from "@/modules/workspace/queries/invalidate-wo
 import type { GitDiffScope, GitStatusEntry } from "./types";
 
 /** Poll git status while a subscriber is mounted (Git panel, file explorer tree). */
-export const GIT_STATUS_REFETCH_INTERVAL_MS = 5_000;
+export const GIT_STATUS_REFETCH_INTERVAL_MS = 30_000;
 
 export function gitStatusQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
   return queryOptions({

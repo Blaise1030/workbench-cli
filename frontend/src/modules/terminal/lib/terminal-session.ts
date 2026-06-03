@@ -5,6 +5,7 @@ import {
   parseOscStream,
   type TerminalOscReport,
 } from "@/modules/terminal/lib/terminal-reports";
+import { RingBuffer } from "./ring-buffer";
 
 export interface TerminalSessionMeta {
   id: string;
@@ -20,7 +21,7 @@ export class TerminalSession {
 
   cwd: string | null = null;
   windowTitle: string | null = null;
-  buffer = "";
+  private buffer = new RingBuffer();
   ws: WebSocket | null = null;
 
   private cols = 80;
@@ -93,7 +94,7 @@ export class TerminalSession {
     const { carry, reports } = parseOscStream(this.oscCarry, chunk);
     this.oscCarry = carry;
     this.applyReports(reports);
-    this.buffer += chunk;
+    this.buffer.append(chunk);
     this.terminal?.write(chunk);
   }
 
@@ -130,8 +131,8 @@ export class TerminalSession {
     if (options?.reset) {
       terminal.reset();
     }
-    if (this.buffer) {
-      terminal.write(this.buffer);
+    if (!this.buffer.isEmpty) {
+      terminal.write(this.buffer.snapshot());
     }
     this.sendResize(terminal.cols, terminal.rows);
     terminal.focus();

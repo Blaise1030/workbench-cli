@@ -22,6 +22,7 @@ export function terminalsQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
       return data.terminals;
     },
     enabled: computed(() => Boolean(toValue(worktreeId))),
+    gcTime: 60_000,
   });
 }
 

@@ -25,6 +25,7 @@ import {
   whenPierreWorkerReady,
 } from "@/shared/lib/pierre-diff-worker-pool";
 import gitDiffHeaderStyles from "@/modules/git/components/git-diff-header.css?inline";
+import pierreShadcnShadowStyles from "@/shared/lib/pierre-shadcn-shadow.css?inline";
 import contextQueueAnnotationShadowStyles from "@/modules/context-queue/lib/context-queue-annotations-shadow.css?inline";
 import {
   contextQueueAnnotationsKey,
@@ -530,7 +531,7 @@ function diffOptions() {
     overflow: props.wordWrap ? ("wrap" as const) : ("scroll" as const),
     diffIndicators: props.diffIndicators,
     diffStyle: props.diffStyle ?? "unified",
-    unsafeCSS: `${gitDiffHeaderStyles}\n${contextQueueAnnotationShadowStyles}`,
+    unsafeCSS: `${gitDiffHeaderStyles}\n${pierreShadcnShadowStyles}\n${contextQueueAnnotationShadowStyles}`,
     ...pierreContextQueueOptions,
     renderHeaderPrefix: (
       fileDiff: FileDiffMetadata,

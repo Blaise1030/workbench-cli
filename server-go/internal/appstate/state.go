@@ -8,6 +8,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/db"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/lan"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
 )
@@ -18,6 +19,7 @@ type AppState struct {
 	Lan           *lan.Manager
 	SettingsStore settings.Store
 	DB            *sql.DB
+	EventBus      *events.Bus
 }
 
 func New(port int, host string, forceHTTP bool) (*AppState, error) {
@@ -31,6 +33,7 @@ func New(port int, host string, forceHTTP bool) (*AppState, error) {
 		Lan:           lan.New(port, host, forceHTTP),
 		SettingsStore: settings.NewFileStore(storeFile),
 		DB:            database,
+		EventBus:      events.NewBus(),
 	}, nil
 }
 

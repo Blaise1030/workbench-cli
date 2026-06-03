@@ -1,27 +1,20 @@
-import { useColorMode } from "@vueuse/core";
-import { watch } from "vue";
-import { syncFavicon } from "@/shared/lib/sync-favicon";
+import { computed } from "vue";
+import { useAppTheme } from "./useAppTheme";
 
-const colorModeOptions = {
-  attribute: "class",
-  modes: {
-    light: "",
-    dark: "dark",
-  },
-} as const;
-
-/** App light/dark mode (Tailwind `.dark` on `<html>`). */
+/** Thin wrapper kept for backward-compat — delegates to useAppTheme. */
 export function useAppColorMode() {
-  const colorMode = useColorMode(colorModeOptions);
+  const { effectiveTheme, setSetting } = useAppTheme();
 
-  watch(
-    colorMode,
-    (mode) => syncFavicon(mode === "dark"),
-    { immediate: true },
+  const colorMode = computed(() =>
+    (["evening", "night"] as const).includes(
+      effectiveTheme.value as "evening" | "night",
+    )
+      ? "dark"
+      : "light",
   );
 
   function toggleTheme() {
-    colorMode.value = colorMode.value === "dark" ? "light" : "dark";
+    setSetting(colorMode.value === "dark" ? "morning" : "night");
   }
 
   return { colorMode, toggleTheme };

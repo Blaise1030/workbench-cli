@@ -8,7 +8,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 )
+
+func publishEvent(bus *events.Bus, topics ...string) {
+	if bus == nil {
+		return
+	}
+	data, _ := json.Marshal(map[string][]string{"topics": topics})
+	bus.Publish(string(data))
+}
 
 func jsonResp(w http.ResponseWriter, v any, code int) {
 	w.Header().Set("Content-Type", "application/json")
@@ -29,7 +38,7 @@ type createBody struct {
 }
 
 // RegisterRoutes mounts authenticated notification CRUD under /notifications.
-func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
+func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus) {
 	r.Use(auth.RequireSession(session))
 
 	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
@@ -45,7 +54,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 	})
 
 	r.Post("/", func(w http.ResponseWriter, req *http.Request) {
-		handleCreate(w, req, db)
+		handleCreate(w, req, db, bus)
 	})
 
 	r.Patch("/{id}/read", func(w http.ResponseWriter, req *http.Request) {
@@ -60,6 +69,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "notifications")
 	})
 
 	r.Post("/read-all", func(w http.ResponseWriter, req *http.Request) {
@@ -68,6 +78,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "notifications")
 	})
 
 	r.Delete("/{id}", func(w http.ResponseWriter, req *http.Request) {
@@ -82,22 +93,23 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "notifications")
 	})
 }
 
 // RegisterHookRoute allows loopback clients (e.g. Claude hooks) to POST without a session.
 // Path is /notify (not under /notifications) to avoid chi sub-router prefix capture.
-func RegisterHookRoute(r chi.Router, db *sql.DB) {
+func RegisterHookRoute(r chi.Router, db *sql.DB, bus *events.Bus) {
 	r.Post("/notify", func(w http.ResponseWriter, req *http.Request) {
 		if !auth.IsLocalRequest(req) {
 			jsonResp(w, map[string]string{"error": "Forbidden"}, http.StatusForbidden)
 			return
 		}
-		handleCreate(w, req, db)
+		handleCreate(w, req, db, bus)
 	})
 }
 
-func handleCreate(w http.ResponseWriter, req *http.Request, db *sql.DB) {
+func handleCreate(w http.ResponseWriter, req *http.Request, db *sql.DB, bus *events.Bus) {
 	var body createBody
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		jsonResp(w, map[string]string{"error": "Bad request"}, http.StatusBadRequest)
@@ -121,4 +133,5 @@ func handleCreate(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 		return
 	}
 	jsonResp(w, map[string]any{"notification": n}, http.StatusCreated)
+	publishEvent(bus, "notifications")
 }

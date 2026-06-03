@@ -41,7 +41,7 @@ import {
 } from "@/modules/workspace/lib/worktree-panels-storage";
 import { gitStatusQueryOptions } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
-import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
+import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
 import { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
 import { useContextQueueKeybinding } from "@/modules/context-queue/hooks/use-context-queue-keybinding";
@@ -57,13 +57,13 @@ const props = defineProps<{
 
 const route = useRoute();
 const router = useRouter();
-const { colorMode } = useAppColorMode();
+const { effectiveTheme } = useAppTheme();
 const sessions = useTerminalSessions();
 
 /** Remount terminal emulator when theme changes so xterm picks up new CSS tokens. */
 const routerViewKey = computed(() => {
   if (route.name === "terminal") {
-    return `${route.params.terminalId as string}:${colorMode.value}`;
+    return `${route.params.terminalId as string}:${effectiveTheme.value}`;
   }
   return route.fullPath;
 });

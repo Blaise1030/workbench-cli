@@ -3,7 +3,6 @@ import { useDebounceFn, useLocalStorage } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import {
-  BellIcon,
   ChevronRightIcon,
   FolderGit2Icon,
   FolderPlusIcon,
@@ -34,7 +33,10 @@ import {
 import { useQuery, useQueries } from "@tanstack/vue-query";
 import { isLocalHost } from "@/lib/is-local-host";
 import { cn } from "@/lib/utils";
-import { useNotifications } from "@/modules/notifications/hooks/use-notifications";
+import {
+  agentStatusClass,
+  formatAgentStatus,
+} from "@/modules/sessions/agent-status";
 import { useSessionsQuery } from "@/modules/sessions/queries";
 import { useRoute } from "vue-router";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
@@ -140,7 +142,6 @@ const activeSessions = computed(() =>
   (sessionsData.value ?? []).filter((s) => s.isAlive),
 );
 
-const { unreadCount } = useNotifications();
 const route = useRoute();
 const terminalSessions = useTerminalSessions();
 
@@ -166,17 +167,8 @@ function sessionTitle(id: string, fallback: string): string {
           <div class="flex min-h-full flex-col">
             <div class="flex flex-1 flex-col px-1 pt-1">
               <!-- Header — sticky, fades into project list below -->
-              <div class="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-gradient-to-b from-background to-transparent pb-2 pt-1">
-                <Button variant="ghost" size="icon-xs" class="relative" aria-label="Notifications">
-                  <BellIcon />
-                  <span
-                    v-if="unreadCount > 0"
-                    class="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold text-primary-foreground"
-                  >
-                    {{ unreadCount }}
-                  </span>
-                </Button>
-                <div class="flex items-center">
+              <div class="sticky top-0 z-10 flex shrink-0 items-center justify-between bg-gradient-to-b from-background to-transparent pb-3 pt-1">
+                <div class="flex items-center ml-auto">
                   <ThemeToggle />
                   <Button variant="ghost" size="icon-xs" as-child>
                     <RouterLink to="/settings" aria-label="Settings">
@@ -221,7 +213,7 @@ function sessionTitle(id: string, fallback: string): string {
                       </SidebarMenuButtonChild>
                     </CollapsibleTrigger>
 
-                    <CollapsibleContent>
+                    <CollapsibleContent class="mt-1">
                       <ProjectWorktrees
                         :project-id="project.id"
                         :repo-path="project.repoPath"
@@ -265,12 +257,23 @@ function sessionTitle(id: string, fallback: string): string {
               v-for="s in activeSessions"
               :key="s.id"
               :to="{ name: 'terminal', params: { worktreeId: s.worktreeId, terminalId: s.id } }"
-              class="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted/60"
-              :class="{ 'bg-secondary': route.params.terminalId === s.id }"
+              class="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': route.params.terminalId === s.id }"
             >
-              <AgentKindIcon :kind="s.agentKind" :status="s.agentStatus" class="mt-0.5 size-4" />
+              <AgentKindIcon :kind="s.agentKind" class="mt-0.5 size-4" />
               <div class="min-w-0 flex-1">
-                <div class="truncate text-foreground">{{ sessionTitle(s.id, s.title) }}</div>
+                <div class="flex items-baseline gap-2">
+                  <div class="min-w-0 flex-1 truncate text-foreground">
+                    {{ sessionTitle(s.id, s.title) }}
+                  </div>
+                  <span
+                    v-if="formatAgentStatus(s.agentStatus)"
+                    class="shrink-0 text-[10px] font-medium"
+                    :class="agentStatusClass(s.agentStatus)"
+                  >
+                    {{ formatAgentStatus(s.agentStatus) }}
+                  </span>
+                </div>
                 <div
                   v-if="worktreeContextMap.get(s.worktreeId)"
                   class="truncate text-muted-foreground"

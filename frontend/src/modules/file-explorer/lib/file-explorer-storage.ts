@@ -14,6 +14,8 @@ export interface FileExplorerWorktreeState {
   markdownOnly?: boolean;
   /** Whether markdown files open in rendered preview instead of the editor. */
   markdownPreview?: boolean;
+  /** Editor scroll position per file (relative path → scrollTop pixels). */
+  scrollPositions?: Record<string, number>;
 }
 
 /** Ancestor directory paths for a file or folder path (not including the path itself). */

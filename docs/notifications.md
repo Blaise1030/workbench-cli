@@ -58,7 +58,7 @@ Both persist `worktree_id` and `terminal_id` on the `notifications` row.
 |------|------|
 | PTY env injection | `server-go/internal/terminal/workbench_env.go`, `pty_registry.go` |
 | CLI notify | `server-go/internal/cli/notify.go` |
-| Hook command generation | `server-go/internal/settings/agents_config.go` (`BuildNotifyCommand`) |
+| Hook command generation | `server-go/internal/settings/agents_config.go` (`BuildRegisterCommand`, `BuildNotifyCommand`) |
 | Hook HTTP ingest | `server-go/internal/notifications/router.go` (`RegisterHookRoute`) |
 | UI | `frontend/src/modules/notifications/` |
 | Agents settings UI | `frontend/src/modules/settings/pages/AgentsSettings.vue` |
@@ -72,5 +72,6 @@ Both persist `worktree_id` and `terminal_id` on the `notifications` row.
 
 ## Related
 
+- [Agent hooks](./agent-hooks.md) (register + notify hook setup, generated manifest, status updates)
 - [Session restore plan](./session-restore-plan.md) (cmux session model)
 - [Terminal architecture](./terminal-architecture.md) (PTY / OSC 133)
