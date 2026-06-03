@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { patchToCodeViewItems } from "@/modules/git/lib/git-diff-items";
+import { excludeUntrackedDiffItems } from "@/modules/git/lib/git-unstaged-filter";
 import {
   selectAllPathsState,
   selectablePathsFromDiffItems,
@@ -212,9 +213,17 @@ const changedFiles = computed(() => gitStatus.value?.files ?? []);
 
 const diffItemsByTab = computed(() => {
   const items = {} as Record<GitPanelTabScope, ReturnType<typeof patchToCodeViewItems>>;
+  const statusFiles = changedFiles.value;
   for (const scope of GIT_PANEL_TAB_SCOPES) {
     const patch = toValue(gitDiffByScope.value.get(scope)?.data)?.patch ?? "";
-    items[scope] = patchToCodeViewItems(patch, `${props.worktreeId}-${scope}`);
+    let scopeItems = patchToCodeViewItems(
+      patch,
+      `${props.worktreeId}-${scope}`,
+    );
+    if (scope === "unstaged") {
+      scopeItems = excludeUntrackedDiffItems(scopeItems, statusFiles);
+    }
+    items[scope] = scopeItems;
   }
   return items;
 });
@@ -258,18 +267,20 @@ const displayBranch = computed(
   () => gitStatus.value?.branch ?? worktree.value?.branch ?? "detached",
 );
 
-/** Files with anything in the working tree (modified + untracked). */
+/** Tracked files with unstaged working-tree changes (excludes untracked). */
 const unstagedCount = computed(
-  () => changedFiles.value.filter((f) => f.unstaged != null).length,
+  () =>
+    changedFiles.value.filter(
+      (f) => f.unstaged != null && f.unstaged !== "untracked",
+    ).length,
 );
 /** Files with anything in the index vs HEAD. */
 const stagedCount = computed(
   () => changedFiles.value.filter((f) => f.staged != null).length,
 );
 
+/** Tab badges follow `git status` buckets, not diff hunk count (diff can differ). */
 function tabCount(tab: GitPanelTabScope): number {
-  const items = diffItemsByTab.value[tab];
-  if (!isDiffPending(tab) && items.length > 0) return items.length;
   return tab === "staged" ? stagedCount.value : unstagedCount.value;
 }
 

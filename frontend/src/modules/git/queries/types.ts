@@ -16,4 +16,4 @@ export interface GitStatusEntry {
   unstaged: GitFileStatusCode | null;
 }
 
-export type GitDiffScope = "all" | "staged" | "unstaged";
+export type GitDiffScope = "all" | "staged" | "unstaged" | "untracked";
