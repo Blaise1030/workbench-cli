@@ -306,6 +306,76 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
 	})
 
+	r.Post("/worktrees/{id}/files", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		var body struct {
+			Path string `json:"path"`
+			Type string `json:"type"` // "file" or "directory"
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Path) == "" {
+			wsErr(w, "path is required", http.StatusBadRequest)
+			return
+		}
+		if body.Type != "file" && body.Type != "directory" {
+			wsErr(w, "type must be 'file' or 'directory'", http.StatusBadRequest)
+			return
+		}
+		if err := CreateFile(wt.Path, body.Path, body.Type == "directory"); err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
+			return
+		}
+		jsonResp(w, map[string]bool{"ok": true}, http.StatusCreated)
+		publishEvent(bus, "file-tree:"+chi.URLParam(r, "id"))
+	})
+
+	r.Delete("/worktrees/{id}/files", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		var body struct {
+			Path string `json:"path"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Path) == "" {
+			wsErr(w, "path is required", http.StatusBadRequest)
+			return
+		}
+		if err := DeleteFile(wt.Path, body.Path); err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
+			return
+		}
+		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "file-tree:"+chi.URLParam(r, "id"))
+	})
+
+	r.Post("/worktrees/{id}/files/move", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		var body struct {
+			From string `json:"from"`
+			To   string `json:"to"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil ||
+			strings.TrimSpace(body.From) == "" || strings.TrimSpace(body.To) == "" {
+			wsErr(w, "from and to are required", http.StatusBadRequest)
+			return
+		}
+		if err := MoveFile(wt.Path, body.From, body.To); err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
+			return
+		}
+		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "file-tree:"+chi.URLParam(r, "id"))
+	})
+
 	// Terminals (REST stubs — no live PTY until Phase 5)
 	r.Get("/worktrees/{id}/terminals", func(w http.ResponseWriter, r *http.Request) {
 		terms, err := ListTerminals(db, chi.URLParam(r, "id"))
