@@ -479,7 +479,7 @@ function openResumeDialog(terminalId: string) {
         </ContextMenu>
       </div>
 
-      <div class="flex shrink-0 border-s items-center gap-0.5 px-1">
+      <div class="flex shrink-0 border-s items-center gap-0 px-0.5">
         <WorkspacePanelMenu @add="addTerminal" />
         <ContextQueuePopover :queue="contextQueue" />
         <Button

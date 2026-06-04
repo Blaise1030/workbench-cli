@@ -101,10 +101,12 @@ onMounted(async () => {
 
   try {
     const s = getComputedStyle(document.documentElement);
+    const fontSize = Number.parseFloat(s.getPropertyValue("--terminal-font-size")) || 14;
     terminal = new Terminal({
       cursorBlink: true,
       theme: buildTheme(),
       fontFamily: s.getPropertyValue("--font-mono").trim() || "monospace",
+      fontSize,
       allowTransparency: false,
     });
 

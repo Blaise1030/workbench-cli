@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activateDefaultSplitAuxPanel,
   activateWorktreeAuxPanel,
   buildWorkspaceQuery,
   clampSplitTerminalSize,
@@ -85,6 +86,28 @@ describe("worktree-panels-storage", () => {
       explorer: false,
       lastRoute: "git",
     });
+  });
+
+  it("activates explorer as the default split aux panel when none is selected", () => {
+    expect(
+      activateDefaultSplitAuxPanel({
+        git: false,
+        explorer: false,
+        lastRoute: "terminal",
+        lastTerminalId: "term-1",
+      }),
+    ).toEqual({
+      git: false,
+      explorer: true,
+      lastRoute: "explorer",
+      lastTerminalId: "term-1",
+    });
+  });
+
+  it("keeps the selected aux panel when activating the default split panel", () => {
+    const state = { git: true, explorer: false, lastRoute: "git" } as const;
+
+    expect(activateDefaultSplitAuxPanel(state)).toBe(state);
   });
 
   it("buildWorkspaceQuery includes tab and file from storage", () => {

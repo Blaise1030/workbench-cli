@@ -11,7 +11,7 @@ const emit = defineEmits<{
   <Button
     variant="ghost"
     size="icon-xs"
-    class="h-6 w-6 shrink-0 rounded-none"
+    class="h-6 w-6 shrink-0"
     aria-label="Add terminal"
     @click="emit('add')"
   >

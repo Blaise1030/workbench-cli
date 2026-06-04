@@ -99,6 +99,7 @@ const filteredCommands = computed(() => {
   const q = (isFileMode.value || isContentMode.value) ? "" : input.value.toLowerCase();
   return COMMANDS.filter((cmd) => {
     if (cmd.type === "navigate" && cmd.requiresWorktree && !props.worktreeId) return false;
+    if (cmd.type === "action" && cmd.requiresWorktree && !props.worktreeId) return false;
     return !q || cmd.label.toLowerCase().includes(q);
   });
 });

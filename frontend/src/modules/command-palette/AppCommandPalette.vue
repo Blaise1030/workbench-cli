@@ -10,6 +10,11 @@ import { useCreateTerminalMutation, type TerminalTab } from "@/modules/terminal/
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import { isLocalHost } from "@/lib/is-local-host";
 import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
+import { useWorktreeLayoutMode } from "@/modules/workspace/hooks/use-worktree-layout-mode";
+import {
+  activateDefaultSplitAuxPanel,
+  useWorktreePanels,
+} from "@/modules/workspace/lib/worktree-panels-storage";
 
 const route = useRoute();
 const router = useRouter();
@@ -26,6 +31,8 @@ const addProjectOpen = ref(false);
 const worktreeId = computed(() => route.params.worktreeId as string | undefined);
 const createTerminal = useCreateTerminalMutation(worktreeId);
 const queryClient = useQueryClient();
+const worktreeLayout = useWorktreeLayoutMode(() => worktreeId.value ?? "");
+const panelsState = useWorktreePanels(() => worktreeId.value ?? "");
 
 async function handlePaletteAction(key: string) {
   if (key === "addProject") {
@@ -46,6 +53,12 @@ async function handlePaletteAction(key: string) {
     const current = queryClient.getQueryData<TerminalTab[]>(cacheKey) ?? [];
     queryClient.setQueryData(cacheKey, [...current, terminal]);
     router.push({ name: "terminal", params: { worktreeId: wtId, terminalId: terminal.id } });
+  } else if (key === "activateSplitLayout") {
+    if (!worktreeId.value) return;
+    if (worktreeLayout.layoutMode.value !== "split") {
+      panelsState.value = activateDefaultSplitAuxPanel(panelsState.value);
+    }
+    worktreeLayout.toggleLayoutMode();
   }
 }
 </script>

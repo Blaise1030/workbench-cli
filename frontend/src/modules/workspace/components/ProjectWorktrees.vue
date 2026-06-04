@@ -111,7 +111,7 @@ async function removeWorktree(w: Worktree) {
 
 <template>
   <SidebarMenuSub>
-    <SidebarMenuSubItem v-for="w in worktrees" :key="w.id" class="flex items-center gap-0.5">
+    <SidebarMenuSubItem v-for="w in worktrees" :key="w.id" class="flex items-center gap-px">
       <BranchCombobox
         v-if="isMain(w)"
         :model-value="currentBranch ?? ''"

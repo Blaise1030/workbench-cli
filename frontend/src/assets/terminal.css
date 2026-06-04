@@ -4,6 +4,7 @@
 }
 
 :root {
+  --terminal-font-size: 14px;
   /* Blue tint — visible on white; resolved to #rrggbbaa for xterm in Terminal.vue. */
   --terminal-selection-bg: color-mix(in oklch, oklch(0.55 0.18 250) 50%, transparent);
   --terminal-selection-inactive-bg: color-mix(in oklch, oklch(0.55 0.18 250) 30%, transparent);

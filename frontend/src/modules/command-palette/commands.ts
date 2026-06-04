@@ -5,6 +5,7 @@ import {
   GitBranchIcon,
   SettingsIcon,
   FolderPlusIcon,
+  SquareIcon,
   SunMoonIcon,
 } from "@lucide/vue";
 import type { Component } from "vue";
@@ -26,6 +27,7 @@ export type ActionCommand = {
   label: string;
   icon: Component;
   action: string;
+  requiresWorktree?: boolean;
   keybindingAction?: KeybindingAction;
 };
 
@@ -39,6 +41,14 @@ export const COMMANDS: Command[] = [
     icon: TerminalIcon,
     action: "newTerminal",
     keybindingAction: "terminal.newTerminal",
+  },
+  {
+    type: "action",
+    id: "action.activateSplitLayout",
+    label: "Toggle Split Layout",
+    icon: SquareIcon,
+    action: "activateSplitLayout",
+    requiresWorktree: true,
   },
   {
     type: "navigate",

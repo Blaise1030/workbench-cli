@@ -135,6 +135,13 @@ export function activateWorktreeAuxPanel(
   };
 }
 
+export function activateDefaultSplitAuxPanel(
+  state: WorktreeAuxPanelsState,
+): WorktreeAuxPanelsState {
+  if (state.git || state.explorer) return state;
+  return activateWorktreeAuxPanel(state, "explorer");
+}
+
 export function useWorktreePanels(worktreeId: MaybeRefOrGetter<string>) {
   const key = computed(() => `${STORAGE_PREFIX}${toValue(worktreeId)}`);
   return useLocalStorage<WorktreeAuxPanelsState>(key, { git: false, explorer: false });
