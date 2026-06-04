@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref, watch } from "vue";
+import { computed, provide, ref, watch, type ComponentPublicInstance } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useQuery } from "@tanstack/vue-query";
 import {
@@ -424,6 +424,13 @@ function openResumeDialog(terminalId: string) {
   resumeDialogTerminalId.value = terminalId;
   resumeDialogOpen.value = true;
 }
+
+const splitTerminalPanelRef = ref<ComponentPublicInstance & { resize: (size: number) => void } | null>(null);
+
+function equalizeSplitPanes() {
+  splitTerminalPanelRef.value?.resize(50);
+  persistSplitTerminalSize(50);
+}
 </script>
 
 <template>
@@ -487,6 +494,7 @@ function openResumeDialog(terminalId: string) {
           size="icon-xs"
           :class="auxIconClass(isExplorerVisible)"
           aria-label="File explorer"
+          title="File explorer"
           :aria-pressed="isExplorerVisible"
           @click="toggleAuxPanel('explorer')"
         >
@@ -497,6 +505,7 @@ function openResumeDialog(terminalId: string) {
           size="icon-xs"
           :class="auxIconClass(isGitVisible)"
           aria-label="Git"
+          title="Git"
           :aria-pressed="isGitVisible"
           @click="toggleAuxPanel('git')"
         >
@@ -556,6 +565,7 @@ function openResumeDialog(terminalId: string) {
         <ResizablePanel
           v-if="activeTerminalId"
           id="split-terminal"
+          ref="splitTerminalPanelRef"
           :min-size="SPLIT_TERMINAL_MIN_SIZE"
           :default-size="splitTerminalDefaultSize"
           class="flex min-h-0 min-w-0 flex-col"
@@ -646,6 +656,7 @@ function openResumeDialog(terminalId: string) {
         <ResizableHandle
           v-if="activeTerminalId && splitAuxPanel"
           with-handle
+          @dblclick.prevent="equalizeSplitPanes"
         />
         <ResizablePanel
           v-if="splitAuxPanel === 'git'"

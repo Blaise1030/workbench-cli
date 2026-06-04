@@ -770,6 +770,7 @@ function toggleTree() {
               variant="ghost"
               size="icon-xs"
               :aria-label="showMarkdownOnly ? 'Show all files' : 'Show markdown files only'"
+              :title="showMarkdownOnly ? 'Show all files' : 'Show markdown files only'"
               :class="showMarkdownOnly ? 'text-foreground' : 'text-muted-foreground'"
               @click="showMarkdownOnly = !showMarkdownOnly"
             >
@@ -779,6 +780,7 @@ function toggleTree() {
               variant="ghost"
               size="icon-xs"
               aria-label="Search files"
+              title="Search files"
               @click="openWithFileSearch"
             >
               <SearchIcon class="size-3.5" />

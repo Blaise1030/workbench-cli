@@ -128,6 +128,7 @@ function closeClass(relativePath: string) {
       size="xs"
       :disabled="isSaving"
       :aria-label="isSaving ? 'Saving…' : 'Save file'"
+      :title="isSaving ? 'Saving…' : 'Save file'"
       @click="emit('save')"
     >
       <LoaderIcon v-if="isSaving" class="animate-spin" />
@@ -139,6 +140,7 @@ function closeClass(relativePath: string) {
       variant="ghost"
       size="icon-xs"
       :aria-label="markdownPreview ? 'Switch to editor' : 'Switch to preview'"
+      :title="markdownPreview ? 'Switch to editor' : 'Switch to preview'"
       :class="markdownPreview ? 'text-foreground' : 'text-muted-foreground'"
       @click="emit('toggleMarkdownPreview')"
     >
@@ -149,6 +151,7 @@ function closeClass(relativePath: string) {
       variant="ghost"
       size="icon-xs"
       aria-label="Find in file"
+      title="Find in file"
       class="text-muted-foreground"
       @click="emit('search')"
     >
@@ -158,6 +161,7 @@ function closeClass(relativePath: string) {
       variant="ghost"
       size="icon-xs"
       :aria-label="treeCollapsed ? 'Expand file tree' : 'Collapse file tree'"
+      :title="treeCollapsed ? 'Expand file tree' : 'Collapse file tree'"
       class="text-muted-foreground"
       @click="emit('toggleTree')"
     >
