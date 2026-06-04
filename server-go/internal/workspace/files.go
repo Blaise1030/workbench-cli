@@ -251,3 +251,57 @@ func WriteFile(worktreePath, relativePath, content string) error {
 	}
 	return nil
 }
+
+// CreateFile creates an empty file (isDir=false) or directory (isDir=true)
+// at relativePath inside the worktree. Parent directories are created as needed.
+func CreateFile(worktreePath, relativePath string, isDir bool) error {
+	absPath, err := AssertPathWithinRoot(worktreePath, relativePath)
+	if err != nil {
+		return err
+	}
+	if isDir {
+		return os.MkdirAll(absPath, 0755)
+	}
+	if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
+		return &FileError{Msg: err.Error(), Status: 400}
+	}
+	f, err := os.OpenFile(absPath, os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return &FileError{Msg: err.Error(), Status: 400}
+	}
+	return f.Close()
+}
+
+// DeleteFile removes a file or directory (recursively) at relativePath.
+func DeleteFile(worktreePath, relativePath string) error {
+	if strings.TrimSpace(relativePath) == "" || relativePath == "." {
+		return &FileError{Msg: "path must not be empty", Status: 400}
+	}
+	absPath, err := AssertPathWithinRoot(worktreePath, relativePath)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return &FileError{Msg: "not found", Status: 404}
+	}
+	return os.RemoveAll(absPath)
+}
+
+// MoveFile moves or renames a file/directory from fromPath to toPath within the worktree.
+func MoveFile(worktreePath, fromPath, toPath string) error {
+	absFrom, err := AssertPathWithinRoot(worktreePath, fromPath)
+	if err != nil {
+		return err
+	}
+	absTo, err := AssertPathWithinRoot(worktreePath, toPath)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(absTo), 0755); err != nil {
+		return &FileError{Msg: err.Error(), Status: 400}
+	}
+	if err := os.Rename(absFrom, absTo); err != nil {
+		return &FileError{Msg: err.Error(), Status: 400}
+	}
+	return nil
+}
