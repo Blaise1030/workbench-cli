@@ -40,6 +40,7 @@ import {
 } from "@/modules/terminal/queries";
 import { useGitPanelStorage } from "@/modules/git/lib/git-panel-storage";
 import {
+  activateWorktreeAuxPanel,
   useWorktreePanels,
   buildWorkspaceQuery,
   clampSplitTerminalSize,
@@ -225,19 +226,11 @@ watch(
 function persistWorkspaceRoute() {
   const name = route.name;
   if (name === "git") {
-    panelsState.value = {
-      ...panelsState.value,
-      git: true,
-      lastRoute: "git",
-    };
+    panelsState.value = activateWorktreeAuxPanel(panelsState.value, "git");
     return;
   }
   if (name === "explorer") {
-    panelsState.value = {
-      ...panelsState.value,
-      explorer: true,
-      lastRoute: "explorer",
-    };
+    panelsState.value = activateWorktreeAuxPanel(panelsState.value, "explorer");
     return;
   }
   if (name === "terminal") {
@@ -340,31 +333,10 @@ async function addTerminal() {
 }
 
 function openAuxPanel(type: "git" | "explorer") {
-  if (type === "git") {
-    panelsState.value = {
-      ...panelsState.value,
-      git: true,
-      explorer: false,
-      lastRoute: "git",
-    };
-    if (layoutMode.value === "page") {
-      router.push({
-        name: "git",
-        params: { worktreeId: props.worktreeId },
-        query: workspaceQuery(),
-      });
-    }
-    return;
-  }
-  panelsState.value = {
-    ...panelsState.value,
-    explorer: true,
-    git: false,
-    lastRoute: "explorer",
-  };
+  panelsState.value = activateWorktreeAuxPanel(panelsState.value, type);
   if (layoutMode.value === "page") {
     router.push({
-      name: "explorer",
+      name: type,
       params: { worktreeId: props.worktreeId },
       query: workspaceQuery(),
     });

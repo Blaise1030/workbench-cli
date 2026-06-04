@@ -26,7 +26,10 @@ import {
 import { uploadWorkbenchDropAssets } from "@/modules/terminal/lib/upload-drop-assets";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import { useRouter } from "vue-router";
-import { useWorktreePanels } from "@/modules/workspace/lib/worktree-panels-storage";
+import {
+  activateWorktreeAuxPanel,
+  useWorktreePanels,
+} from "@/modules/workspace/lib/worktree-panels-storage";
 import { createFileLinkProvider } from "@/modules/terminal/lib/terminal-file-links";
 import { terminalSelectionColors } from "@/modules/terminal/lib/terminal-theme";
 import { cn } from "@/lib/utils";
@@ -120,7 +123,10 @@ onMounted(async () => {
         terminal,
         () => worktree.value?.path ?? "",
         (path) => {
-          panelsState.value = { ...panelsState.value, explorer: true };
+          panelsState.value = activateWorktreeAuxPanel(
+            panelsState.value,
+            "explorer",
+          );
           void router.push({
             name: "explorer",
             params: { worktreeId: worktreeId.value },

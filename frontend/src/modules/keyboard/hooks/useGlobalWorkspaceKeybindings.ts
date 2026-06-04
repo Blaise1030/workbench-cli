@@ -8,7 +8,10 @@ import {
 } from "../lib/workspace-key-event";
 import { useKeybindingsQuery } from "../queries/keybindings";
 import { KEYBINDING_OPTIONS } from "../options";
-import { useWorktreePanels } from "@/modules/workspace/lib/worktree-panels-storage";
+import {
+  activateWorktreeAuxPanel,
+  useWorktreePanels,
+} from "@/modules/workspace/lib/worktree-panels-storage";
 import {
   useCreateTerminalMutation,
   useTerminalsQuery,
@@ -57,12 +60,15 @@ export function useGlobalWorkspaceKeybindings(worktreeId: MaybeRefOrGetter<strin
         return;
       }
       if (matched === "panel.explorer") {
-        panelsState.value = { ...panelsState.value, explorer: true };
+        panelsState.value = activateWorktreeAuxPanel(
+          panelsState.value,
+          "explorer",
+        );
         router.push({ name: "explorer", params: { worktreeId: wtId } });
         return;
       }
       if (matched === "panel.git") {
-        panelsState.value = { ...panelsState.value, git: true };
+        panelsState.value = activateWorktreeAuxPanel(panelsState.value, "git");
         router.push({ name: "git", params: { worktreeId: wtId } });
         return;
       }

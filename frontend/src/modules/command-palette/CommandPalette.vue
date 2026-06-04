@@ -13,6 +13,10 @@ import { useKeybindingsQuery } from "@/modules/keyboard/queries/keybindings";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import { chordLabel } from "@/modules/keyboard/chord";
 import { KEYBINDING_OPTIONS } from "@/modules/keyboard/options";
+import {
+  activateWorktreeAuxPanel,
+  useWorktreePanels,
+} from "@/modules/workspace/lib/worktree-panels-storage";
 import type { RouteLocationRaw } from "vue-router";
 import type { KeybindingAction } from "@/modules/keyboard/types";
 
@@ -44,6 +48,7 @@ const emit = defineEmits<{
 const router = useRouter();
 const input = ref("");
 const paletteRef = ref<HTMLElement | null>(null);
+const panelsState = useWorktreePanels(() => props.worktreeId ?? "");
 
 // Prevent double-execution when both reka-ui's Enter handler and our fallback fire.
 let closing = false;
@@ -121,6 +126,16 @@ function handleOpenChange(value: boolean) {
 }
 
 function navigateTo(to: RouteLocationRaw) {
+  if (typeof to === "object" && "name" in to) {
+    if (to.name === "explorer") {
+      panelsState.value = activateWorktreeAuxPanel(
+        panelsState.value,
+        "explorer",
+      );
+    } else if (to.name === "git") {
+      panelsState.value = activateWorktreeAuxPanel(panelsState.value, "git");
+    }
+  }
   router.push(to);
   handleOpenChange(false);
 }

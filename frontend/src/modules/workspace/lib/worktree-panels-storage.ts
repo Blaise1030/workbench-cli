@@ -103,6 +103,18 @@ export function explorerPanelId(worktreeId: string): string {
   return `panel-explorer-${worktreeId}`;
 }
 
+export function activateWorktreeAuxPanel(
+  state: WorktreeAuxPanelsState,
+  type: Exclude<WorktreeLastRoute, "terminal">,
+): WorktreeAuxPanelsState {
+  return {
+    ...state,
+    git: type === "git",
+    explorer: type === "explorer",
+    lastRoute: type,
+  };
+}
+
 export function useWorktreePanels(worktreeId: MaybeRefOrGetter<string>) {
   const key = computed(() => `${STORAGE_PREFIX}${toValue(worktreeId)}`);
   return useLocalStorage<WorktreeAuxPanelsState>(key, { git: false, explorer: false });

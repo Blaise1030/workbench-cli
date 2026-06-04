@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activateWorktreeAuxPanel,
   buildWorkspaceQuery,
   clampSplitTerminalSize,
   clientPanelsFromState,
@@ -57,6 +58,32 @@ describe("worktree-panels-storage", () => {
       explorer: false,
     });
     expect(panelsNone).toEqual([]);
+  });
+
+  it("activates explorer as the selected aux panel", () => {
+    expect(
+      activateWorktreeAuxPanel(
+        { git: true, explorer: false, lastRoute: "git" },
+        "explorer",
+      ),
+    ).toEqual({
+      git: false,
+      explorer: true,
+      lastRoute: "explorer",
+    });
+  });
+
+  it("activates git as the selected aux panel", () => {
+    expect(
+      activateWorktreeAuxPanel(
+        { git: false, explorer: true, lastRoute: "explorer" },
+        "git",
+      ),
+    ).toEqual({
+      git: true,
+      explorer: false,
+      lastRoute: "git",
+    });
   });
 
   it("buildWorkspaceQuery includes tab and file from storage", () => {
