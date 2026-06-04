@@ -140,10 +140,14 @@ Delete uses the existing `AlertDialog` pattern already in `FileExplorerPanel.vue
 
 ```ts
 const deleteDialogOpen = ref(false)
-const pendingDeletePath = ref<{ path: string; isDir: boolean } | null>(null)
+const pendingDeletePaths = ref<{ path: string; isDir: boolean }[]>([])
 ```
 
-On confirm: call `DELETE /worktrees/{id}/files` (with `recursive: true` for directories), then invalidate. On cancel: clear `pendingDeletePath`.
+On confirm: call `DELETE /worktrees/{id}/files` for each pending path (with `recursive: true` for directories), then invalidate once after all deletions complete. On cancel: clear `pendingDeletePaths`.
+
+### Multi-select delete
+
+Inside the `render` callback, read `tree.getSelectedPaths()`. If the right-clicked item's path is in the current selection and the selection has more than one item, show **"Delete X items"** and populate `pendingDeletePaths` with all selected paths. Otherwise show "Delete" for just the single item.
 
 ---
 
@@ -161,15 +165,22 @@ new FileTree({
 })
 ```
 
-Listen for move mutations:
+Listen for both single and batch move mutations. `canDrag` receives the full selection array, confirming multi-select drag is natively supported:
 
 ```ts
 tree.onMutation('move', ({ from, to }) => {
   moveFileMutation.mutate({ from, to })
 })
+
+tree.onMutation('batch', ({ events }) => {
+  const moves = events.filter((e): e is FileTreeMoveEvent => e.operation === 'move')
+  // fire one API call per move; invalidate once after all settle
+  Promise.all(moves.map(({ from, to }) => moveFileMutation.mutateAsync({ from, to })))
+    .then(() => invalidateWorkspaceFs(queryClient, worktreeId))
+})
 ```
 
-Multi-select drag is handled natively by pierre/trees when `dragAndDrop: true` — users can shift/cmd-click to select multiple files then drag them into a folder. Each selected path fires a separate `move` mutation event.
+When multiple files are selected and dragged to a folder, pierre/trees fires a single `batch` event containing all the individual move operations — **not** multiple `move` events. Listening to only `move` would silently drop multi-file drags.
 
 ---
 
