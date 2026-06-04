@@ -2,6 +2,14 @@
 import Layout from '../layouts/Layout.astro';
 import FeaturePan from '../components/FeaturePan.astro';
 import { installCmd, installChannelLabel, isDevPreviewBuild } from '../lib/install';
+import { fetchReleaseVersions, PAGES_BASE } from '../lib/versions';
+
+const releaseVersions = await fetchReleaseVersions();
+const latestVersion = releaseVersions[0]?.version;
+const latestInstallCmd = latestVersion
+  ? `curl -fsSL ${PAGES_BASE}/${latestVersion}/install.sh | sh`
+  : installCmd;
+const displayInstallCmd = isDevPreviewBuild ? installCmd : latestInstallCmd;
 
 const compareTools = ['Workbench', 'tmux', 'Conductor', 'OpenCode', 'herdr', 'cmux'];
 const compareRows = [
@@ -38,7 +46,7 @@ const compareRows = [
     </div>
   )}
   <div class="leading-relaxed">
-    <span class="font-medium p-1 bg-muted text-muted-foreground break-all box-decoration-clone" id="install-cmd">{installCmd}</span><!--
+    <span class="font-medium p-1 bg-muted text-muted-foreground break-all box-decoration-clone" id="install-cmd">{displayInstallCmd}</span><!--
     --><button
       class="inline-block align-middle ms-2 tracking-[0.1em] bg-foreground text-background border-0 px-1 cursor-pointer hover:opacity-80"
       aria-label="Copy install command"
