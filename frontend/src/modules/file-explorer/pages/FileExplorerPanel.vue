@@ -57,6 +57,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { openWithFileSearch } from "@/modules/command-palette/useCommandPalette";
+import type { FileTreeMoveEvent } from "@pierre/trees";
+import {
+  useCreateFile,
+  useDeleteFile,
+  useMoveFile,
+} from "@/modules/file-explorer/hooks/use-file-mutations";
+import { createFileContextMenu } from "@/modules/file-explorer/lib/file-context-menu";
+import { Input } from "@/components/ui/input";
 
 const props = defineProps<{
   worktreeId: string;
@@ -73,6 +81,20 @@ const ownsRoute = computed(() => route.name === "explorer");
 
 const explorerState = useFileExplorerStorage(() => props.worktreeId);
 const { save, isSaving } = useFileEditorSave(() => props.worktreeId);
+
+const createFileMutation = useCreateFile(() => props.worktreeId);
+const deleteFileMutation = useDeleteFile(() => props.worktreeId);
+const moveFileMutation = useMoveFile(() => props.worktreeId);
+
+// Delete dialog state
+const deleteDialogOpen = ref(false);
+const pendingDeletePaths = ref<{ path: string; isDir: boolean }[]>([]);
+
+// New entry dialog state
+const newEntryDialogOpen = ref(false);
+const newEntryName = ref("");
+const newEntryParentPath = ref("");
+const newEntryType = ref<"file" | "directory">("file");
 
 const showMarkdownOnly = computed({
   get: () => explorerState.value.markdownOnly ?? false,
@@ -104,6 +126,8 @@ const selectionReady = ref(false);
 const syncingTreeSelection = ref(false);
 let tree: InstanceType<typeof FileTree> | null = null;
 let treeSubscription: (() => void) | null = null;
+let moveUnsubscribe: (() => void) | null = null;
+let batchUnsubscribe: (() => void) | null = null;
 
 // Dirty state: set of relative paths with unsaved changes
 const dirtyPaths = ref<Set<string>>(new Set());
@@ -449,6 +473,10 @@ async function revealActiveFileInTree() {
 function teardownTree() {
   treeSubscription?.();
   treeSubscription = null;
+  moveUnsubscribe?.();
+  moveUnsubscribe = null;
+  batchUnsubscribe?.();
+  batchUnsubscribe = null;
   tree?.cleanUp();
   tree = null;
   selectionReady.value = false;
@@ -467,6 +495,7 @@ function mountTree(newPaths: string[]) {
 
   tree = new FileTree({
     paths: newPaths,
+    dragAndDrop: true,
     density: "compact",
     icons: "minimal",
     initialExpandedPaths: initialExpandedPaths(),
@@ -478,6 +507,37 @@ function mountTree(newPaths: string[]) {
     `,
   });
   tree.render({ fileTreeContainer: treeEl.value });
+
+  tree.setComposition({
+    contextMenu: {
+      triggerMode: "right-click",
+      buttonVisibility: "when-needed",
+      render: (item, context) =>
+        createFileContextMenu(item, context, {
+          onCopyName: (name) => navigator.clipboard.writeText(name),
+          onNewFile: (parent) => handleNewEntry(parent, "file"),
+          onNewFolder: (parent) => handleNewEntry(parent, "directory"),
+          onDelete: (paths, isDir) => {
+            pendingDeletePaths.value = paths.map((p) => ({ path: p, isDir }));
+            deleteDialogOpen.value = true;
+          },
+        }, tree!.getSelectedPaths()),
+    },
+  });
+
+  moveUnsubscribe = tree.onMutation("move", ({ from, to }) => {
+    moveFileMutation.mutate({ from, to });
+  });
+
+  batchUnsubscribe = tree.onMutation("batch", ({ events }) => {
+    const moves = events.filter(
+      (e): e is FileTreeMoveEvent => e.operation === "move",
+    );
+    if (moves.length === 0) return;
+    Promise.all(moves.map(({ from, to }) => moveFileMutation.mutateAsync({ from, to })))
+      .then(() => invalidateWorkspaceFs(queryClient, props.worktreeId))
+      .catch(() => { /* toast already shown by useMoveFile onError */ });
+  });
 
   treeSubscription = tree.subscribe(() => {
     persistExpandedPaths();
@@ -648,6 +708,30 @@ function toggleTree() {
     treePanelBridgeRef.value?.collapse();
   }
 }
+
+async function onDeleteConfirm() {
+  deleteDialogOpen.value = false;
+  const paths = pendingDeletePaths.value;
+  pendingDeletePaths.value = [];
+  await Promise.all(paths.map(({ path }) => deleteFileMutation.mutateAsync({ path })));
+}
+
+function handleNewEntry(parentPath: string, type: "file" | "directory") {
+  newEntryParentPath.value = parentPath;
+  newEntryType.value = type;
+  newEntryName.value = "";
+  newEntryDialogOpen.value = true;
+}
+
+async function onNewEntryConfirm() {
+  const name = newEntryName.value.trim();
+  if (!name) return;
+  const path = newEntryParentPath.value
+    ? `${newEntryParentPath.value}/${name}`
+    : name;
+  newEntryDialogOpen.value = false;
+  await createFileMutation.mutateAsync({ path, type: newEntryType.value });
+}
 </script>
 
 <template>
@@ -805,6 +889,56 @@ function toggleTree() {
         <AlertDialogFooter>
           <AlertDialogCancel @click="onDiscardCancel">Cancel</AlertDialogCancel>
           <AlertDialogAction @click="onDiscardConfirm">Discard</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog :open="deleteDialogOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Delete {{ pendingDeletePaths.length === 1 ? pendingDeletePaths[0]?.path.split('/').at(-1) : `${pendingDeletePaths.length} items` }}?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="deleteDialogOpen = false; pendingDeletePaths = []">
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            @click="onDeleteConfirm"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog :open="newEntryDialogOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {{ newEntryType === 'file' ? 'New File' : 'New Folder' }}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Enter a name{{ newEntryParentPath ? ` inside "${newEntryParentPath}"` : '' }}.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input
+          v-model="newEntryName"
+          placeholder="filename.txt"
+          class="mt-2"
+          @keydown.enter="onNewEntryConfirm"
+          @keydown.escape="newEntryDialogOpen = false"
+        />
+        <AlertDialogFooter class="mt-4">
+          <AlertDialogCancel @click="newEntryDialogOpen = false">Cancel</AlertDialogCancel>
+          <AlertDialogAction :disabled="!newEntryName.trim()" @click="onNewEntryConfirm">
+            Create
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
