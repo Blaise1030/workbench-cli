@@ -104,13 +104,6 @@ function onHooksEnabledChange(id: string, enabled: boolean) {
   void saveAgent(id, { hooks: { enabled } });
 }
 
-function onEventChange(id: string, eventId: string, enabled: boolean) {
-  const current = data.value?.agents.find((a) => a.id === id);
-  void saveAgent(id, {
-    hooks: { events: { ...(current?.hooks.events ?? {}), [eventId]: enabled } },
-  });
-}
-
 function onFieldBlur(
   id: string,
   field: "name" | "startCommand" | "resumeCommand",
@@ -358,17 +351,11 @@ async function removeAgent(id: string) {
                   <ItemContent>
                     <ItemTitle>Agent hooks</ItemTitle>
                     <ItemDescription>
-                      When enabled, a <code>PreToolUse</code> hook calls
-                      <code>workbench-cli register</code> to bind the session to this terminal,
-                      and the selected events below call <code>workbench-cli notify</code> to
-                      send notifications. Both use the session env injected by the Workbench
-                      terminal tab (see
-                      <a
-                        href="https://cmux.com/docs/notifications"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="underline underline-offset-2"
-                      >cmux notifications</a>). Re-apply after upgrading if hooks look outdated.
+                      When enabled, hooks call <code>workbench-cli register</code> to track
+                      session state (<span class="text-green-600 dark:text-green-400">Running</span> /
+                      <span class="text-orange-600 dark:text-orange-400">Needs Attention</span> /
+                      Idle) and <code>workbench-cli notify</code> to send desktop notifications.
+                      Use <b>Sync config</b> to write hooks to the agent's config file.
                     </ItemDescription>
                   </ItemContent>
                   <ItemActions>
@@ -388,6 +375,42 @@ async function removeAgent(id: string) {
                 </Item>
 
                 <div v-if="agent.hooks.enabled" class="space-y-4">
+                  <div class="space-y-2">
+                    <p class="text-sm font-medium">Hooks</p>
+                    <ItemGroup class="flex flex-col gap-1.5">
+                      <Item
+                        v-for="ev in data?.meta[agent.id]?.supportedEvents ?? []"
+                        :key="ev.id"
+                        variant="outline"
+                        size="sm"
+                      >
+                        <ItemContent>
+                          <div class="flex items-center gap-2">
+                            <ItemTitle>{{ ev.label }}</ItemTitle>
+                            <span
+                              v-if="ev.state"
+                              :class="[
+                                'rounded px-1.5 py-0.5 text-[10px] font-medium leading-none',
+                                ev.state === 'running' && 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
+                                ev.state === 'needs_attention' && 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
+                                ev.state === 'idle' && 'bg-muted text-muted-foreground',
+                              ]"
+                            >
+                              {{ ev.state === 'needs_attention' ? 'Needs Attention' : ev.state === 'running' ? 'Running' : 'Idle' }}
+                            </span>
+                            <span
+                              v-else
+                              class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground"
+                            >
+                              notify
+                            </span>
+                          </div>
+                          <ItemDescription>{{ ev.description }}</ItemDescription>
+                        </ItemContent>
+                      </Item>
+                    </ItemGroup>
+                  </div>
+
                   <div class="grid gap-3 sm:grid-cols-2">
                     <div class="space-y-2">
                       <Label :for="`${agent.id}-hook-title`">Notification title</Label>
@@ -411,45 +434,20 @@ async function removeAgent(id: string) {
                     </div>
                   </div>
 
-                  <div class="space-y-2">
-                    <p class="text-sm font-medium">Hook events</p>
-                    <ItemGroup class="flex flex-col gap-2">
-                      <Item
-                        v-for="ev in data?.meta[agent.id]?.supportedEvents ?? []"
-                        :key="ev.id"
-                        variant="outline"
-                        size="sm"
-                      >
-                        <ItemContent>
-                          <ItemTitle>{{ ev.label }}</ItemTitle>
-                          <ItemDescription>{{ ev.description }}</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                          <Switch
-                            :id="`${agent.id}-${ev.id}`"
-                            :checked="agent.hooks.events?.[ev.id] ?? false"
-                            :disabled="loading"
-                            @update:checked="(checked) => onEventChange(agent.id, ev.id, checked)"
-                          />
-                        </ItemActions>
-                      </Item>
-                    </ItemGroup>
-                  </div>
-
                   <div v-if="agent.configPath" class="text-xs text-muted-foreground">
                     Config: <code>{{ agent.configPath }}</code>
                   </div>
 
-                  <div class="space-y-2">
-                    <Label>Hook JSON to merge</Label>
-                    <Textarea
-                      readonly
-                      class="min-h-[100px] font-mono text-xs"
-                      :model-value="data?.manifests[agent.id]?.settingsMerge ?? ''"
-                    />
-                  </div>
-
                   <div class="flex flex-wrap gap-2">
+                    <Button
+                      v-if="agent.canApplyHooks"
+                      type="button"
+                      size="sm"
+                      :disabled="loading"
+                      @click="applyToAgent(agent.id)"
+                    >
+                      Sync config
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
@@ -458,15 +456,6 @@ async function removeAgent(id: string) {
                       @click="copyManifest(agent.id)"
                     >
                       Copy JSON
-                    </Button>
-                    <Button
-                      v-if="agent.canApplyHooks"
-                      type="button"
-                      size="sm"
-                      :disabled="loading"
-                      @click="applyToAgent(agent.id)"
-                    >
-                      Apply hooks to {{ agent.name }}
                     </Button>
                   </div>
                 </div>

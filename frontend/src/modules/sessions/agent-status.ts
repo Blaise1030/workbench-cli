@@ -5,6 +5,7 @@ const STATUS_LABELS: Record<string, string> = {
   done: "Done",
   idle: "Idle",
   stop: "Stop",
+  needs_attention: "Needs Attention",
 };
 
 export function formatAgentStatus(status: string): string {
@@ -19,6 +20,7 @@ export function formatAgentStatus(status: string): string {
 export function agentStatusClass(status: string): string {
   const normalized = status.trim().toLowerCase();
   if (normalized === "running" || normalized === "thinking") return "text-green-500";
-  if (normalized === "waiting") return "text-orange-500";
+  if (normalized === "waiting" || normalized === "needs_attention") return "text-orange-500";
+  if (normalized === "idle" || normalized === "done" || normalized === "stop") return "text-muted-foreground";
   return "text-muted-foreground";
 }

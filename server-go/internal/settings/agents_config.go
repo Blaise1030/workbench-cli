@@ -27,7 +27,11 @@ type ClaudeHookCommand struct {
 // BuildRegisterCommand returns a shell command that registers the agent session via workbench-cli.
 // The session ID is read from stdin (Claude Code hook payload format).
 func BuildRegisterCommand(agentID string) string {
-	return fmt.Sprintf("workbench-cli register --source %s --state running", agentID)
+	return fmt.Sprintf("workbench-cli register --source %s --state running || true", agentID)
+}
+
+func buildRegisterCmd(agentID, state string) string {
+	return fmt.Sprintf("workbench-cli register --source %s --state %s || true", agentID, state)
 }
 
 // BuildNotifyCommand returns a shell command that posts to workbench-cli notify.
@@ -96,6 +100,9 @@ type AgentHookEventMeta struct {
 	ID          string `json:"id"`
 	Label       string `json:"label"`
 	Description string `json:"description"`
+	// State is the workbench status this event sets ("running", "idle", "needs_attention").
+	// Empty means the event only sends a notification (no state change).
+	State string `json:"state,omitempty"`
 }
 
 // AgentResponseMeta is static UI metadata per agent id.
@@ -159,18 +166,29 @@ func NewAgentsStore() *AgentsStore {
 
 var builtinHookEvents = map[string][]AgentHookEventMeta{
 	"claude": {
-		{ID: "Stop", Label: "Stop", Description: "When the main agent finishes a turn or session stops."},
-		{ID: "SubagentStop", Label: "Subagent stop", Description: "When a subagent completes."},
-		{ID: "Notification", Label: "Notification", Description: "When Claude sends a notification (e.g. permission prompt)."},
+		{ID: "SessionStart", Label: "Session start", Description: "Fired when a session begins.", State: "running"},
+		{ID: "PreToolUse", Label: "Before tool", Description: "Fired before each tool call.", State: "running"},
+		{ID: "UserPromptSubmit", Label: "Prompt submitted", Description: "Fired when you submit a prompt.", State: "running"},
+		{ID: "PermissionRequest", Label: "Permission request", Description: "Fired when Claude asks for permission.", State: "needs_attention"},
+		{ID: "Notification", Label: "Notification", Description: "Fired when Claude sends a notification. Also sends a desktop notification.", State: "needs_attention"},
+		{ID: "Stop", Label: "Stop", Description: "Fired when the session stops. Also sends a desktop notification.", State: "idle"},
+		{ID: "SubagentStop", Label: "Subagent stop", Description: "Fired when a subagent completes. Sends a desktop notification."},
 	},
 	"cursor": {
-		{ID: "Stop", Label: "Stop", Description: "When the agent run completes (if your Cursor build supports hooks)."},
+		{ID: "beforeSubmitPrompt", Label: "Before submit", Description: "Fired when you submit a prompt.", State: "running"},
+		{ID: "stop", Label: "Stop", Description: "Fired when the agent run completes. Also sends a desktop notification.", State: "idle"},
 	},
 	"codex": {
-		{ID: "Stop", Label: "Stop", Description: "Run when a Codex session ends (manual or wrapper script)."},
+		{ID: "SessionStart", Label: "Session start", Description: "Fired when a session begins.", State: "running"},
+		{ID: "UserPromptSubmit", Label: "Prompt submitted", Description: "Fired when you submit a prompt.", State: "running"},
+		{ID: "Stop", Label: "Stop", Description: "Fired when the session ends. Also sends a desktop notification.", State: "idle"},
 	},
 	"gemini": {
-		{ID: "Stop", Label: "Stop", Description: "Run when a Gemini CLI session ends (manual or wrapper script)."},
+		{ID: "SessionStart", Label: "Session start", Description: "Fired when a session begins.", State: "running"},
+		{ID: "BeforeTool", Label: "Before tool", Description: "Fired before each tool call.", State: "running"},
+		{ID: "BeforeAgent", Label: "Before agent", Description: "Fired before an agent run.", State: "running"},
+		{ID: "AfterAgent", Label: "After agent", Description: "Fired when an agent completes. Also sends a desktop notification.", State: "idle"},
+		{ID: "SessionEnd", Label: "Session end", Description: "Fired when the session ends. Also sends a desktop notification.", State: "idle"},
 	},
 }
 
@@ -184,31 +202,26 @@ var defaultBuiltinAgents = []WorkbenchAgent{
 	{
 		ID: "cursor", Name: "Cursor Agent", Icon: "/agents/cursor.svg", StartCommand: "agent",
 		ResumeCommand: "agent --resume {{sessionId}}", MatchBinaries: []string{"agent", "cursor-agent"},
-		ConfigPath: "~/.cursor/hooks.json", Builtin: true,
+		ConfigPath: "~/.cursor/hooks.json", CanApplyHooks: true, Builtin: true,
 		Hooks: defaultHooksForEvents(builtinHookEvents["cursor"], "Cursor Agent"),
 	},
 	{
 		ID: "codex", Name: "Codex", Icon: "/agents/codex.svg", StartCommand: "codex",
 		ResumeCommand: "codex resume {{sessionId}}", MatchBinaries: []string{"codex"},
-		Builtin: true,
+		ConfigPath: "~/.codex/hooks.json", CanApplyHooks: true, Builtin: true,
 		Hooks: defaultHooksForEvents(builtinHookEvents["codex"], "Codex"),
 	},
 	{
 		ID: "gemini", Name: "Gemini CLI", Icon: "/agents/gemini.svg", StartCommand: "gemini",
 		ResumeCommand: "gemini --resume {{sessionId}}", MatchBinaries: []string{"gemini"},
-		Builtin: true,
+		ConfigPath: "~/.gemini/settings.json", CanApplyHooks: true, Builtin: true,
 		Hooks: defaultHooksForEvents(builtinHookEvents["gemini"], "Gemini CLI"),
 	},
 }
 
 func defaultHooksForEvents(events []AgentHookEventMeta, title string) AgentHooksConfig {
-	evMap := make(map[string]bool)
-	for _, ev := range events {
-		evMap[ev.ID] = ev.ID == "Stop"
-	}
 	return AgentHooksConfig{
 		Enabled: false,
-		Events:  evMap,
 		Title:   title,
 		Body:    "Session finished",
 	}
@@ -471,60 +484,90 @@ func hookMetaForAgent(a WorkbenchAgent) AgentResponseMeta {
 	return AgentResponseMeta{ID: a.ID, SupportedEvents: genericHookEvents()}
 }
 
+// buildClaudeStyleHooks generates the full hook set for an agent using Claude-format hook JSON.
+// State events always get a register command; events that also notify append the notify command.
+func buildClaudeStyleHooks(agentID string, events []AgentHookEventMeta, notifyCmd string) map[string][]ClaudeHookCommand {
+	hooks := map[string][]ClaudeHookCommand{}
+	for _, ev := range events {
+		var cmds []ClaudeHookCommand
+		if ev.State != "" {
+			cmds = append(cmds, ClaudeHookCommand{Type: "command", Command: buildRegisterCmd(agentID, ev.State)})
+		}
+		// Send notification on idle/needs_attention events and pure notify events.
+		if ev.State == "idle" || ev.State == "needs_attention" || ev.State == "" {
+			cmds = append(cmds, ClaudeHookCommand{Type: "command", Command: notifyCmd + " || true"})
+		}
+		if len(cmds) > 0 {
+			hooks[ev.ID] = cmds
+		}
+	}
+	return hooks
+}
+
+// buildCursorHooks generates hooks in the Cursor-specific format (no "type" field).
+func buildCursorHooks(events []AgentHookEventMeta, notifyCmd string) map[string][]map[string]string {
+	hooks := map[string][]map[string]string{}
+	for _, ev := range events {
+		var cmds []map[string]string
+		if ev.State != "" {
+			cmds = append(cmds, map[string]string{"command": buildRegisterCmd("cursor", ev.State)})
+		}
+		if ev.State == "idle" || ev.State == "needs_attention" || ev.State == "" {
+			cmds = append(cmds, map[string]string{"command": notifyCmd + " || true"})
+		}
+		if len(cmds) > 0 {
+			hooks[ev.ID] = cmds
+		}
+	}
+	return hooks
+}
+
 func buildAgentManifest(a WorkbenchAgent, port int) AgentManifest {
-	cmd := BuildNotifyCommand(port, a.Hooks.Title, a.Hooks.Body)
+	notifyCmd := BuildNotifyCommand(port, a.Hooks.Title, a.Hooks.Body)
 	manifest := AgentManifest{
 		Enabled:       a.Hooks.Enabled,
-		NotifyCommand: cmd,
+		NotifyCommand: notifyCmd,
 	}
 	if !a.Hooks.Enabled {
-		manifest.InstallHint = "Enable notify hooks to generate install commands."
+		manifest.InstallHint = "Enable hooks to generate install commands."
 		return manifest
 	}
 
-	if a.ID == "claude" || (a.CanApplyHooks && strings.Contains(a.ConfigPath, ".claude")) {
-		hooks := map[string][]ClaudeHookCommand{}
-		// Register hook: fires on first tool use to bind the session to this terminal.
-		hooks["PreToolUse"] = []ClaudeHookCommand{{Type: "command", Command: BuildRegisterCommand(a.ID)}}
-		// Notify hooks: one entry per enabled event.
-		for evID, on := range a.Hooks.Events {
-			if !on {
-				continue
-			}
-			hooks[evID] = []ClaudeHookCommand{{Type: "command", Command: cmd}}
+	events, ok := builtinHookEvents[a.ID]
+	if !ok {
+		// Custom agent: generate a basic stop → idle + notify hook.
+		events = []AgentHookEventMeta{
+			{ID: "Stop", Label: "Stop", Description: "Session ends.", State: "idle"},
 		}
-		manifest.ClaudeHooks = hooks
-		merge := map[string]any{"hooks": hooks}
-		raw, _ := json.MarshalIndent(merge, "", "  ")
-		manifest.SettingsMerge = string(raw)
-		manifest.InstallHint = "Merge the hooks object into " + a.ConfigPath + ", or use Apply below."
-		return manifest
 	}
 
 	if a.ID == "cursor" || strings.Contains(a.ConfigPath, ".cursor") {
-		merge := map[string]any{
-			"version": 1,
-			"hooks":   buildGenericHookMapFromEvents(a.Hooks.Events, cmd),
-		}
+		cursorHooks := buildCursorHooks(events, notifyCmd)
+		merge := map[string]any{"version": 1, "hooks": cursorHooks}
 		raw, _ := json.MarshalIndent(merge, "", "  ")
 		manifest.SettingsMerge = string(raw)
-		manifest.InstallHint = "Copy into " + a.ConfigPath + " when your Cursor build supports agent hooks."
+		manifest.InstallHint = "Copy into " + a.ConfigPath + "."
 		return manifest
 	}
 
-	manifest.InstallHint = fmt.Sprintf("Run on session end:\n  %s", cmd)
-	return manifest
-}
-
-func buildGenericHookMapFromEvents(events map[string]bool, cmd string) map[string][]ClaudeHookCommand {
-	out := map[string][]ClaudeHookCommand{}
-	for evID, on := range events {
-		if !on {
-			continue
-		}
-		out[evID] = []ClaudeHookCommand{{Type: "command", Command: cmd}}
+	// Claude, Codex, Gemini, and custom agents all use the Claude-style hook JSON.
+	claudeHooks := buildClaudeStyleHooks(a.ID, events, notifyCmd)
+	manifest.ClaudeHooks = claudeHooks
+	var mergeRoot map[string]any
+	if a.ID == "gemini" || strings.Contains(a.ConfigPath, ".gemini") {
+		// Gemini merges hooks into settings.json under the "hooks" key.
+		mergeRoot = map[string]any{"hooks": claudeHooks}
+	} else {
+		mergeRoot = map[string]any{"hooks": claudeHooks}
 	}
-	return out
+	raw, _ := json.MarshalIndent(mergeRoot, "", "  ")
+	manifest.SettingsMerge = string(raw)
+	if a.ConfigPath != "" {
+		manifest.InstallHint = "Merge the hooks object into " + a.ConfigPath + ", or use Sync config below."
+	} else {
+		manifest.InstallHint = "Merge the hooks object into your agent config, or use Sync config below."
+	}
+	return manifest
 }
 
 func GetAgentsResponse(st *AgentsStore, port int) AgentsResponse {
@@ -543,24 +586,24 @@ func GetAgentsResponse(st *AgentsStore, port int) AgentsResponse {
 	}
 }
 
-// ApplyAgentNotifyHooks merges generated hooks into the agent config file (Claude today).
+// ApplyAgentNotifyHooks writes the generated hook config to the agent's config file.
 func ApplyAgentNotifyHooks(st *AgentsStore, agentID string, port int) (configPath string, backupPath string, err error) {
 	agent, ok := st.GetAgent(agentID)
 	if !ok {
 		return "", "", fmt.Errorf("agent not found")
 	}
 	if !agent.Hooks.Enabled {
-		return "", "", fmt.Errorf("notify hooks are disabled for %s", agent.Name)
+		return "", "", fmt.Errorf("hooks are disabled for %s", agent.Name)
 	}
-	if !agent.CanApplyHooks && agent.ID != "claude" {
-		return "", "", fmt.Errorf("apply is not supported for %s", agent.Name)
-	}
-	manifest := buildAgentManifest(agent, port)
-	if len(manifest.ClaudeHooks) == 0 {
-		return "", "", fmt.Errorf("no hook events selected")
+	if !agent.CanApplyHooks {
+		return "", "", fmt.Errorf("sync is not supported for %s", agent.Name)
 	}
 	if strings.TrimSpace(agent.ConfigPath) == "" {
 		return "", "", fmt.Errorf("no config path for %s", agent.Name)
+	}
+	manifest := buildAgentManifest(agent, port)
+	if manifest.SettingsMerge == "" {
+		return "", "", fmt.Errorf("no hooks generated for %s", agent.Name)
 	}
 
 	configPath, err = expandHome(agent.ConfigPath)
@@ -571,31 +614,31 @@ func ApplyAgentNotifyHooks(st *AgentsStore, agentID string, port int) (configPat
 		return "", "", err
 	}
 
-	existing := map[string]any{}
-	if raw, readErr := os.ReadFile(configPath); readErr == nil {
-		_ = json.Unmarshal(raw, &existing)
-	}
-
 	backupPath = configPath + ".workbench.bak"
 	if raw, readErr := os.ReadFile(configPath); readErr == nil {
 		_ = os.WriteFile(backupPath, raw, 0o644)
 	}
 
-	hooksVal, ok := existing["hooks"]
-	hooks := map[string]any{}
-	if ok {
-		if m, ok := hooksVal.(map[string]any); ok {
-			hooks = m
+	// For cursor: write the full hooks file directly.
+	if agent.ID == "cursor" || strings.Contains(agent.ConfigPath, ".cursor") {
+		if err := os.WriteFile(configPath, []byte(manifest.SettingsMerge+"\n"), 0o644); err != nil {
+			return "", "", err
+		}
+		return configPath, backupPath, nil
+	}
+
+	// For all others (Claude, Codex, Gemini): merge the hooks key into existing JSON.
+	existing := map[string]any{}
+	if raw, readErr := os.ReadFile(configPath); readErr == nil {
+		_ = json.Unmarshal(raw, &existing)
+	}
+
+	var mergeDoc map[string]any
+	if jsonErr := json.Unmarshal([]byte(manifest.SettingsMerge), &mergeDoc); jsonErr == nil {
+		if h, ok := mergeDoc["hooks"]; ok {
+			existing["hooks"] = h
 		}
 	}
-	for ev, entries := range manifest.ClaudeHooks {
-		var list []any
-		for _, e := range entries {
-			list = append(list, map[string]string{"type": e.Type, "command": e.Command})
-		}
-		hooks[ev] = list
-	}
-	existing["hooks"] = hooks
 
 	out, err := json.MarshalIndent(existing, "", "  ")
 	if err != nil {

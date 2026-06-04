@@ -2,7 +2,7 @@
 import { computed, inject, nextTick, onMounted, ref, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useDebounceFn } from "@vueuse/core";
-import { FileIcon, FileTextIcon, FolderTreeIcon, SearchIcon } from "@lucide/vue";
+import { FileIcon, FilePlusIcon, FileTextIcon, FolderPlusIcon, FolderTreeIcon, SearchIcon } from "@lucide/vue";
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { FileTree } from "@pierre/trees";
 import {
@@ -500,6 +500,11 @@ function mountTree(newPaths: string[]) {
     icons: "minimal",
     initialExpandedPaths: initialExpandedPaths(),
     onSelectionChange: syncSelectionToUrl,
+    renaming: {
+      onRename: ({ sourcePath, destinationPath }) => {
+        moveFileMutation.mutate({ from: sourcePath, to: destinationPath });
+      },
+    },
     unsafeCSS: `
       [data-file-tree-virtualized-scroll='true'] {
         scrollbar-gutter: auto;
@@ -517,6 +522,7 @@ function mountTree(newPaths: string[]) {
           onCopyName: (name) => navigator.clipboard.writeText(name),
           onNewFile: (parent) => handleNewEntry(parent, "file"),
           onNewFolder: (parent) => handleNewEntry(parent, "directory"),
+          onRename: (path) => tree!.startRenaming(path),
           onDelete: (paths, isDir) => {
             pendingDeletePaths.value = paths.map((p) => ({ path: p, isDir }));
             deleteDialogOpen.value = true;
@@ -551,11 +557,30 @@ function mountTree(newPaths: string[]) {
   selectionReady.value = true;
 }
 
+function getTreeScrollEl(): HTMLElement | null {
+  if (!treeEl.value) return null;
+  return (treeEl.value.querySelector('[data-file-tree-virtualized-scroll="true"]') as HTMLElement | null) ?? treeEl.value;
+}
+
 function syncTreeToPaths(pathList: string[], prevPathList?: readonly string[] | null) {
   if (!treeEl.value) return;
   if (tree && prevPathList && pathsListEqual(pathList, prevPathList)) return;
-  if (tree) teardownTree();
-  void nextTick(() => mountTree(pathList));
+  let savedScrollTop = 0;
+  if (tree) {
+    savedScrollTop = getTreeScrollEl()?.scrollTop ?? 0;
+    const expandedPaths = collectExpandedPathsFromDom();
+    explorerState.value = { ...explorerState.value, expandedPaths };
+    teardownTree();
+  }
+  void nextTick(() => {
+    mountTree(pathList);
+    if (savedScrollTop > 0) {
+      requestAnimationFrame(() => {
+        const scrollEl = getTreeScrollEl();
+        if (scrollEl) scrollEl.scrollTop = savedScrollTop;
+      });
+    }
+  });
 }
 
 function tryMountTree() {
@@ -729,8 +754,24 @@ async function onNewEntryConfirm() {
   const path = newEntryParentPath.value
     ? `${newEntryParentPath.value}/${name}`
     : name;
+  const type = newEntryType.value;
   newEntryDialogOpen.value = false;
-  await createFileMutation.mutateAsync({ path, type: newEntryType.value });
+  await createFileMutation.mutateAsync({ path, type });
+  if (type === "file") {
+    if (paths.value?.includes(path)) {
+      openFileInTab(path);
+    } else {
+      const stop = watch(
+        () => paths.value,
+        (newPaths) => {
+          if (newPaths?.includes(path)) {
+            stop();
+            openFileInTab(path);
+          }
+        },
+      );
+    }
+  }
 }
 </script>
 
@@ -853,6 +894,26 @@ async function onNewEntryConfirm() {
             <Button
               variant="ghost"
               size="icon-xs"
+              aria-label="New file"
+              title="New file"
+              class="text-muted-foreground"
+              @click="handleNewEntry('', 'file')"
+            >
+              <FilePlusIcon class="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              class="mr-auto text-muted-foreground"
+              aria-label="New folder"
+              title="New folder"              
+              @click="handleNewEntry('', 'directory')"
+            >
+              <FolderPlusIcon class="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
               :aria-label="showMarkdownOnly ? 'Show all files' : 'Show markdown files only'"
               :title="showMarkdownOnly ? 'Show all files' : 'Show markdown files only'"
               :class="showMarkdownOnly ? 'text-foreground' : 'text-muted-foreground'"
@@ -865,6 +926,7 @@ async function onNewEntryConfirm() {
               size="icon-xs"
               aria-label="Search files"
               title="Search files"
+              class="ml-1"
               @click="openWithFileSearch"
             >
               <SearchIcon class="size-3.5" />
@@ -919,7 +981,7 @@ async function onNewEntryConfirm() {
 
     <AlertDialog :open="newEntryDialogOpen">
       <AlertDialogContent>
-        <AlertDialogHeader>
+        <AlertDialogHeader class="items-start text-left">
           <AlertDialogTitle>
             {{ newEntryType === 'file' ? 'New File' : 'New Folder' }}
           </AlertDialogTitle>

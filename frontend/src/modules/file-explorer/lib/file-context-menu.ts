@@ -11,6 +11,7 @@ export type FileContextMenuActions = {
   onCopyName: (name: string) => void;
   onNewFile: (parentPath: string) => void;
   onNewFolder: (parentPath: string) => void;
+  onRename: (path: string) => void;
   onDelete: (paths: string[], isDir: boolean) => void;
 };
 
@@ -56,6 +57,10 @@ export function createFileContextMenu(
     menuItem(copyLabel, false, () => {
       actions.onCopyName(item.name);
       context.close();
+    }),
+    menuItem("Rename", false, () => {
+      context.close({ restoreFocus: false });
+      actions.onRename(item.path);
     }),
   ];
 

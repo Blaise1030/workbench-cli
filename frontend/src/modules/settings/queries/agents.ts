@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { toast } from "vue-sonner";
 import { ensureOk } from "@/lib/api-error";
 import type {
   AgentsResponse,
@@ -41,6 +42,10 @@ export function usePatchAgentsMutation() {
     },
     onSuccess: (data) => {
       qc.setQueryData(agentsQueryKeys.all, data);
+      toast.success("Agent settings saved");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save agent settings");
     },
   });
 }
@@ -64,6 +69,10 @@ export function useCreateAgentMutation() {
     },
     onSuccess: (data) => {
       qc.setQueryData(agentsQueryKeys.all, data.settings);
+      toast.success("Agent created");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to create agent");
     },
   });
 }
@@ -80,6 +89,10 @@ export function useDeleteAgentMutation() {
     },
     onSuccess: (data) => {
       qc.setQueryData(agentsQueryKeys.all, data);
+      toast.success("Agent deleted");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to delete agent");
     },
   });
 }
@@ -95,6 +108,12 @@ export function useApplyAgentHooksMutation() {
         },
       );
       return ensureOk<ApplyAgentHooksResult>(res);
+    },
+    onSuccess: () => {
+      toast.success("Agent hooks applied");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to apply agent hooks");
     },
   });
 }

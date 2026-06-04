@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/vue-query";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { toast } from "vue-sonner";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 import { workspaceKeys } from "./keys";
@@ -80,6 +81,10 @@ export function useRegisterProjectMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workspaceKeys.projects() });
+      toast.success("Project registered");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to register project");
     },
   });
 }
@@ -101,7 +106,11 @@ export function usePickProjectFolderMutation() {
     onSuccess: (result) => {
       if (!result.cancelled) {
         queryClient.invalidateQueries({ queryKey: workspaceKeys.projects() });
+        toast.success("Project added");
       }
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to open folder");
     },
   });
 }
@@ -123,6 +132,10 @@ export function useCheckoutBranchMutation(projectId: MaybeRefOrGetter<string>) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workspaceKeys.worktrees(toValue(projectId)) });
+      toast.success("Branch checked out");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Checkout failed");
     },
   });
 }
@@ -147,6 +160,10 @@ export function useCreateWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.worktrees(toValue(projectId)),
       });
+      toast.success("Worktree created");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to create worktree");
     },
   });
 }
@@ -174,6 +191,10 @@ export function useDeleteWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
       queryClient.removeQueries({
         queryKey: workspaceKeys.terminals(worktreeId),
       });
+      toast.success("Worktree deleted");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to delete worktree");
     },
   });
 }

@@ -12,6 +12,7 @@ import type {
 } from "@server/schemas/api";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
+import { toast } from "vue-sonner";
 
 export const settingsKeys = {
   all: ["settings"] as const,
@@ -71,6 +72,10 @@ export function usePatchNetworkSettingsMutation() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(settingsKeys.network(), data);
+      toast.success("Network settings saved");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save network settings");
     },
   });
 }
@@ -84,6 +89,10 @@ export function usePatchTerminalSettingsMutation() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(settingsKeys.terminal(), data);
+      toast.success("Terminal settings saved");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save terminal settings");
     },
   });
 }
@@ -97,6 +106,10 @@ export function useAddResumePrefixMutation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.resumePrefixes() });
+      toast.success("Resume command added");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to add resume command");
     },
   });
 }
@@ -112,6 +125,10 @@ export function useRevokeResumePrefixMutation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.resumePrefixes() });
+      toast.success("Resume command removed");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to remove resume command");
     },
   });
 }

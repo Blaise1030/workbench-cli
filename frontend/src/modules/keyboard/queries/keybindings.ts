@@ -1,4 +1,5 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { toast } from "vue-sonner";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 import type { KeybindingsMap } from "../types";
@@ -32,6 +33,10 @@ export function useUpdateKeybindingsMutation() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(keybindingsKeys.all, data);
+      toast.success("Keybindings saved");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save keybindings");
     },
   });
 }

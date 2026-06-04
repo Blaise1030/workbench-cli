@@ -2,6 +2,8 @@ export interface AgentHookEvent {
   id: string;
   label: string;
   description: string;
+  /** State this event sets: "running" | "idle" | "needs_attention". Empty = notify only. */
+  state?: string;
 }
 
 export interface AgentHooksConfig {

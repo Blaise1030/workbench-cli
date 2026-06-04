@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/vue-query";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { toast } from "vue-sonner";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 import { workspaceKeys } from "@/modules/workspace/queries/keys";
@@ -46,6 +47,9 @@ export function useCreateTerminalMutation(worktreeId: MaybeRefOrGetter<string>) 
         queryKey: workspaceKeys.terminals(toValue(worktreeId)),
       });
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to create terminal");
+    },
   });
 }
 
@@ -75,6 +79,10 @@ export function useUpdateTerminalMutation(worktreeId: MaybeRefOrGetter<string>) 
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.terminals(toValue(worktreeId)),
       });
+      toast.success("Terminal updated");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to update terminal");
     },
   });
 }
@@ -92,6 +100,9 @@ export function useDeleteTerminalMutation(worktreeId: MaybeRefOrGetter<string>) 
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.terminals(toValue(worktreeId)),
       });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to delete terminal");
     },
   });
 }

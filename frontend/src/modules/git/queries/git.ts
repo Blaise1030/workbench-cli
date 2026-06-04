@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from "@tanstack/vue-query";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { toast } from "vue-sonner";
 import { apiClient } from "@/lib/api-client";
 import { ensureOk } from "@/lib/api-error";
 import type { GitFileAction } from "@/modules/git/lib/git-file-actions";
@@ -96,6 +97,9 @@ export function useGitFileActionsMutation(worktreeId: MaybeRefOrGetter<string>) 
     onSuccess: () => {
       invalidateGitQueries(queryClient, toValue(worktreeId));
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to apply git action");
+    },
   });
 }
 
@@ -112,6 +116,10 @@ export function useGitCommitMutation(worktreeId: MaybeRefOrGetter<string>) {
     },
     onSuccess: () => {
       invalidateGitQueries(queryClient, toValue(worktreeId));
+      toast.success("Committed successfully");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to commit");
     },
   });
 }

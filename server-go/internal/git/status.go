@@ -87,7 +87,7 @@ func ParseStatusPorcelain(output string) []StatusEntry {
 }
 
 func GetStatus(repoPath string) ([]StatusEntry, error) {
-	out, err := Run(repoPath, []string{"status", "--porcelain"})
+	out, err := Run(repoPath, []string{"status", "--porcelain", "--ignored"})
 	if err != nil {
 		return nil, err
 	}

@@ -44,7 +44,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { patchToCodeViewItems } from "@/modules/git/lib/git-diff-items";
-import { excludeUntrackedDiffItems } from "@/modules/git/lib/git-unstaged-filter";
 import {
   selectAllPathsState,
   selectablePathsFromDiffItems,
@@ -214,6 +213,11 @@ const gitDiffByScope = computed(() => {
   return map;
 });
 
+const { data: untrackedDiffData } = useQuery({
+  ...gitDiffQueryOptions(() => props.worktreeId, "untracked", () => null),
+  enabled: gitEnabled,
+});
+
 const changedFiles = computed(() => gitStatus.value?.files ?? []);
 
 const diffItemsByTab = computed(() => {
@@ -226,7 +230,17 @@ const diffItemsByTab = computed(() => {
       `${props.worktreeId}-${scope}`,
     );
     if (scope === "unstaged") {
-      scopeItems = excludeUntrackedDiffItems(scopeItems, statusFiles);
+      const ignoredPaths = new Set(
+        statusFiles.filter((f) => f.unstaged === "ignored").map((f) => f.path),
+      );
+      const untrackedPatch = untrackedDiffData.value?.patch ?? "";
+      const untrackedItems = patchToCodeViewItems(untrackedPatch, `${props.worktreeId}-untracked`)
+        .filter((item) => {
+          if (ignoredPaths.has(item.id)) return false;
+          const firstSegment = item.id.split("/")[0];
+          return !firstSegment.startsWith(".");
+        });
+      scopeItems = [...scopeItems, ...untrackedItems];
     }
     items[scope] = scopeItems;
   }
@@ -272,12 +286,12 @@ const displayBranch = computed(
   () => gitStatus.value?.branch ?? worktree.value?.branch ?? "detached",
 );
 
-/** Tracked files with unstaged working-tree changes (excludes untracked). */
 const unstagedCount = computed(
-  () =>
-    changedFiles.value.filter(
-      (f) => f.unstaged != null && f.unstaged !== "untracked",
-    ).length,
+  () => changedFiles.value.filter((f) => {
+    if (!f.unstaged || f.unstaged === "ignored") return false;
+    const firstSegment = f.path.split("/")[0];
+    return !firstSegment.startsWith(".");
+  }).length,
 );
 /** Files with anything in the index vs HEAD. */
 const stagedCount = computed(
