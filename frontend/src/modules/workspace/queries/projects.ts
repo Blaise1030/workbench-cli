@@ -51,6 +51,9 @@ export function worktreesQueryOptions(projectId: MaybeRefOrGetter<string>) {
       return data.worktrees;
     },
     enabled: computed(() => Boolean(toValue(projectId))),
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    gcTime: 60_000,
   });
 }
 
@@ -99,6 +102,27 @@ export function usePickProjectFolderMutation() {
       if (!result.cancelled) {
         queryClient.invalidateQueries({ queryKey: workspaceKeys.projects() });
       }
+    },
+  });
+}
+
+export function useCheckoutBranchMutation(projectId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (branch: string) => {
+      const res = await fetch(`/api/projects/${toValue(projectId)}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ branch }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as any).error ?? "Checkout failed");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.worktrees(toValue(projectId)) });
     },
   });
 }

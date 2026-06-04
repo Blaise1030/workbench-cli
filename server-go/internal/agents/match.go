@@ -3,6 +3,8 @@ package agents
 import (
 	"regexp"
 	"strings"
+
+	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
 )
 
 var envAssignRE = regexp.MustCompile(`^(?:\s*[A-Za-z_][A-Za-z0-9_]*=\S*\s*)+`)
@@ -37,6 +39,14 @@ func ExtractInvocation(commandLine string) string {
 }
 
 func MatchAdapter(commandLine string) *Adapter {
+	file := settings.NewAgentsStore().Load()
+	if agent := settings.MatchAgentByCommand(commandLine, file); agent != nil {
+		for i := range Adapters {
+			if Adapters[i].Kind == agent.ID {
+				return &Adapters[i]
+			}
+		}
+	}
 	invocation := ExtractInvocation(commandLine)
 	if invocation == "" {
 		return nil
@@ -52,6 +62,15 @@ func MatchAdapter(commandLine string) *Adapter {
 }
 
 func BuildResumeArgv(kind, sessionID string) []string {
+	file := settings.NewAgentsStore().Load()
+	for i := range file.Agents {
+		if file.Agents[i].ID == kind {
+			argv := settings.ResumeArgv(file.Agents[i].ResumeCommand, sessionID)
+			if len(argv) > 0 {
+				return argv
+			}
+		}
+	}
 	for i := range Adapters {
 		if Adapters[i].Kind == kind {
 			return Adapters[i].ResumeArgs(sessionID)

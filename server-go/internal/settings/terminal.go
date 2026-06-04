@@ -43,7 +43,15 @@ type ApprovedResumePrefix struct {
 
 func GetTerminalSettings(s Store) TerminalSettings {
 	hooks := make(AgentHooks)
+	seen := make(map[string]bool)
+	for _, agent := range NewAgentsStore().Load().Agents {
+		hooks[agent.ID] = GetBool(s, agentHookKey(agent.ID), true)
+		seen[agent.ID] = true
+	}
 	for _, kind := range supportedAgentKinds {
+		if seen[kind] {
+			continue
+		}
 		hooks[kind] = GetBool(s, agentHookKey(kind), true)
 	}
 	return TerminalSettings{

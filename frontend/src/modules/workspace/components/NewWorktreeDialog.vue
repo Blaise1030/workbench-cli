@@ -90,10 +90,10 @@ async function submit() {
         as="button"
         type="button"
         size="sm"
-        class="w-fit max-w-full whitespace-nowrap text-muted-foreground [&>span:last-child]:truncate-none"
+        class="w-fit text-muted-foreground"
       >
-        <PlusIcon class="stroke-muted-foreground" />
-        <span>New worktree</span>
+        <PlusIcon class="shrink-0 stroke-muted-foreground" />
+        <span class="shrink-0 whitespace-nowrap">New worktree</span>
       </SidebarMenuSubButton>
     </PopoverTrigger>
     <PopoverContent class="w-72" align="start" side="right">

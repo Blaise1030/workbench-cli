@@ -9,6 +9,7 @@ export {
   worktreeQueryOptions,
   useRegisterProjectMutation,
   usePickProjectFolderMutation,
+  useCheckoutBranchMutation,
   useCreateWorktreeMutation,
   useDeleteWorktreeMutation,
 } from "./projects";

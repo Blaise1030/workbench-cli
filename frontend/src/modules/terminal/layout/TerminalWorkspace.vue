@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, ref, watch } from "vue";
+import { useDebounceFn } from "@vueuse/core";
 import { useQuery } from "@tanstack/vue-query";
 import {
   FolderTreeIcon,
@@ -8,6 +9,15 @@ import {
   XIcon,
 } from "@lucide/vue";
 import { RouterView, useRoute, useRouter } from "vue-router";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import Terminal from "@/modules/terminal/pages/Terminal.vue";
+import GitPanel from "@/modules/git/pages/GitPanel.vue";
+import FileExplorerPanel from "@/modules/file-explorer/pages/FileExplorerPanel.vue";
+import { useFileExplorerStorage } from "@/modules/file-explorer/lib/file-explorer-storage";
 import { Button } from "@/components/ui/button";
 import WorkspacePanelMenu from "@/modules/workspace/components/WorkspacePanelMenu.vue";
 import WorkspaceSidebarToggle from "@/modules/workspace/components/WorkspaceSidebarToggle.vue";
@@ -20,28 +30,30 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import {
-  createTerminalSessionsStore,
   terminalSessionsKey,
+  useTerminalSessions,
 } from "@/modules/terminal/hooks/terminal-sessions";
 import {
   useCreateTerminalMutation,
   useDeleteTerminalMutation,
   useTerminalsQuery,
 } from "@/modules/terminal/queries";
-import {
-  GIT_PANEL_DEFAULT_TAB,
-  useGitPanelStorage,
-  isGitPanelTabScope,
-} from "@/modules/git/lib/git-panel-storage";
+import { useGitPanelStorage } from "@/modules/git/lib/git-panel-storage";
 import {
   useWorktreePanels,
+  buildWorkspaceQuery,
+  clampSplitTerminalSize,
   gitPanelId,
   explorerPanelId,
+  SPLIT_AUX_MIN_SIZE,
+  SPLIT_TERMINAL_DEFAULT_SIZE,
+  SPLIT_TERMINAL_MIN_SIZE,
   type WorktreeLastRoute,
 } from "@/modules/workspace/lib/worktree-panels-storage";
+import { useWorktreeLayoutMode } from "@/modules/workspace/hooks/use-worktree-layout-mode";
 import { gitStatusQueryOptions } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
-import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
+import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
 import { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
 import { useContextQueueKeybinding } from "@/modules/context-queue/hooks/use-context-queue-keybinding";
@@ -57,20 +69,27 @@ const props = defineProps<{
 
 const route = useRoute();
 const router = useRouter();
-const { colorMode } = useAppColorMode();
-const sessions = createTerminalSessionsStore();
+const { effectiveTheme } = useAppTheme();
+const sessions = useTerminalSessions();
 
 /** Remount terminal emulator when theme changes so xterm picks up new CSS tokens. */
 const routerViewKey = computed(() => {
   if (route.name === "terminal") {
-    return `${route.params.terminalId as string}:${colorMode.value}`;
+    return `${route.params.terminalId as string}:${effectiveTheme.value}`;
   }
   return route.fullPath;
 });
-provide(terminalSessionsKey, sessions);
 
 const panelsState = useWorktreePanels(() => props.worktreeId);
 const gitPanelState = useGitPanelStorage(() => props.worktreeId);
+const explorerState = useFileExplorerStorage(() => props.worktreeId);
+const {
+  layoutMode,
+  layoutPrefs,
+  splitAuxPanel,
+  activeTerminalId,
+  workspaceQuery,
+} = useWorktreeLayoutMode(() => props.worktreeId);
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
 /** Keep git status warm while on terminal (explorer/git panels unmount). */
 useQuery(gitStatusQueryOptions(() => props.worktreeId));
@@ -83,11 +102,26 @@ provide(contextQueueAnnotationsKey, contextQueueAnnotations);
 const gitItemIdsRef = ref<string[]>([]);
 provide(contextQueueGitItemIdsKey, gitItemIdsRef);
 
+const effectiveRouteName = computed(() => {
+  if (layoutMode.value !== "split") return route.name;
+  if (splitAuxPanel.value === "explorer") return "explorer";
+  if (splitAuxPanel.value === "git") return "git";
+  return route.name;
+});
+
+const effectiveFileQuery = computed(() => {
+  if (typeof route.query.file === "string") return route.query.file;
+  const rel = explorerState.value.lastFilePath;
+  const wt = worktree.value?.path;
+  if (!rel || !wt) return undefined;
+  const base = wt.endsWith("/") ? wt.slice(0, -1) : wt;
+  return encodeURIComponent(`${base}/${rel.replace(/^\//, "")}`);
+});
+
 useContextQueueKeybinding({
-  routeName: () => route.name,
+  routeName: () => effectiveRouteName.value,
   worktreePath: () => worktree.value?.path,
-  fileQuery: () =>
-    typeof route.query.file === "string" ? route.query.file : undefined,
+  fileQuery: () => effectiveFileQuery.value,
   gitItemIds: () => gitItemIdsRef.value,
   queue: contextQueue,
   annotations: contextQueueAnnotations,
@@ -109,14 +143,62 @@ const terminalTabItems = computed(() =>
   })),
 );
 
-const hasPanelContent = computed(
-  () =>
-    terminalTabItems.value.length > 0 ||
-    route.name === "git" ||
-    route.name === "explorer",
+const isGitVisible = computed(() =>
+  layoutMode.value === "split"
+    ? splitAuxPanel.value === "git"
+    : route.name === "git",
 );
 
+const isExplorerVisible = computed(() =>
+  layoutMode.value === "split"
+    ? splitAuxPanel.value === "explorer"
+    : route.name === "explorer",
+);
+
+const splitTerminalKey = computed(
+  () => `${activeTerminalId.value}:${effectiveTheme.value}`,
+);
+
+const splitTerminalDefaultSize = computed(() =>
+  clampSplitTerminalSize(
+    layoutPrefs.value.splitTerminalSize ?? SPLIT_TERMINAL_DEFAULT_SIZE,
+  ),
+);
+
+const splitAuxDefaultSize = computed(
+  () => 100 - splitTerminalDefaultSize.value,
+);
+
+const persistSplitTerminalSize = useDebounceFn((size: number) => {
+  if (!worktree.value?.projectId) return;
+  const next = clampSplitTerminalSize(size);
+  if (layoutPrefs.value.splitTerminalSize === next) return;
+  layoutPrefs.value = { ...layoutPrefs.value, splitTerminalSize: next };
+}, 300);
+
+function onSplitLayout(sizes: number[]) {
+  if (!splitAuxPanel.value) return;
+  const terminalSize = sizes[0];
+  if (typeof terminalSize === "number" && Number.isFinite(terminalSize)) {
+    persistSplitTerminalSize(terminalSize);
+  }
+}
+
+const hasPanelContent = computed(() => {
+  if (layoutMode.value === "split") {
+    return terminalTabItems.value.length > 0 || splitAuxPanel.value !== null;
+  }
+  return (
+    terminalTabItems.value.length > 0 ||
+    route.name === "git" ||
+    route.name === "explorer"
+  );
+});
+
 const activeId = computed(() => {
+  if (layoutMode.value === "split") {
+    return activeTerminalId.value;
+  }
   if (route.name === "terminal") return route.params.terminalId as string;
   if (route.name === "git") return gitPanelId(props.worktreeId);
   if (route.name === "explorer") return explorerPanelId(props.worktreeId);
@@ -181,14 +263,17 @@ function restoreDefaultRoute(list: { id: string }[]) {
   const state = panelsState.value;
   const lastRoute: WorktreeLastRoute = state.lastRoute ?? "terminal";
 
+  const query = buildWorkspaceQuery(
+    worktree.value?.path,
+    gitPanelState.value,
+    explorerState.value,
+  );
+
   if (lastRoute === "git" && state.git) {
-    const tab = gitPanelState.value.activeTab;
     router.replace({
       name: "git",
       params: { worktreeId: props.worktreeId },
-      query: {
-        tab: isGitPanelTabScope(tab) ? tab : GIT_PANEL_DEFAULT_TAB,
-      },
+      query,
     });
     return;
   }
@@ -197,6 +282,7 @@ function restoreDefaultRoute(list: { id: string }[]) {
     router.replace({
       name: "explorer",
       params: { worktreeId: props.worktreeId },
+      query,
     });
     return;
   }
@@ -209,6 +295,7 @@ function restoreDefaultRoute(list: { id: string }[]) {
   router.replace({
     name: "terminal",
     params: { worktreeId: props.worktreeId, terminalId: preferredId },
+    query,
   });
 }
 
@@ -254,12 +341,34 @@ async function addTerminal() {
 
 function openAuxPanel(type: "git" | "explorer") {
   if (type === "git") {
-    panelsState.value.git = true;
-    router.push({ name: "git", params: { worktreeId: props.worktreeId } });
+    panelsState.value = {
+      ...panelsState.value,
+      git: true,
+      explorer: false,
+      lastRoute: "git",
+    };
+    if (layoutMode.value === "page") {
+      router.push({
+        name: "git",
+        params: { worktreeId: props.worktreeId },
+        query: workspaceQuery(),
+      });
+    }
     return;
   }
-  panelsState.value.explorer = true;
-  router.push({ name: "explorer", params: { worktreeId: props.worktreeId } });
+  panelsState.value = {
+    ...panelsState.value,
+    explorer: true,
+    git: false,
+    lastRoute: "explorer",
+  };
+  if (layoutMode.value === "page") {
+    router.push({
+      name: "explorer",
+      params: { worktreeId: props.worktreeId },
+      query: workspaceQuery(),
+    });
+  }
 }
 
 async function closeTab(id: string) {
@@ -289,13 +398,17 @@ function navigateToFirstTerminal() {
 }
 
 function toggleAuxPanel(type: "git" | "explorer") {
-  const isActive =
-    type === "git" ? route.name === "git" : route.name === "explorer";
+  const isActive = type === "git" ? isGitVisible.value : isExplorerVisible.value;
 
   if (isActive) {
-    if (type === "git") panelsState.value.git = false;
-    else panelsState.value.explorer = false;
-    navigateToFirstTerminal();
+    if (type === "git") {
+      panelsState.value = { ...panelsState.value, git: false };
+    } else {
+      panelsState.value = { ...panelsState.value, explorer: false };
+    }
+    if (layoutMode.value === "page") {
+      navigateToFirstTerminal();
+    }
     return;
   }
 
@@ -400,9 +513,9 @@ function openResumeDialog(terminalId: string) {
         <Button
           variant="ghost"
           size="icon-xs"
-          :class="auxIconClass(route.name === 'explorer')"
+          :class="auxIconClass(isExplorerVisible)"
           aria-label="File explorer"
-          :aria-pressed="route.name === 'explorer'"
+          :aria-pressed="isExplorerVisible"
           @click="toggleAuxPanel('explorer')"
         >
           <FolderTreeIcon />
@@ -410,9 +523,9 @@ function openResumeDialog(terminalId: string) {
         <Button
           variant="ghost"
           size="icon-xs"
-          :class="auxIconClass(route.name === 'git')"
+          :class="auxIconClass(isGitVisible)"
           aria-label="Git"
-          :aria-pressed="route.name === 'git'"
+          :aria-pressed="isGitVisible"
           @click="toggleAuxPanel('git')"
         >
           <GitBranchIcon />
@@ -438,9 +551,9 @@ function openResumeDialog(terminalId: string) {
           <Button
             variant="ghost"
             size="icon-xs"
-            :class="auxIconClass(route.name === 'explorer')"
+            :class="auxIconClass(isExplorerVisible)"
             aria-label="File explorer"
-            :aria-pressed="route.name === 'explorer'"
+            :aria-pressed="isExplorerVisible"
             @click="toggleAuxPanel('explorer')"
           >
             <FolderTreeIcon />
@@ -448,16 +561,62 @@ function openResumeDialog(terminalId: string) {
           <Button
             variant="ghost"
             size="icon-xs"
-            :class="auxIconClass(route.name === 'git')"
+            :class="auxIconClass(isGitVisible)"
             aria-label="Git"
-            :aria-pressed="route.name === 'git'"
+            :aria-pressed="isGitVisible"
             @click="toggleAuxPanel('git')"
           >
             <GitBranchIcon />
           </Button>
         </div>
       </div>
-      <RouterView v-else :key="routerViewKey" class="absolute border-t inset-0" />
+      <RouterView
+        v-else-if="layoutMode === 'page'"
+        :key="routerViewKey"
+        class="absolute border-t inset-0"
+      />
+      <ResizablePanelGroup
+        v-else
+        direction="horizontal"
+        class="absolute inset-0 border-t"
+        @layout="onSplitLayout"
+      >
+        <ResizablePanel
+          v-if="activeTerminalId"
+          id="split-terminal"
+          :min-size="SPLIT_TERMINAL_MIN_SIZE"
+          :default-size="splitTerminalDefaultSize"
+          class="flex min-h-0 min-w-0 flex-col"
+        >
+          <Terminal
+            :key="splitTerminalKey"
+            :session-id="activeTerminalId"
+            class="min-h-0 flex-1"
+          />
+        </ResizablePanel>
+        <ResizableHandle
+          v-if="activeTerminalId && splitAuxPanel"
+          with-handle
+        />
+        <ResizablePanel
+          v-if="splitAuxPanel === 'git'"
+          id="split-git"
+          :min-size="SPLIT_AUX_MIN_SIZE"
+          :default-size="splitAuxDefaultSize"
+          class="flex min-h-0 min-w-0 flex-col overflow-hidden"
+        >
+          <GitPanel :worktree-id="worktreeId" class="min-h-0 flex-1" />
+        </ResizablePanel>
+        <ResizablePanel
+          v-else-if="splitAuxPanel === 'explorer'"
+          id="split-explorer"
+          :min-size="SPLIT_AUX_MIN_SIZE"
+          :default-size="splitAuxDefaultSize"
+          class="flex min-h-0 min-w-0 flex-col overflow-hidden"
+        >
+          <FileExplorerPanel :worktree-id="worktreeId" class="min-h-0 flex-1" />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
 
     <TerminalResumeDialog

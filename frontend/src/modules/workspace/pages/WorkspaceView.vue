@@ -3,6 +3,7 @@ import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import WorkspaceLayout from "@/modules/workspace/layout/WorkspaceLayout.vue";
 import TerminalWorkspace from "@/modules/terminal/layout/TerminalWorkspace.vue";
+import WorkspaceSidebarToggle from "@/modules/workspace/components/WorkspaceSidebarToggle.vue";
 import {
   projectsQueryOptions,
   worktreeQueryOptions,
@@ -56,7 +57,7 @@ watch(
     </TerminalWorkspace>
 
     <div v-else class="flex h-full min-h-0 flex-1 flex-col">
-      <header class="flex h-8 shrink-0 items-stretch border-b bg-muted">
+      <header class="flex h-8 shrink-0 items-center border-b bg-muted px-1">
         <WorkspaceSidebarToggle />
       </header>
       <div

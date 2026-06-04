@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +32,8 @@ type clientConn struct {
 }
 
 type ptyEntry struct {
+	worktreeID     string
+	title          string
 	cwd            string
 	resumeCommand  *string
 	resumeTrusted  bool
@@ -46,22 +49,34 @@ type ptyEntry struct {
 	idleTimer    *time.Timer
 	lastActivity int64
 	exitCode     *int
+	agentStatus            string
+	agentResumeAttempted   bool
+	exited                 bool
 }
+
 
 // Registry is the PTY registry.
 type Registry struct {
 	mu      sync.RWMutex
 	entries map[string]*ptyEntry
 
-	capBytes    int
-	idleTTL     time.Duration
-	onCmdComplete func(terminalID string, report OscCommandReport)
+	capBytes                  int
+	idleTTL                   time.Duration
+	serverPort                int
+	autoResumeAgentSessions   func() bool
+	agentHooksEnabled         func(kind string) bool
+	buildAgentResumeArgv      func(kind, sessionID string) []string
+	onCmdComplete             func(terminalID string, report OscCommandReport)
 }
 
 type RegistryConfig struct {
-	CapBytes      int
-	IdleTTL       time.Duration
-	OnCmdComplete func(terminalID string, report OscCommandReport)
+	CapBytes                  int
+	IdleTTL                   time.Duration
+	ServerPort                int
+	AutoResumeAgentSessions   func() bool
+	AgentHooksEnabled         func(kind string) bool
+	BuildAgentResumeArgv      func(kind, sessionID string) []string
+	OnCmdComplete             func(terminalID string, report OscCommandReport)
 }
 
 func NewRegistry(cfg RegistryConfig) *Registry {
@@ -74,10 +89,14 @@ func NewRegistry(cfg RegistryConfig) *Registry {
 		idleTTL = 24 * time.Hour
 	}
 	return &Registry{
-		entries:       make(map[string]*ptyEntry),
-		capBytes:      capBytes,
-		idleTTL:       idleTTL,
-		onCmdComplete: cfg.OnCmdComplete,
+		entries:              make(map[string]*ptyEntry),
+		capBytes:             capBytes,
+		idleTTL:              idleTTL,
+		serverPort:           cfg.ServerPort,
+		autoResumeAgentSessions: cfg.AutoResumeAgentSessions,
+		agentHooksEnabled:       cfg.AgentHooksEnabled,
+		buildAgentResumeArgv:    cfg.BuildAgentResumeArgv,
+		onCmdComplete:        cfg.OnCmdComplete,
 	}
 }
 
@@ -94,13 +113,21 @@ func processEnv() map[string]string {
 	return env
 }
 
-func (reg *Registry) getOrCreate(terminalID string, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string) *ptyEntry {
+func (reg *Registry) getOrCreate(terminalID, worktreeID, title, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string) *ptyEntry {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 	if e, ok := reg.entries[terminalID]; ok {
+		if worktreeID != "" {
+			e.worktreeID = worktreeID
+		}
+		if title != "" {
+			e.title = title
+		}
 		return e
 	}
 	e := &ptyEntry{
+		worktreeID:     worktreeID,
+		title:          title,
 		cwd:            cwd,
 		resumeCommand:  resumeCommand,
 		resumeTrusted:  resumeTrusted,
@@ -116,8 +143,8 @@ func (reg *Registry) getOrCreate(terminalID string, cwd string, resumeCommand *s
 
 // Attach connects a client to a terminal.
 // skipReplay: don't send ring contents (reconnect case).
-func (reg *Registry) Attach(terminalID string, conn *clientConn, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string, skipReplay bool) {
-	e := reg.getOrCreate(terminalID, cwd, resumeCommand, resumeTrusted, agentKind, agentSessionID)
+func (reg *Registry) Attach(terminalID, worktreeID, title string, conn *clientConn, cwd string, resumeCommand *string, resumeTrusted bool, agentKind, agentSessionID *string, skipReplay bool) {
+	e := reg.getOrCreate(terminalID, worktreeID, title, cwd, resumeCommand, resumeTrusted, agentKind, agentSessionID)
 
 	// Load from disk if not yet loaded
 	if e.ring.ByteLen() == 0 {
@@ -144,6 +171,8 @@ func (reg *Registry) Attach(terminalID string, conn *clientConn, cwd string, res
 			}
 		}
 	}
+
+	reg.maybeInjectAgentResume(terminalID, e)
 }
 
 // Detach disconnects a client and schedules idle kill if no clients remain.
@@ -224,6 +253,7 @@ func (reg *Registry) spawnPTY(terminalID string, e *ptyEntry, cols, rows uint16)
 	baseEnv := processEnv()
 	sanitized := SanitizeEnv(baseEnv)
 	spawnCfg := ShellIntegrationSpawn(shellPath, sanitized)
+	ApplyWorkbenchEnv(spawnCfg.Env, terminalID, e.worktreeID, e.title, reg.serverPort)
 
 	envSlice := make([]string, 0, len(spawnCfg.Env))
 	for k, v := range spawnCfg.Env {
@@ -236,10 +266,13 @@ func (reg *Registry) spawnPTY(terminalID string, e *ptyEntry, cols, rows uint16)
 		cwd = home
 	}
 
-	// Apply resume command if trusted
+	// Apply trusted custom resume or agent session resume when the agent is not running.
 	args := spawnCfg.Args
 	if e.resumeCommand != nil && e.resumeTrusted && *e.resumeCommand != "" {
 		args = append(args, "-c", fmt.Sprintf("%s; exec %s -l", *e.resumeCommand, shellPath))
+	} else if resumeCmd, ok := reg.shouldAutoResumeAgent(e); ok {
+		args = append(args, "-c", fmt.Sprintf("%s; exec %s -l", resumeCmd, shellPath))
+		e.markAgentResumeAttempted()
 	}
 
 	cmd := buildCmd(shellPath, args, envSlice, cwd)
@@ -322,6 +355,7 @@ func (reg *Registry) spawnPTY(terminalID string, e *ptyEntry, cols, rows uint16)
 
 		// PTY exited
 		e.mu.Lock()
+		e.exited = true
 		for c := range e.clients {
 			close(c.done)
 		}
@@ -375,6 +409,65 @@ func (reg *Registry) Has(terminalID string) bool {
 	_, ok := reg.entries[terminalID]
 	reg.mu.RUnlock()
 	return ok
+}
+
+// GetAgentStatus returns the current status and liveness of a terminal entry.
+func (reg *Registry) GetAgentStatus(terminalID string) (status string, isAlive bool) {
+	reg.mu.RLock()
+	e, ok := reg.entries[terminalID]
+	reg.mu.RUnlock()
+	if !ok {
+		return "done", false
+	}
+	e.mu.Lock()
+	status = e.agentStatus
+	isAlive = e.ptySide != nil && !e.exited
+	e.mu.Unlock()
+	if status == "" {
+		if isAlive {
+			status = "running"
+		} else {
+			status = "done"
+		}
+	}
+	return status, isAlive
+}
+
+// SetAgentStatus updates the agent status for a terminal entry.
+func (reg *Registry) SetAgentStatus(terminalID, status string) bool {
+	reg.mu.RLock()
+	e, ok := reg.entries[terminalID]
+	reg.mu.RUnlock()
+	if !ok {
+		return false
+	}
+	e.mu.Lock()
+	e.agentStatus = status
+	if strings.EqualFold(strings.TrimSpace(status), "done") {
+		e.agentResumeAttempted = false
+	}
+	e.mu.Unlock()
+	return true
+}
+
+func (reg *Registry) maybeInjectAgentResume(terminalID string, e *ptyEntry) {
+	resumeCmd, ok := reg.shouldAutoResumeAgent(e)
+	if !ok {
+		return
+	}
+	e.mu.Lock()
+	ptySide := e.ptySide
+	exited := e.exited
+	e.mu.Unlock()
+	if ptySide == nil || exited {
+		return
+	}
+	line := resumeCmd + "\n"
+	if _, err := ptySide.Write([]byte(line)); err != nil {
+		slog.Warn("agent resume inject failed", "terminalId", terminalID, "err", err)
+		return
+	}
+	e.markAgentResumeAttempted()
 }
 
 func (reg *Registry) Shutdown() {

@@ -200,3 +200,8 @@ On attach, server replays in-memory ring buffer (and may hydrate from disk first
 3. **Reconnect** — Client clears screen and reconnects WS after 1s on disconnect (unless disposed).
 4. **Idle kill** — No WebSocket clients → timer (`ptyIdleTtlHours` from settings) → `registry.kill` → optional scrollback dump.
 5. **OSC** — Shell integration reports cwd, window title, and command exit; client updates tab labels and optional success bell.
+
+## Related
+
+- [Notifications](./notifications.md) — agent hooks and `workbench-cli notify` (adapted from [cmux notifications](https://cmux.com/docs/notifications))
+- [Session restore plan](./session-restore-plan.md)

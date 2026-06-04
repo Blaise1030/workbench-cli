@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { patchToCodeViewItems } from "@/modules/git/lib/git-diff-items";
+import { excludeUntrackedDiffItems } from "@/modules/git/lib/git-unstaged-filter";
 import {
   selectAllPathsState,
   selectablePathsFromDiffItems,
@@ -67,13 +68,15 @@ const props = defineProps<{
 const route = useRoute();
 const router = useRouter();
 
+const ownsRoute = computed(() => route.name === "git");
+
 const gitState = useGitPanelStorage(() => props.worktreeId);
 
 function resolveActiveTab(): GitPanelTabScope {
-  const fromRoute = normalizeGitPanelTabScope(route.query.tab);
-  if (fromRoute) return fromRoute;
   const stored = normalizeGitPanelTabScope(gitState.value.activeTab);
   if (stored) return stored;
+  const fromRoute = normalizeGitPanelTabScope(route.query.tab);
+  if (fromRoute) return fromRoute;
   return GIT_PANEL_DEFAULT_TAB;
 }
 
@@ -97,6 +100,7 @@ function setCollapsedIdsForTab(tab: GitPanelTabScope, ids: string[]) {
 watch(
   () => route.query.tab,
   (tab) => {
+    if (!ownsRoute.value) return;
     const normalized = normalizeGitPanelTabScope(tab);
     if (normalized) {
       if (tab !== normalized) {
@@ -124,10 +128,21 @@ watch(activeTab, (tab) => {
   if (gitState.value.activeTab !== tab) {
     gitState.value = { ...gitState.value, activeTab: tab };
   }
-  if (route.query.tab !== tab) {
+  if (ownsRoute.value && route.query.tab !== tab) {
     router.replace({ query: { ...route.query, tab } });
   }
 });
+
+watch(
+  () => props.worktreeId,
+  () => {
+    const tab = normalizeGitPanelTabScope(gitState.value.activeTab) ?? GIT_PANEL_DEFAULT_TAB;
+    activeTab.value = tab;
+    if (ownsRoute.value) {
+      router.replace({ query: { ...route.query, tab } });
+    }
+  },
+);
 
 const showBackgrounds = ref(true);
 const showLineNumbers = ref(true);
@@ -203,9 +218,17 @@ const changedFiles = computed(() => gitStatus.value?.files ?? []);
 
 const diffItemsByTab = computed(() => {
   const items = {} as Record<GitPanelTabScope, ReturnType<typeof patchToCodeViewItems>>;
+  const statusFiles = changedFiles.value;
   for (const scope of GIT_PANEL_TAB_SCOPES) {
     const patch = toValue(gitDiffByScope.value.get(scope)?.data)?.patch ?? "";
-    items[scope] = patchToCodeViewItems(patch, `${props.worktreeId}-${scope}`);
+    let scopeItems = patchToCodeViewItems(
+      patch,
+      `${props.worktreeId}-${scope}`,
+    );
+    if (scope === "unstaged") {
+      scopeItems = excludeUntrackedDiffItems(scopeItems, statusFiles);
+    }
+    items[scope] = scopeItems;
   }
   return items;
 });
@@ -249,18 +272,20 @@ const displayBranch = computed(
   () => gitStatus.value?.branch ?? worktree.value?.branch ?? "detached",
 );
 
-/** Files with anything in the working tree (modified + untracked). */
+/** Tracked files with unstaged working-tree changes (excludes untracked). */
 const unstagedCount = computed(
-  () => changedFiles.value.filter((f) => f.unstaged != null).length,
+  () =>
+    changedFiles.value.filter(
+      (f) => f.unstaged != null && f.unstaged !== "untracked",
+    ).length,
 );
 /** Files with anything in the index vs HEAD. */
 const stagedCount = computed(
   () => changedFiles.value.filter((f) => f.staged != null).length,
 );
 
+/** Tab badges follow `git status` buckets, not diff hunk count (diff can differ). */
 function tabCount(tab: GitPanelTabScope): number {
-  const items = diffItemsByTab.value[tab];
-  if (!isDiffPending(tab) && items.length > 0) return items.length;
   return tab === "staged" ? stagedCount.value : unstagedCount.value;
 }
 

@@ -2,10 +2,10 @@
 import type { Component } from "vue";
 import { useRouter, useRoute, RouterView, RouterLink } from "vue-router";
 import {
+  BotIcon,
   ChevronLeftIcon,
   GlobeIcon,
   KeyboardIcon,
-  Settings2Icon,
 } from "@lucide/vue";
 import {
   Sidebar,
@@ -30,7 +30,7 @@ function leaveSettings() {
 }
 
 const navItems: { label: string; name: string; icon: Component }[] = [
-  { label: "General", name: "settings-general", icon: Settings2Icon },
+  { label: "Agents", name: "settings-agents", icon: BotIcon },
   { label: "Network", name: "settings-network", icon: GlobeIcon },
   { label: "Keybindings", name: "settings-keybindings", icon: KeyboardIcon },
 ];

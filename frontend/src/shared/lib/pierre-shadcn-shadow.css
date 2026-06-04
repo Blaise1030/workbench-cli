@@ -1,0 +1,70 @@
+/* Injected into Pierre shadow roots via unsafeCSS — uses inherited shadcn tokens. */
+@layer unsafe {
+  :host {
+    --diffs-font-family: var(--font-mono);
+    --diffs-header-font-family: var(--font-sans);
+
+    --diffs-light: var(--foreground) !important;
+    --diffs-dark: var(--foreground) !important;
+    --diffs-light-bg: var(--background) !important;
+    --diffs-dark-bg: var(--background) !important;
+    --diffs-fg: var(--foreground) !important;
+    --diffs-bg: var(--background) !important;
+
+    --diffs-light-addition-color: var(--diff-addition) !important;
+    --diffs-dark-addition-color: var(--diff-addition) !important;
+    --diffs-light-deletion-color: var(--destructive) !important;
+    --diffs-dark-deletion-color: var(--destructive) !important;
+    --diffs-light-modified-color: var(--primary) !important;
+    --diffs-dark-modified-color: var(--primary) !important;
+
+    --diffs-deletion-color-override: var(--destructive);
+    --diffs-addition-color-override: var(--diff-addition);
+    --diffs-modified-color-override: var(--primary);
+
+    --diffs-bg-deletion-override: color-mix(
+      in lab,
+      var(--background) 94%,
+      var(--destructive)
+    );
+    --diffs-bg-addition-override: color-mix(
+      in lab,
+      var(--background) 94%,
+      var(--diff-addition)
+    );
+    --diffs-bg-deletion-emphasis-override: color-mix(
+      in lab,
+      var(--background) 88%,
+      var(--destructive)
+    );
+    --diffs-bg-addition-emphasis-override: color-mix(
+      in lab,
+      var(--background) 88%,
+      var(--diff-addition)
+    );
+
+    --diffs-bg-context-override: var(--muted);
+    --diffs-bg-context-gutter-override: color-mix(
+      in lab,
+      var(--muted) 80%,
+      var(--background)
+    );
+    --diffs-bg-separator-override: var(--muted);
+    --diffs-bg-buffer-override: color-mix(
+      in lab,
+      var(--background) 96%,
+      var(--foreground)
+    );
+    --diffs-fg-number-override: var(--muted-foreground);
+    --diffs-fg-number-addition-override: color-mix(
+      in lab,
+      var(--diff-addition) 70%,
+      var(--muted-foreground)
+    );
+    --diffs-fg-number-deletion-override: color-mix(
+      in lab,
+      var(--destructive) 70%,
+      var(--muted-foreground)
+    );
+  }
+}

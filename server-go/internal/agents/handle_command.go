@@ -22,22 +22,33 @@ func HandleCommandComplete(
 	if event.CommandLine == nil || *event.CommandLine == "" {
 		return
 	}
+	agentsFile := settings.NewAgentsStore().Load()
+	agent := settings.MatchAgentByCommand(*event.CommandLine, agentsFile)
 	adapter := MatchAdapter(*event.CommandLine)
-	if adapter == nil {
+	if agent == nil && adapter == nil {
 		return
 	}
-	if !settings.GetBool(store, "terminal.agentHooks."+adapter.Kind+".enabled", true) {
+	kind := ""
+	if agent != nil {
+		kind = agent.ID
+	} else {
+		kind = adapter.Kind
+	}
+	if !settings.GetBool(store, "terminal.agentHooks."+kind+".enabled", true) {
 		return
 	}
-	sessionID := adapter.FindLatest(cwd, DefaultHome())
+	var sessionID string
+	if adapter != nil {
+		sessionID = adapter.FindLatest(cwd, DefaultHome())
+	}
 	if sessionID == "" {
 		return
 	}
-	if err := workspace.UpdateTerminalAgentSession(db, terminalID, adapter.Kind, sessionID); err != nil {
+	if err := workspace.UpdateTerminalAgentSession(db, terminalID, kind, sessionID); err != nil {
 		slog.Error("update agent session", "terminalId", terminalID, "err", err)
 		return
 	}
 	if onStored != nil {
-		onStored(adapter.Kind, sessionID)
+		onStored(kind, sessionID)
 	}
 }

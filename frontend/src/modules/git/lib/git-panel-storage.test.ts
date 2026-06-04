@@ -13,8 +13,10 @@ describe("git-panel-storage", () => {
     expect(isGitPanelTabScope(undefined)).toBe(false);
   });
 
-  it("maps legacy untracked tab to unstaged", () => {
+  it("maps untracked tab query to unstaged", () => {
     expect(normalizeGitPanelTabScope("untracked")).toBe("unstaged");
     expect(normalizeGitPanelTabScope("staged")).toBe("staged");
+    expect(normalizeGitPanelTabScope("unstaged")).toBe("unstaged");
+    expect(normalizeGitPanelTabScope("invalid")).toBeUndefined();
   });
 });

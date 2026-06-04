@@ -176,7 +176,31 @@ func DeleteTerminal(db *sql.DB, id string, onKill func(string)) error {
 	return err
 }
 
+// ListAgentTerminals returns all terminals that have an agent_kind set.
+func ListAgentTerminals(db *sql.DB) ([]Terminal, error) {
+	rows, err := db.Query(`SELECT `+terminalCols+` FROM terminals WHERE agent_kind IS NOT NULL ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Terminal
+	for rows.Next() {
+		t, err := scanTerminal(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	if out == nil {
+		out = []Terminal{}
+	}
+	return out, nil
+}
+
 func UpdateTerminalAgentSession(db *sql.DB, id, agentKind, agentSessionID string) error {
-	_, err := db.Exec(`UPDATE terminals SET agent_kind=?, agent_session_id=? WHERE id=?`, agentKind, agentSessionID, id)
+	// Only set agent_kind when it is not yet assigned; subsequent calls (e.g. status
+	// heartbeats from Claude Code PreToolUse hooks) must not overwrite a kind that was
+	// already registered by a different agent (e.g. cursor).
+	_, err := db.Exec(`UPDATE terminals SET agent_kind=COALESCE(agent_kind,?), agent_session_id=? WHERE id=?`, agentKind, agentSessionID, id)
 	return err
 }

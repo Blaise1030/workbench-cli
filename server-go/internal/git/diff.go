@@ -97,9 +97,7 @@ func GetDiff(repoPath string, scope DiffScope, path string) (string, error) {
 		if path != "" {
 			unstagedArgs = append(unstagedArgs, "--", path)
 		}
-		unstaged, _ := runGitAllowExit1(repoPath, unstagedArgs)
-		untracked, _ := untrackedDiff(repoPath, path)
-		return joinPatches(unstaged, untracked), nil
+		return runGitAllowExit1(repoPath, unstagedArgs)
 	default: // DiffAll
 		args := []string{"diff", "HEAD"}
 		if path != "" {
@@ -107,14 +105,4 @@ func GetDiff(repoPath string, scope DiffScope, path string) (string, error) {
 		}
 		return runGitAllowExit1(repoPath, args)
 	}
-}
-
-func joinPatches(parts ...string) string {
-	var nonEmpty []string
-	for _, p := range parts {
-		if strings.TrimSpace(p) != "" {
-			nonEmpty = append(nonEmpty, p)
-		}
-	}
-	return strings.Join(nonEmpty, "\n")
 }

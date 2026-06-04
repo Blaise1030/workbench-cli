@@ -170,7 +170,7 @@ func CreateWorktreeForProject(db *sql.DB, projectID string, body CreateWorktreeB
 	if body.Path != nil && *body.Path != "" {
 		wtPath = *body.Path
 	} else {
-		wtPath = p.RepoPath + "/../" + body.Branch
+		wtPath = filepath.Clean(p.RepoPath + "/../" + body.Branch)
 	}
 	args = append(args, wtPath)
 

@@ -14,3 +14,6 @@ tsx-501
 .playwright-mcp/
 .superpowers/
 docs/superpowers/
+
+# Local marketing / social drafts (not versioned)
+marketing/

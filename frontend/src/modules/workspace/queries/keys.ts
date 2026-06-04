@@ -13,7 +13,7 @@ export const workspaceKeys = {
     [...workspaceKeys.all, "git-status", worktreeId] as const,
   gitDiff: (
     worktreeId: string,
-    scope: "all" | "staged" | "unstaged",
+    scope: "all" | "staged" | "unstaged" | "untracked",
     path: string | null,
   ) =>
     [...workspaceKeys.all, "git-diff", worktreeId, scope, path] as const,

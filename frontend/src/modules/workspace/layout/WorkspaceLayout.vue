@@ -12,6 +12,10 @@ import {
   createWorkspaceSidebarStore,
   workspaceSidebarKey,
 } from "@/modules/workspace/hooks/workspace-sidebar";
+import {
+  createTerminalSessionsStore,
+  terminalSessionsKey,
+} from "@/modules/terminal/hooks/terminal-sessions";
 
 defineProps<{
   activeWorktreeId?: string;
@@ -30,6 +34,9 @@ const sidebarWidth = useLocalStorage(STORAGE_KEY, DEFAULT_WIDTH_PX);
 
 const workspaceSidebar = createWorkspaceSidebarStore();
 provide(workspaceSidebarKey, workspaceSidebar);
+
+const terminalSessions = createTerminalSessionsStore();
+provide(terminalSessionsKey, terminalSessions);
 
 const sidebarDefaultSize = computed(() => clampWidth(sidebarWidth.value));
 

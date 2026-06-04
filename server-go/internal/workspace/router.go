@@ -14,8 +14,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/git"
 )
+
+func publishEvent(bus *events.Bus, topics ...string) {
+	if bus == nil {
+		return
+	}
+	data, _ := json.Marshal(map[string][]string{"topics": topics})
+	bus.Publish(string(data))
+}
 
 func jsonResp(w http.ResponseWriter, v any, code int) {
 	w.Header().Set("Content-Type", "application/json")
@@ -63,7 +72,7 @@ func domainStatus(err error) int {
 	return http.StatusInternalServerError
 }
 
-func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
+func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus) {
 	r.Use(auth.RequireSession(session))
 
 	// Projects
@@ -89,6 +98,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]any{"project": p}, http.StatusCreated)
+		publishEvent(bus, "worktrees")
 	})
 	r.Post("/projects/pick-folder", func(w http.ResponseWriter, r *http.Request) {
 		if !auth.IsLocalRequest(r) {
@@ -106,6 +116,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]any{"project": p}, http.StatusCreated)
+		publishEvent(bus, "worktrees")
 	})
 	r.Delete("/projects/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if err := DeleteProject(db, chi.URLParam(r, "id")); err != nil {
@@ -113,6 +124,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "worktrees")
 	})
 	r.Get("/projects/{id}/branches", func(w http.ResponseWriter, r *http.Request) {
 		p, err := GetProject(db, chi.URLParam(r, "id"))
@@ -126,6 +138,28 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 		}
 		defaultBranch := git.GetDefaultBranch(p.RepoPath)
 		jsonResp(w, map[string]any{"branches": branches, "defaultBranch": defaultBranch}, http.StatusOK)
+	})
+
+	r.Post("/projects/{id}/checkout", func(w http.ResponseWriter, r *http.Request) {
+		p, err := GetProject(db, chi.URLParam(r, "id"))
+		if err != nil || p == nil {
+			wsErr(w, "Project not found", http.StatusNotFound)
+			return
+		}
+		var body struct {
+			Branch string `json:"branch"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Branch) == "" {
+			wsErr(w, "branch is required", http.StatusBadRequest)
+			return
+		}
+		if _, err := git.Run(p.RepoPath, []string{"checkout", body.Branch}); err != nil {
+			wsErr(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_ = syncWorktreesForProject(db, p.ID)
+		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "worktrees")
 	})
 
 	// Worktrees under project
@@ -149,6 +183,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]any{"worktree": wt}, http.StatusCreated)
+		publishEvent(bus, "worktrees")
 	})
 
 	// Individual worktree
@@ -166,6 +201,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "worktrees")
 	})
 
 	// Files
@@ -373,6 +409,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "git-status:"+chi.URLParam(r, "id"))
 	})
 	r.Post("/worktrees/{id}/git/commit", func(w http.ResponseWriter, r *http.Request) {
 		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
@@ -392,6 +429,7 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session) {
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		publishEvent(bus, "git-status:"+chi.URLParam(r, "id"))
 	})
 
 	// Drop assets (multipart)

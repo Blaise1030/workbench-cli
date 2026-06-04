@@ -4,6 +4,8 @@ import { computed, type MaybeRefOrGetter, toValue } from "vue";
 export interface FileExplorerWorktreeState {
   /** Tree panel size as a percentage of the split (15–55). */
   treeSize?: number;
+  /** Whether the file tree sidebar is collapsed. */
+  treeCollapsed?: boolean;
   /** Path relative to the worktree root. */
   lastFilePath?: string;
   /** Open file tabs (relative paths), in tab order. Scoped per worktree. */
@@ -14,6 +16,8 @@ export interface FileExplorerWorktreeState {
   markdownOnly?: boolean;
   /** Whether markdown files open in rendered preview instead of the editor. */
   markdownPreview?: boolean;
+  /** Editor scroll position per file (relative path → scrollTop pixels). */
+  scrollPositions?: Record<string, number>;
 }
 
 /** Ancestor directory paths for a file or folder path (not including the path itself). */

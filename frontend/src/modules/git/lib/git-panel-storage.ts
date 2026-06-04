@@ -12,7 +12,6 @@ export function isGitPanelTabScope(value: unknown): value is GitPanelTabScope {
   return value === "staged" || value === "unstaged";
 }
 
-/** Legacy tab value from older panel versions. */
 export function normalizeGitPanelTabScope(
   value: unknown,
 ): GitPanelTabScope | undefined {

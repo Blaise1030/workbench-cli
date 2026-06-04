@@ -6,6 +6,7 @@ import {
   PIERRE_DIFF_RENDER_OPTIONS,
   PIERRE_DIFF_THEME,
 } from "@/shared/lib/pierre-config";
+import "@/shared/lib/pierre-shadcn-theme";
 import { PIERRE_SHIKI_LANGS } from "@/shared/lib/pierre-shiki-langs";
 
 export { PIERRE_DIFF_RENDER_OPTIONS, PIERRE_DIFF_THEME };
@@ -22,7 +23,7 @@ export function getPierreWorkerPool(): WorkerPoolManager {
     pool = getOrCreateWorkerPoolSingleton({
       poolOptions: {
         workerFactory: () => new Worker(WorkerUrl, { type: "module" }),
-        poolSize: 3,
+        poolSize: 1,
       },
       highlighterOptions: {
         theme: PIERRE_DIFF_THEME,
