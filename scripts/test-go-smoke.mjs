@@ -5,7 +5,8 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +18,7 @@ const HEALTH_URL = `http://127.0.0.1:${PORT}/api/health`;
 const ROOT_URL = `http://127.0.0.1:${PORT}/`;
 const POLL_MS = 300;
 const TIMEOUT_MS = 15_000;
+const TEST_HOME = mkdtempSync(join(tmpdir(), "workbench-smoke-"));
 
 if (!existsSync(BINARY)) {
   console.error(`Binary not found: ${BINARY}`);
@@ -26,6 +28,11 @@ if (!existsSync(BINARY)) {
 
 const server = spawn(BINARY, ["--http", `-p`, String(PORT), "-y"], {
   stdio: ["ignore", "pipe", "pipe"],
+  env: {
+    ...process.env,
+    HOME: TEST_HOME,
+    USERPROFILE: TEST_HOME,
+  },
 });
 
 server.stdout.on("data", (d) => process.stdout.write(d));
@@ -76,6 +83,7 @@ try {
   exitCode = 1;
 } finally {
   server.kill("SIGTERM");
+  rmSync(TEST_HOME, { recursive: true, force: true });
 }
 
 process.exit(exitCode);
