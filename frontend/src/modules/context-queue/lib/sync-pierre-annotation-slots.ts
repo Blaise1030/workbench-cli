@@ -24,13 +24,29 @@ export function annotationSlotSignature(
   ].join("|");
 }
 
-function existingSlotsByName(host: HTMLElement): Map<string, HTMLElement> {
+export function annotationSlotsByName(
+  elements: Iterable<HTMLElement>,
+): Map<string, HTMLElement> {
   const map = new Map<string, HTMLElement>();
-  for (const el of host.querySelectorAll(".context-queue-annotation-slot")) {
+  for (const el of elements) {
     const slot = el.getAttribute("slot");
-    if (slot) map.set(slot, el as HTMLElement);
+    if (!slot) continue;
+    const existing = map.get(slot);
+    if (existing) {
+      el.remove();
+      continue;
+    }
+    map.set(slot, el as HTMLElement);
   }
   return map;
+}
+
+function existingSlotsByName(host: HTMLElement): Map<string, HTMLElement> {
+  return annotationSlotsByName(
+    host.querySelectorAll(
+      "[data-annotation-slot], .context-queue-annotation-slot",
+    ) as NodeListOf<HTMLElement>,
+  );
 }
 
 /** Pierre skips renderAnnotations() when CodeView owns the container; fill slots ourselves. */

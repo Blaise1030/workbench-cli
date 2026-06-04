@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { annotationSlotSignature } from "./sync-pierre-annotation-slots";
+import {
+  annotationSlotSignature,
+  annotationSlotsByName,
+} from "./sync-pierre-annotation-slots";
 import type { StoredContextQueueAnnotation } from "./context-queue-annotations-state";
 
 const annotation: StoredContextQueueAnnotation = {
@@ -40,5 +43,24 @@ describe("annotationSlotSignature", () => {
     expect(annotationSlotSignature(annotation)).toBe(
       annotationSlotSignature(annotation),
     );
+  });
+});
+
+describe("annotationSlotsByName", () => {
+  it("keeps one wrapper per annotation slot and removes duplicates", () => {
+    const removed: string[] = [];
+    const slot = (name: string, id: string) =>
+      ({
+        getAttribute: (attr: string) => (attr === "slot" ? name : null),
+        remove: () => removed.push(id),
+      }) as HTMLElement;
+
+    const first = slot("annotation-4", "first");
+    const second = slot("annotation-4", "second");
+
+    const slots = annotationSlotsByName([first, second]);
+
+    expect(slots.get("annotation-4")).toBe(first);
+    expect(removed).toEqual(["second"]);
   });
 });

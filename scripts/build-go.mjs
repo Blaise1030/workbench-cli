@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { goMissingMessage, resolveGoBin } from "./go-bin.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const serverGo = join(root, "server-go");
@@ -15,6 +16,12 @@ const indexHtml = join(root, "dist/public/index.html");
 const embedPublic = join(serverGo, "internal/assets/public");
 const outBinary = join(root, "bin", "workbench-cli");
 const skipUi = process.argv.includes("--skip-ui");
+const goBin = resolveGoBin();
+
+if (!goBin) {
+  console.error(goMissingMessage());
+  process.exit(1);
+}
 
 if (!skipUi) {
   if (!existsSync(indexHtml)) {
@@ -44,7 +51,7 @@ mkdirSync(join(root, "bin"), { recursive: true });
 
 console.log("Building Go server (embed, stripped) …");
 execFileSync(
-  "go",
+  goBin,
   [
     "build",
     "-tags",

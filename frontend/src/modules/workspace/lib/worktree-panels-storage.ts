@@ -13,12 +13,15 @@ export type WorktreeLastRoute = "terminal" | "git" | "explorer";
 
 export type LayoutMode = "page" | "split";
 
-/** Split layout prefs shared across worktrees in a project. */
-export interface ProjectLayoutPrefs {
+/** Split layout prefs shared across the workspace. */
+export interface WorkspaceLayoutPrefs {
   layoutMode?: LayoutMode;
   /** Terminal pane size (% of split row) when an aux panel is open. */
   splitTerminalSize?: number;
 }
+
+/** @deprecated Project-scoped layout prefs are migrated to workspace prefs. */
+export type ProjectLayoutPrefs = WorkspaceLayoutPrefs;
 
 export interface WorktreeAuxPanelsState {
   git: boolean;
@@ -68,31 +71,48 @@ export function buildWorkspaceQuery(
 }
 
 const STORAGE_PREFIX = "workbench:worktree-panels:";
+const WORKSPACE_LAYOUT_KEY = "workbench:workspace-layout";
 const PROJECT_LAYOUT_PREFIX = "workbench:project-layout:";
+
+export function migrateLayoutPrefsToWorkspace(
+  workspacePrefs: WorkspaceLayoutPrefs,
+  ...legacyPrefs: Array<WorkspaceLayoutPrefs | WorktreeAuxPanelsState>
+): WorkspaceLayoutPrefs | null {
+  const next: WorkspaceLayoutPrefs = { ...workspacePrefs };
+  let changed = false;
+  for (const prefs of legacyPrefs) {
+    if (next.layoutMode === undefined && prefs.layoutMode !== undefined) {
+      next.layoutMode = prefs.layoutMode;
+      changed = true;
+    }
+    if (
+      next.splitTerminalSize === undefined &&
+      prefs.splitTerminalSize !== undefined
+    ) {
+      next.splitTerminalSize = prefs.splitTerminalSize;
+      changed = true;
+    }
+    if (next.layoutMode !== undefined && next.splitTerminalSize !== undefined) {
+      break;
+    }
+  }
+  return changed ? next : null;
+}
 
 export function migrateWorktreeLayoutToProject(
   worktreePanels: WorktreeAuxPanelsState,
   projectPrefs: ProjectLayoutPrefs,
 ): ProjectLayoutPrefs | null {
-  const next: ProjectLayoutPrefs = { ...projectPrefs };
-  let changed = false;
-  if (next.layoutMode === undefined && worktreePanels.layoutMode !== undefined) {
-    next.layoutMode = worktreePanels.layoutMode;
-    changed = true;
-  }
-  if (
-    next.splitTerminalSize === undefined &&
-    worktreePanels.splitTerminalSize !== undefined
-  ) {
-    next.splitTerminalSize = worktreePanels.splitTerminalSize;
-    changed = true;
-  }
-  return changed ? next : null;
+  return migrateLayoutPrefsToWorkspace(projectPrefs, worktreePanels);
 }
 
 export function useProjectLayoutPrefs(projectId: MaybeRefOrGetter<string>) {
   const key = computed(() => `${PROJECT_LAYOUT_PREFIX}${toValue(projectId)}`);
-  return useLocalStorage<ProjectLayoutPrefs>(key, {});
+  return useLocalStorage<WorkspaceLayoutPrefs>(key, {});
+}
+
+export function useWorkspaceLayoutPrefs() {
+  return useLocalStorage<WorkspaceLayoutPrefs>(WORKSPACE_LAYOUT_KEY, {});
 }
 
 export function gitPanelId(worktreeId: string): string {

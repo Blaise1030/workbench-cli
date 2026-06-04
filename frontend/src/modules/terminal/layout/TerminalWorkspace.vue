@@ -428,7 +428,7 @@ function openResumeDialog(terminalId: string) {
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
-    <header class="flex shrink-0 items-stretch bg-sidebar">
+    <header v-if="layoutMode === 'page'" class="flex shrink-0 items-stretch bg-sidebar">
       <div
         class="flex aspect-square shrink-0 items-stretch border-e border-border/60"
       >
@@ -550,7 +550,7 @@ function openResumeDialog(terminalId: string) {
       <ResizablePanelGroup
         v-else
         direction="horizontal"
-        class="absolute inset-0 border-t"
+        class="absolute inset-0"
         @layout="onSplitLayout"
       >
         <ResizablePanel
@@ -560,10 +560,87 @@ function openResumeDialog(terminalId: string) {
           :default-size="splitTerminalDefaultSize"
           class="flex min-h-0 min-w-0 flex-col"
         >
+          <header class="flex shrink-0 items-stretch bg-sidebar">
+            <div
+              class="flex aspect-square shrink-0 items-stretch border-e border-border/60"
+            >
+              <WorkspaceSidebarToggle />
+            </div>
+            <div
+              class="flex h-8 min-w-0 flex-1 items-stretch overflow-x-auto"
+              role="tablist"
+            >
+              <ContextMenu v-for="(tab, index) in terminalTabItems" :key="tab.id">
+                <ContextMenuTrigger as-child>
+                  <button
+                    type="button"
+                    role="tab"
+                    :class="tabTriggerClass(tab.id, index)"
+                    :aria-selected="tab.id === activeId"
+                    @click="navigateToTerminal(tab.id)"
+                  >
+                    <TerminalIcon class="size-3.5 shrink-0 opacity-70" />
+                    <span class="min-w-0 truncate" :title="tabTitle(tab.id)">
+                      {{ sessions.tabLabel(tab.id) }}
+                    </span>
+                    <span
+                      v-if="terminalRow(tab.id)?.agentSessionId"
+                      class="size-1.5 shrink-0 rounded-full bg-emerald-500"
+                      :title="`Agent session (${terminalRow(tab.id)?.agentKind})`"
+                    />
+                    <span
+                      v-if="terminalRow(tab.id)?.resumeTrusted"
+                      class="size-1.5 shrink-0 rounded-full bg-primary"
+                      title="Trusted restart command"
+                    />
+                    <span
+                      role="button"
+                      :class="tabCloseClass(tab.id)"
+                      :aria-label="`Close ${tab.title}`"
+                      @click.stop="closeTab(tab.id)"
+                    >
+                      <XIcon class="size-3" />
+                    </span>
+                  </button>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem @select="openResumeDialog(tab.id)">
+                    Set restart command…
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
+            </div>
+
+            <div class="flex shrink-0 border-s items-center gap-0.5 px-1">
+              <WorkspacePanelMenu @add="addTerminal" />
+              <ContextQueuePopover :queue="contextQueue" />
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                :class="auxIconClass(isExplorerVisible)"
+                aria-label="File explorer"
+                :aria-pressed="isExplorerVisible"
+                @click="toggleAuxPanel('explorer')"
+              >
+                <FolderTreeIcon />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                :class="auxIconClass(isGitVisible)"
+                aria-label="Git"
+                :aria-pressed="isGitVisible"
+                @click="toggleAuxPanel('git')"
+              >
+                <GitBranchIcon />
+              </Button>
+              <slot name="toolbar-end" />
+            </div>
+          </header>
           <Terminal
             :key="splitTerminalKey"
             :session-id="activeTerminalId"
-            class="min-h-0 flex-1"
+            class="min-h-0 flex-1 border-t"
           />
         </ResizablePanel>
         <ResizableHandle

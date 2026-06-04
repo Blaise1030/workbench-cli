@@ -6,6 +6,7 @@ import {
   clientPanelsFromState,
   explorerPanelId,
   gitPanelId,
+  migrateLayoutPrefsToWorkspace,
   migrateWorktreeLayoutToProject,
   SPLIT_TERMINAL_DEFAULT_SIZE,
   SPLIT_TERMINAL_MAX_SIZE,
@@ -137,5 +138,24 @@ describe("worktree-panels-storage", () => {
         { layoutMode: "split", splitTerminalSize: 50 },
       ),
     ).toBeNull();
+  });
+
+  it("migrateLayoutPrefsToWorkspace prefers existing workspace prefs", () => {
+    expect(
+      migrateLayoutPrefsToWorkspace(
+        { layoutMode: "page", splitTerminalSize: 60 },
+        { layoutMode: "split", splitTerminalSize: 42 },
+      ),
+    ).toBeNull();
+  });
+
+  it("migrateLayoutPrefsToWorkspace fills missing workspace prefs from legacy prefs", () => {
+    expect(
+      migrateLayoutPrefsToWorkspace(
+        {},
+        { layoutMode: "split" },
+        { git: true, explorer: false, splitTerminalSize: 42 },
+      ),
+    ).toEqual({ layoutMode: "split", splitTerminalSize: 42 });
   });
 });

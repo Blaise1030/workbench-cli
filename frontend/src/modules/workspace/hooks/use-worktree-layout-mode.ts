@@ -4,10 +4,11 @@ import { useFileExplorerStorage } from "@/modules/file-explorer/lib/file-explore
 import { useGitPanelStorage } from "@/modules/git/lib/git-panel-storage";
 import {
   buildWorkspaceQuery,
-  migrateWorktreeLayoutToProject,
+  migrateLayoutPrefsToWorkspace,
   type LayoutMode,
   type WorkspaceRouteQuery,
   useProjectLayoutPrefs,
+  useWorkspaceLayoutPrefs,
   useWorktreePanels,
 } from "@/modules/workspace/lib/worktree-panels-storage";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
@@ -36,15 +37,17 @@ export function useWorktreeLayoutMode(worktreeId: MaybeRefOrGetter<string>) {
   const projectId = computed(
     () => worktree.value?.projectId ?? resolvedWorktreeId.value,
   );
-  const layoutPrefs = useProjectLayoutPrefs(projectId);
+  const projectLayoutPrefs = useProjectLayoutPrefs(projectId);
+  const layoutPrefs = useWorkspaceLayoutPrefs();
 
   watch(
-    [worktree, panelsState],
-    ([currentWorktree, currentPanels]) => {
+    [worktree, panelsState, projectLayoutPrefs],
+    ([currentWorktree, currentPanels, currentProjectPrefs]) => {
       if (!currentWorktree) return;
-      const migrated = migrateWorktreeLayoutToProject(
-        currentPanels,
+      const migrated = migrateLayoutPrefsToWorkspace(
         layoutPrefs.value,
+        currentProjectPrefs,
+        currentPanels,
       );
       if (migrated) {
         layoutPrefs.value = migrated;
