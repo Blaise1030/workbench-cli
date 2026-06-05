@@ -7,6 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "worktree-setup": "pnpm install --frozen-lockfile && node scripts/worktree-ports.mjs",
     "dev": "node scripts/dev-go.mjs",
     "build": "vite build --config frontend/vite.config.ts && node scripts/assert-shiki-bundle.mjs",
     "perf:budget": "node scripts/perf-budget.mjs",
