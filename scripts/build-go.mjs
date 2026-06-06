@@ -47,6 +47,17 @@ if (!existsSync(join(embedPublic, "index.html"))) {
   process.exit(1);
 }
 
+// Copy sidecar-client bundle for go:embed
+const sidecarDist = join(root, "sidecar-client/dist/client.js");
+const sidecarEmbed = join(serverGo, "internal/sidecar/static/client.js");
+if (!existsSync(sidecarDist)) {
+  console.error("sidecar-client/dist/client.js missing. Run `pnpm run build` first.");
+  process.exit(1);
+}
+console.log("Staging sidecar client for go:embed …");
+mkdirSync(join(serverGo, "internal/sidecar/static"), { recursive: true });
+cpSync(sidecarDist, sidecarEmbed);
+
 mkdirSync(join(root, "bin"), { recursive: true });
 
 console.log("Building Go server (embed, stripped) …");
