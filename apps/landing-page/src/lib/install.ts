@@ -1,5 +1,5 @@
-/** Cloudflare Workers site root. */
-export const PAGES_BASE = 'https://apps-landing-page.pages.dev';
+/** Cloudflare Workers site root — derived from Astro.site at build time. */
+export const PAGES_BASE = (import.meta.env.SITE as string | undefined)?.replace(/\/$/, '') ?? 'https://apps-landing-page.pages.dev';
 
 /** Stable install script (latest release). */
 export const INSTALL_SCRIPT_URL = `${PAGES_BASE}/install.sh`;
