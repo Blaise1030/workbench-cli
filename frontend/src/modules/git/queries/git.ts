@@ -94,8 +94,14 @@ export function useGitFileActionsMutation(worktreeId: MaybeRefOrGetter<string>) 
       });
       return ensureOk<{ ok: true }>(res);
     },
-    onSuccess: () => {
+    onSuccess: (_, { action }) => {
       invalidateGitQueries(queryClient, toValue(worktreeId));
+      const messages: Record<typeof action, string> = {
+        stage: "Files staged",
+        unstage: "Files unstaged",
+        discard: "Changes discarded",
+      };
+      toast.success(messages[action]);
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to apply git action");
