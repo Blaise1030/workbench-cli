@@ -61,8 +61,11 @@ All messages are JSON.
 IDE tab → proxy tab:
   { "type": "refresh" }
 
-Proxy tab → IDE tab:
+Proxy tab → Go hub (raw):
   { "type": "element-selected", "selector": ".card > h2", "screenshot": "<base64 png>" }
+
+Go hub → IDE tab (enriched, base64 stripped):
+  { "type": "element-selected", "selector": ".card > h2", "screenshotPath": ".workbench/files/<uuid>.png" }
 ```
 
 The hub does not interpret messages — it relays them to all other connected clients.
@@ -108,10 +111,19 @@ Use the Canvas API + `element.getBoundingClientRect()` with `html2canvas` (bundl
 
 ## 7. IDE: receiving element-selected
 
-When the IDE tab receives `{ type: "element-selected" }` over the WS:
+The Go WS hub handler intercepts `element-selected` messages before relaying to the IDE tab:
 
-1. Paste the selector as a line into the active terminal input
-2. Paste the screenshot as an inline image into the terminal (if the terminal supports it via OSC 8 / iTerm2 protocol) — fall back to a `[screenshot attached]` placeholder if not supported
+1. Decodes the base64 screenshot and saves it to `.workbench/files/<uuid>.png` on disk
+2. Strips the raw base64 from the message and replaces it with `screenshotPath: ".workbench/files/<uuid>.png"`
+3. Forwards the enriched message to the IDE tab
+
+The IDE tab then pastes two lines into the active terminal input:
+```
+.card > h2
+Screenshot: .workbench/files/abc123.png
+```
+
+The file path is immediately readable by Claude Code (`Read` tool) or any terminal command. No OSC / iTerm2 inline image protocol needed.
 
 ---
 
