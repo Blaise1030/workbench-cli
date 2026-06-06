@@ -11,5 +11,6 @@ export {
   usePickProjectFolderMutation,
   useCheckoutBranchMutation,
   useCreateWorktreeMutation,
+  useDeleteProjectMutation,
   useDeleteWorktreeMutation,
 } from "./projects";

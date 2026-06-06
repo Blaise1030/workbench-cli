@@ -20,6 +20,7 @@ import FileExplorerPanel from "@/modules/file-explorer/pages/FileExplorerPanel.v
 import { useFileExplorerStorage } from "@/modules/file-explorer/lib/file-explorer-storage";
 import { Button } from "@/components/ui/button";
 import WorkspacePanelMenu from "@/modules/workspace/components/WorkspacePanelMenu.vue";
+import type { AddTerminalChoice } from "@/modules/workspace/types/add-terminal-choice";
 import WorkspaceSidebarToggle from "@/modules/workspace/components/WorkspaceSidebarToggle.vue";
 import TerminalResumeDialog from "@/modules/terminal/components/TerminalResumeDialog.vue";
 import {
@@ -319,8 +320,12 @@ function navigateToTerminal(tabId: string) {
   });
 }
 
-async function addTerminal() {
-  const terminal = await createTerminal.mutateAsync(undefined);
+async function addTerminal(choice: AddTerminalChoice = { kind: "shell" }) {
+  const input =
+    choice.kind === "agent"
+      ? { title: choice.agent.name, launchCommand: choice.agent.startCommand }
+      : undefined;
+  const terminal = await createTerminal.mutateAsync(input);
   sessions.create({
     id: terminal.id,
     terminalId: terminal.id,

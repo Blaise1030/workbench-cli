@@ -11,6 +11,11 @@ import { ensureOk } from "@/lib/api-error";
 import { workspaceKeys } from "@/modules/workspace/queries/keys";
 import type { TerminalTab } from "./types";
 
+export type CreateTerminalInput = {
+  title?: string;
+  launchCommand?: string;
+};
+
 export function terminalsQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
   return queryOptions({
     queryKey: computed(() => workspaceKeys.terminals(toValue(worktreeId))),
@@ -34,10 +39,13 @@ export function useTerminalsQuery(worktreeId: MaybeRefOrGetter<string>) {
 export function useCreateTerminalMutation(worktreeId: MaybeRefOrGetter<string>) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (title?: string) => {
+    mutationFn: async (input?: CreateTerminalInput) => {
+      const json: CreateTerminalInput = {};
+      if (input?.title) json.title = input.title;
+      if (input?.launchCommand) json.launchCommand = input.launchCommand;
       const res = await apiClient.worktrees[":id"].terminals.$post({
         param: { id: toValue(worktreeId) },
-        json: title ? { title } : {},
+        json,
       });
       const data = await ensureOk<{ terminal: TerminalTab }>(res);
       return data.terminal;
