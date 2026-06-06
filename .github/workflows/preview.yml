@@ -64,8 +64,6 @@ jobs:
           node-version: "20"
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-go@v5
         with:
@@ -181,8 +179,6 @@ jobs:
             --jq '.content' | tr -d '\n' | base64 --decode > docs/dev-versions.json
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v4
         with:
@@ -234,8 +230,6 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v4
         with:
