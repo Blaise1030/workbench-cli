@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useDebounceFn, useLocalStorage } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 import { useQueryClient } from "@tanstack/vue-query";
 import {
   ChevronRightIcon,
   FolderGit2Icon,
   FolderPlusIcon,
   SettingsIcon,
+  Trash2Icon,
 } from "@lucide/vue";
 import AgentKindIcon from "@/modules/workspace/components/AgentKindIcon.vue";
 import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
@@ -19,6 +20,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import SidebarMenuButtonChild from "@/components/ui/sidebar/SidebarMenuButtonChild.vue";
 import {
@@ -29,7 +36,9 @@ import {
 import {
   projectsQueryOptions,
   worktreesQueryOptions,
+  useDeleteProjectMutation,
   usePickProjectFolderMutation,
+  type Project,
 } from "@/modules/workspace/queries";
 import { useQuery, useQueries } from "@tanstack/vue-query";
 import { isLocalHost } from "@/lib/is-local-host";
@@ -39,7 +48,6 @@ import {
   formatAgentStatus,
 } from "@/modules/sessions/agent-status";
 import { useSessionsQuery } from "@/modules/sessions/queries";
-import { useRoute } from "vue-router";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
 import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
 
@@ -85,6 +93,7 @@ function onVerticalLayout(sizes: number[]) {
 }
 const { data: projects } = useQuery(projectsQueryOptions());
 const pickProjectFolder = usePickProjectFolderMutation();
+const deleteProject = useDeleteProjectMutation();
 
 const allWorktreeQueries = useQueries({
   queries: computed(() =>
@@ -154,6 +163,40 @@ const terminalSessions = useTerminalSessions();
 function sessionTitle(id: string, fallback: string): string {
   return terminalSessions.tabLabel(id) || fallback;
 }
+
+function projectWorktrees(projectId: string) {
+  const projectIndex = projects.value?.findIndex((p) => p.id === projectId) ?? -1;
+  if (projectIndex < 0) return [];
+  return allWorktreeQueries.value[projectIndex]?.data ?? [];
+}
+
+async function removeProject(project: Project) {
+  if (
+    !window.confirm(
+      `Remove "${project.name}" from the workbench? Saved worktrees and terminals for this project will be removed. Files on disk are not deleted.`,
+    )
+  ) {
+    return;
+  }
+
+  const affectsActive = projectWorktrees(project.id).some(
+    (w) => w.id === props.activeWorktreeId,
+  );
+
+  try {
+    await deleteProject.mutateAsync(project.id);
+
+    const { [project.id]: _removed, ...rest } = expandedProjects.value;
+    expandedProjects.value = rest;
+
+    if (affectsActive) {
+      localStorage.removeItem("lastWorktreeId");
+      await router.push({ name: "home" });
+    }
+  } catch {
+    // handled by mutation onError (toast)
+  }
+}
 </script>
 
 <template>
@@ -208,16 +251,29 @@ function sessionTitle(id: string, fallback: string): string {
                     :open="expandedProjects[project.id] ?? true"
                     @update:open="(v) => setExpanded(project.id, v)"
                   >
-                    <CollapsibleTrigger as-child>
-                      <SidebarMenuButtonChild type="button" class="w-full">
-                        <ChevronRightIcon
-                          class="size-4 shrink-0 transition-transform"
-                          :class="cn((expandedProjects[project.id] ?? true) && 'rotate-90')"
-                        />
-                        <FolderGit2Icon />
-                        <span>{{ project.name }}</span>
-                      </SidebarMenuButtonChild>
-                    </CollapsibleTrigger>
+                    <ContextMenu>
+                      <ContextMenuTrigger as-child>
+                        <CollapsibleTrigger as-child>
+                          <SidebarMenuButtonChild type="button" class="w-full">
+                            <ChevronRightIcon
+                              class="size-4 shrink-0 transition-transform"
+                              :class="cn((expandedProjects[project.id] ?? true) && 'rotate-90')"
+                            />
+                            <FolderGit2Icon />
+                            <span>{{ project.name }}</span>
+                          </SidebarMenuButtonChild>
+                        </CollapsibleTrigger>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem
+                          variant="destructive"
+                          @select="removeProject(project)"
+                        >
+                          <Trash2Icon />
+                          Remove project
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
 
                     <CollapsibleContent class="mt-1">
                       <ProjectWorktrees

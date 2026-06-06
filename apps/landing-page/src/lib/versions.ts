@@ -1,5 +1,5 @@
 export const REPO = 'Blaise1030/workbench-cli';
-export const PAGES_BASE = 'https://apps-landing-page.pages.dev';
+export const PAGES_BASE = (import.meta.env.SITE as string | undefined)?.replace(/\/$/, '') ?? 'https://apps-landing-page.pages.dev';
 
 export interface VersionEntry {
   version: string;

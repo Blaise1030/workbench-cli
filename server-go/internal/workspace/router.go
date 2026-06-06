@@ -18,6 +18,11 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/git"
 )
 
+// PendingLaunchSetter queues a one-shot command for a terminal's first PTY spawn.
+type PendingLaunchSetter interface {
+	SetPendingLaunch(terminalID, command string)
+}
+
 func publishEvent(bus *events.Bus, topics ...string) {
 	if bus == nil {
 		return
@@ -72,7 +77,7 @@ func domainStatus(err error) int {
 	return http.StatusInternalServerError
 }
 
-func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus) {
+func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus, launches PendingLaunchSetter) {
 	r.Use(auth.RequireSession(session))
 
 	// Projects
@@ -395,13 +400,17 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 	})
 	r.Post("/worktrees/{id}/terminals", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
-			Title *string `json:"title,omitempty"`
+			Title         *string `json:"title,omitempty"`
+			LaunchCommand *string `json:"launchCommand,omitempty"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		t, err := CreateTerminal(db, chi.URLParam(r, "id"), body.Title)
 		if err != nil {
 			wsErr(w, err.Error(), domainStatus(err))
 			return
+		}
+		if launches != nil && body.LaunchCommand != nil {
+			launches.SetPendingLaunch(t.ID, *body.LaunchCommand)
 		}
 		jsonResp(w, map[string]any{"terminal": t}, http.StatusCreated)
 	})
