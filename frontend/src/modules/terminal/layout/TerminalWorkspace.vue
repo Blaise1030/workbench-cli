@@ -20,6 +20,7 @@ import FileExplorerPanel from "@/modules/file-explorer/pages/FileExplorerPanel.v
 import { useFileExplorerStorage } from "@/modules/file-explorer/lib/file-explorer-storage";
 import { Button } from "@/components/ui/button";
 import WorkspacePanelMenu from "@/modules/workspace/components/WorkspacePanelMenu.vue";
+import GitDisabledIndicator from "@/modules/workspace/components/GitDisabledIndicator.vue";
 import WorkspaceSidebarToggle from "@/modules/workspace/components/WorkspaceSidebarToggle.vue";
 import TerminalResumeDialog from "@/modules/terminal/components/TerminalResumeDialog.vue";
 import {
@@ -54,6 +55,7 @@ import {
 import { useWorktreeLayoutMode } from "@/modules/workspace/hooks/use-worktree-layout-mode";
 import { gitStatusQueryOptions } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
+import { useProjectIsGitRepo } from "@/modules/workspace/hooks/use-project-is-git-repo";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
 import { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
@@ -92,8 +94,12 @@ const {
   workspaceQuery,
 } = useWorktreeLayoutMode(() => props.worktreeId);
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
+const isGitRepo = useProjectIsGitRepo(() => worktree.value?.projectId);
 /** Keep git status warm while on terminal (explorer/git panels unmount). */
-useQuery(gitStatusQueryOptions(() => props.worktreeId));
+useQuery({
+  ...gitStatusQueryOptions(() => props.worktreeId),
+  enabled: isGitRepo,
+});
 const contextQueue = useContextQueue(() => props.worktreeId, sessions);
 provide(contextQueueKey, contextQueue);
 const contextQueueAnnotations = createContextQueueAnnotationsState(
@@ -262,7 +268,7 @@ function restoreDefaultRoute(list: { id: string }[]) {
     explorerState.value,
   );
 
-  if (lastRoute === "git" && state.git) {
+  if (lastRoute === "git" && state.git && isGitRepo.value) {
     router.replace({
       name: "git",
       params: { worktreeId: props.worktreeId },
@@ -368,6 +374,16 @@ function navigateToFirstTerminal() {
   }
   router.push({ name: "workspace", params: { worktreeId: props.worktreeId } });
 }
+
+watch(isGitRepo, (git) => {
+  if (git) return;
+  if (splitAuxPanel.value === "git") {
+    panelsState.value = { ...panelsState.value, git: false };
+  }
+  if (route.name === "git") {
+    navigateToFirstTerminal();
+  }
+});
 
 function toggleAuxPanel(type: "git" | "explorer") {
   const isActive = type === "git" ? isGitVisible.value : isExplorerVisible.value;
@@ -501,6 +517,7 @@ function equalizeSplitPanes() {
           <FolderTreeIcon />
         </Button>
         <Button
+          v-if="isGitRepo"
           variant="ghost"
           size="icon-xs"
           :class="auxIconClass(isGitVisible)"
@@ -511,6 +528,7 @@ function equalizeSplitPanes() {
         >
           <GitBranchIcon />
         </Button>
+        <GitDisabledIndicator v-else size="xs" />
         <slot name="toolbar-end" />
       </div>
     </header>
@@ -540,6 +558,7 @@ function equalizeSplitPanes() {
             <FolderTreeIcon />
           </Button>
           <Button
+            v-if="isGitRepo"
             variant="ghost"
             size="icon-xs"
             :class="auxIconClass(isGitVisible)"
@@ -549,6 +568,7 @@ function equalizeSplitPanes() {
           >
             <GitBranchIcon />
           </Button>
+          <GitDisabledIndicator v-else size="xs" />
         </div>
       </div>
       <RouterView
@@ -635,6 +655,7 @@ function equalizeSplitPanes() {
                 <FolderTreeIcon />
               </Button>
               <Button
+                v-if="isGitRepo"
                 variant="ghost"
                 size="icon-xs"
                 :class="auxIconClass(isGitVisible)"
@@ -644,6 +665,7 @@ function equalizeSplitPanes() {
               >
                 <GitBranchIcon />
               </Button>
+              <GitDisabledIndicator v-else size="xs" />
               <slot name="toolbar-end" />
             </div>
           </header>

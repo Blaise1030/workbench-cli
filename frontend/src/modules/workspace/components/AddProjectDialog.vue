@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useQueryClient } from "@tanstack/vue-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,9 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegisterProjectMutation } from "@/modules/workspace/queries";
+import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
 
 const open = defineModel<boolean>("open", { default: false });
 
+const router = useRouter();
+const queryClient = useQueryClient();
 const repoPath = ref("");
 const error = ref("");
 const register = useRegisterProjectMutation();
@@ -22,13 +27,14 @@ async function submit() {
   error.value = "";
   const path = repoPath.value.trim();
   if (!path) {
-    error.value = "Enter a repository path";
+    error.value = "Enter a folder path";
     return;
   }
   try {
-    await register.mutateAsync(path);
+    const project = await register.mutateAsync(path);
     repoPath.value = "";
     open.value = false;
+    await openProjectWorkspace(queryClient, router, project);
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to register project";
   }
@@ -43,7 +49,7 @@ async function submit() {
       </DialogHeader>
       <form class="grid gap-4" @submit.prevent="submit">
         <div class="grid gap-2">
-          <Label for="repo-path">Repository path</Label>
+          <Label for="repo-path">Folder path</Label>
           <Input
             data-native-keyboard
             id="repo-path"

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useDebounceFn, useLocalStorage } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
+import { useQueryClient } from "@tanstack/vue-query";
 import {
   ChevronRightIcon,
   FolderGit2Icon,
@@ -40,6 +41,7 @@ import {
 import { useSessionsQuery } from "@/modules/sessions/queries";
 import { useRoute } from "vue-router";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
+import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
 
 const STORAGE_KEY_EXPANDED_PROJECTS = "workbench:workspace-projects-expanded";
 const STORAGE_KEY_AGENTS_PANEL_SIZE = "workbench:workspace-sidebar-agents-size";
@@ -52,6 +54,8 @@ function clampAgentsPanelSize(size: number): number {
   return Math.min(max, Math.max(MIN_AGENTS_PANEL_SIZE, Math.round(size)));
 }
 
+const router = useRouter();
+const queryClient = useQueryClient();
 const addProjectOpen = ref(false);
 const addProjectError = ref("");
 const expandedProjects = useLocalStorage<Record<string, boolean>>(
@@ -131,6 +135,8 @@ async function addProject() {
   try {
     const result = await pickProjectFolder.mutateAsync();
     if (result.cancelled) return;
+    setExpanded(result.project.id, true);
+    await openProjectWorkspace(queryClient, router, result.project);
   } catch (e) {
     addProjectError.value =
       e instanceof Error ? e.message : "Failed to add project";
@@ -189,7 +195,7 @@ function sessionTitle(id: string, fallback: string): string {
                 v-if="!projects?.length"
                 class="px-2 py-4 text-center text-sm text-muted-foreground"
               >
-                No projects yet. Choose a folder to add a git repository.
+                No projects yet. Choose a folder to add a project.
               </p>
 
               <SidebarMenu class="relative">
@@ -217,6 +223,7 @@ function sessionTitle(id: string, fallback: string): string {
                       <ProjectWorktrees
                         :project-id="project.id"
                         :repo-path="project.repoPath"
+                        :is-git-repo="project.isGitRepo"
                         :active-worktree-id="activeWorktreeId"
                       />
                     </CollapsibleContent>

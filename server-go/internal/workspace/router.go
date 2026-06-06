@@ -132,6 +132,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 			wsErr(w, "Project not found", http.StatusNotFound)
 			return
 		}
+		if !git.IsGitRepo(p.RepoPath) {
+			jsonResp(w, map[string]any{"branches": []string{}, "defaultBranch": ""}, http.StatusOK)
+			return
+		}
 		branches, _ := git.ListBranches(p.RepoPath)
 		if branches == nil {
 			branches = []string{}
@@ -144,6 +148,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		p, err := GetProject(db, chi.URLParam(r, "id"))
 		if err != nil || p == nil {
 			wsErr(w, "Project not found", http.StatusNotFound)
+			return
+		}
+		if !git.IsGitRepo(p.RepoPath) {
+			wsErr(w, "Project is not a git repository", http.StatusBadRequest)
 			return
 		}
 		var body struct {

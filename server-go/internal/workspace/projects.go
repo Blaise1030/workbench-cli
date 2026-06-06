@@ -3,6 +3,7 @@ package workspace
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -21,7 +22,13 @@ type Project struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	RepoPath  string    `json:"repoPath"`
+	IsGitRepo bool      `json:"isGitRepo"`
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+func enrichProject(p Project) Project {
+	p.IsGitRepo = git.IsGitRepo(p.RepoPath)
+	return p
 }
 
 func scanProject(rows *sql.Rows) (Project, error) {
@@ -46,7 +53,7 @@ func ListProjects(db *sql.DB) ([]Project, error) {
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, p)
+		out = append(out, enrichProject(p))
 	}
 	if out == nil {
 		out = []Project{}
@@ -67,7 +74,8 @@ func GetProject(db *sql.DB, id string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &p, nil
+	enriched := enrichProject(p)
+	return &enriched, nil
 }
 
 func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
@@ -75,8 +83,15 @@ func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
 	if err != nil {
 		return nil, &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
 	}
-	if !git.IsGitRepo(repoPath) {
-		return nil, &ProjectError{Msg: "Path is not a git repository", Status: 400}
+	info, err := os.Stat(repoPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, &ProjectError{Msg: "Path does not exist", Status: 400}
+		}
+		return nil, &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
+	}
+	if !info.IsDir() {
+		return nil, &ProjectError{Msg: "Path is not a directory", Status: 400}
 	}
 
 	var existing string
@@ -95,7 +110,11 @@ func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
 	if err := syncWorktreesForProject(db, id); err != nil {
 		return nil, err
 	}
-	return GetProject(db, id)
+	p, err := GetProject(db, id)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
 func DeleteProject(db *sql.DB, id string) error {

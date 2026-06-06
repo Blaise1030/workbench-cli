@@ -2,6 +2,7 @@ export interface Project {
   id: string;
   name: string;
   repoPath: string;
+  isGitRepo: boolean;
   createdAt: string;
 }
 
