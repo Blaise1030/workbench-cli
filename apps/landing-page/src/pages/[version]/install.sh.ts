@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { fetchReleaseVersions, PAGES_BASE } from '../../lib/versions';
 
 const template = readFileSync(
-  join(process.cwd(), '..', 'docs', 'install.sh'),
+  join(process.cwd(), '..', '..', 'docs', 'install.sh'),
   'utf8'
 );
 

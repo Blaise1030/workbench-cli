@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@astrojs/vue";
 
 export default defineConfig({
-  site: "https://apps-landing-page.pages.dev",
+  site: "https://workbench.nocodemonkeys1.workers.dev",
   output: "static",
   integrations: [vue()],
   vite: {
