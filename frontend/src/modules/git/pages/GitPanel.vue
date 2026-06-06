@@ -26,6 +26,7 @@ import {
   type GitFileAction,
 } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
+import { useProjectIsGitRepo } from "@/modules/workspace/hooks/use-project-is-git-repo";
 import GitDiffCodeView from "@/modules/git/components/GitDiffCodeView.vue";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -178,8 +179,13 @@ const { data: worktree, isLoading: worktreeLoading } = useQuery(
   worktreeQueryOptions(() => props.worktreeId),
 );
 
+const isGitRepo = useProjectIsGitRepo(() => worktree.value?.projectId);
+
 const gitEnabled = computed(
-  () => Boolean(worktree.value?.isLinked) && !worktreeLoading.value,
+  () =>
+    Boolean(worktree.value?.isLinked) &&
+    isGitRepo.value === true &&
+    !worktreeLoading.value,
 );
 
 const {
@@ -385,7 +391,25 @@ async function submitCommit() {
     </div>
 
     <template v-else-if="worktree">
-      <Tabs v-model="activeTab" class="flex min-h-0 flex-1 flex-col gap-0">
+      <div
+        v-if="isGitRepo === false"
+        class="p-4 text-sm text-muted-foreground"
+      >
+        Git is not available for this folder.
+      </div>
+
+      <div
+        v-else-if="isGitRepo === undefined"
+        class="p-4 text-sm text-muted-foreground"
+      >
+        Loading…
+      </div>
+
+      <Tabs
+        v-else-if="isGitRepo === true"
+        v-model="activeTab"
+        class="flex min-h-0 flex-1 flex-col gap-0"
+      >
         <header
           class="box-border flex min-h-8 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/60 px-3"
         >

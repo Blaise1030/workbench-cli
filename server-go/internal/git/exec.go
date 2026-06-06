@@ -37,3 +37,20 @@ func IsGitRepo(path string) bool {
 	out, err := Run(path, []string{"rev-parse", "--git-dir"})
 	return err == nil && out != ""
 }
+
+// ValidateDirectoryPath reports whether path exists and is a directory.
+// Git repositories and plain folders are accepted; files and missing paths error.
+func ValidateDirectoryPath(path string) error {
+	_, err := Run(path, []string{"rev-parse"})
+	if err == nil {
+		return nil
+	}
+	errMsg := strings.ToLower(err.Error())
+	if strings.Contains(errMsg, "no such file or directory") {
+		return os.ErrNotExist
+	}
+	if strings.Contains(errMsg, "not a directory") {
+		return fmt.Errorf("not a directory")
+	}
+	return nil
+}

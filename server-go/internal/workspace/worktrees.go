@@ -75,6 +75,26 @@ func listWorktreesByProjectID(db *sql.DB, projectID string) ([]Worktree, error) 
 	return out, nil
 }
 
+func ensureFolderWorktree(db *sql.DB, projectID, folderPath string) error {
+	existing, err := listWorktreesByProjectID(db, projectID)
+	if err != nil {
+		return err
+	}
+	isLinkedInt := 0
+	if git.WorktreePathExists(folderPath) {
+		isLinkedInt = 1
+	}
+	for _, w := range existing {
+		if w.Path == folderPath {
+			_, err = db.Exec(`UPDATE worktrees SET is_linked=? WHERE id=?`, isLinkedInt, w.ID)
+			return err
+		}
+	}
+	_, err = db.Exec(`INSERT OR IGNORE INTO worktrees (id,project_id,path,branch,base_branch,git_dir,is_linked,created_at) VALUES (?,?,?,?,?,?,?,?)`,
+		uuid.NewString(), projectID, folderPath, nil, nil, nil, isLinkedInt, time.Now().UnixMilli())
+	return err
+}
+
 func syncWorktreesForProject(db *sql.DB, projectID string) error {
 	p, err := GetProject(db, projectID)
 	if err != nil || p == nil {
@@ -82,7 +102,10 @@ func syncWorktreesForProject(db *sql.DB, projectID string) error {
 	}
 	gitEntries, err := git.ListWorktrees(p.RepoPath)
 	if err != nil {
-		return nil // not a fatal error — may be a fresh repo
+		if !git.IsGitRepo(p.RepoPath) {
+			return ensureFolderWorktree(db, projectID, p.RepoPath)
+		}
+		return nil // transient git failure — keep existing worktrees
 	}
 	existing, err := listWorktreesByProjectID(db, projectID)
 	if err != nil {
@@ -140,6 +163,20 @@ func syncWorktreesForProject(db *sql.DB, projectID string) error {
 	return nil
 }
 
+func requireGitProjectForWorktree(db *sql.DB, wt *Worktree) error {
+	p, err := GetProject(db, wt.ProjectID)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return &ProjectError{Msg: "Project not found", Status: 404}
+	}
+	if !p.IsGitRepo {
+		return &ProjectError{Msg: "Project is not a git repository", Status: 400}
+	}
+	return nil
+}
+
 func ListWorktreesByProject(db *sql.DB, projectID string) ([]Worktree, error) {
 	p, err := GetProject(db, projectID)
 	if err != nil {
@@ -163,6 +200,9 @@ func CreateWorktreeForProject(db *sql.DB, projectID string, body CreateWorktreeB
 	p, err := GetProject(db, projectID)
 	if err != nil || p == nil {
 		return nil, &ProjectError{Msg: "Project not found", Status: 404}
+	}
+	if !git.IsGitRepo(p.RepoPath) {
+		return nil, &WorktreeError{Msg: "Project is not a git repository", Status: 400}
 	}
 
 	args := []string{"worktree", "add"}

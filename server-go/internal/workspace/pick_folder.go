@@ -18,20 +18,20 @@ func PickFolder() (path string, cancelled bool) {
 		raw, err = exec.Command(
 			"osascript",
 			"-e",
-			`POSIX path of (choose folder with prompt "Select git repository")`,
+			`POSIX path of (choose folder with prompt "Select folder")`,
 		).Output()
 	case "linux":
 		raw, err = exec.Command(
 			"zenity",
 			"--file-selection",
 			"--directory",
-			"--title=Select git repository",
+			"--title=Select folder",
 		).Output()
 	case "windows":
 		script := strings.Join([]string{
 			"Add-Type -AssemblyName System.Windows.Forms",
 			"$d = New-Object System.Windows.Forms.FolderBrowserDialog",
-			`$d.Description = "Select git repository"`,
+			`$d.Description = "Select folder"`,
 			"if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {",
 			"  Write-Output $d.SelectedPath",
 			"}",

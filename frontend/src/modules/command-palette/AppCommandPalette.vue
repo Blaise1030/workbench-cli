@@ -10,6 +10,8 @@ import { useCreateTerminalMutation, type TerminalTab } from "@/modules/terminal/
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
 import { isLocalHost } from "@/lib/is-local-host";
 import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
+import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
+import { toast } from "vue-sonner";
 import { useWorktreeLayoutMode } from "@/modules/workspace/hooks/use-worktree-layout-mode";
 import {
   activateDefaultSplitAuxPanel,
@@ -40,7 +42,19 @@ async function handlePaletteAction(key: string) {
       addProjectOpen.value = true;
       return;
     }
-    void pickProjectFolder.mutateAsync();
+    try {
+      const result = await pickProjectFolder.mutateAsync();
+      if (result.cancelled) return;
+      try {
+        await openProjectWorkspace(queryClient, router, result.project);
+      } catch (e) {
+        toast.error(
+          e instanceof Error ? e.message : "Failed to open project workspace",
+        );
+      }
+    } catch {
+      // handled by mutation onError (toast)
+    }
   } else if (key === "toggleTheme") {
     toggleTheme();
   } else if (key === "newTerminal") {

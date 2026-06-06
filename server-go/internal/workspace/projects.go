@@ -3,7 +3,9 @@ package workspace
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,7 +23,13 @@ type Project struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	RepoPath  string    `json:"repoPath"`
+	IsGitRepo bool      `json:"isGitRepo"`
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+func enrichProject(p Project) Project {
+	p.IsGitRepo = git.IsGitRepo(p.RepoPath)
+	return p
 }
 
 func scanProject(rows *sql.Rows) (Project, error) {
@@ -46,7 +54,7 @@ func ListProjects(db *sql.DB) ([]Project, error) {
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, p)
+		out = append(out, enrichProject(p))
 	}
 	if out == nil {
 		out = []Project{}
@@ -67,16 +75,35 @@ func GetProject(db *sql.DB, id string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &p, nil
+	enriched := enrichProject(p)
+	return &enriched, nil
+}
+
+func resolveProjectDirectory(repoPathInput string) (string, error) {
+	if strings.Contains(repoPathInput, "\x00") {
+		return "", &ProjectError{Msg: "Invalid path", Status: 400}
+	}
+	repoPath, err := filepath.Abs(repoPathInput)
+	if err != nil {
+		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
+	}
+	repoPath = filepath.Clean(repoPath)
+	if err := git.ValidateDirectoryPath(repoPath); err != nil {
+		if os.IsNotExist(err) {
+			return "", &ProjectError{Msg: "Path does not exist", Status: 400}
+		}
+		if err.Error() == "not a directory" {
+			return "", &ProjectError{Msg: "Path is not a directory", Status: 400}
+		}
+		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
+	}
+	return repoPath, nil
 }
 
 func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
-	repoPath, err := filepath.Abs(repoPathInput)
+	repoPath, err := resolveProjectDirectory(repoPathInput)
 	if err != nil {
-		return nil, &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
-	}
-	if !git.IsGitRepo(repoPath) {
-		return nil, &ProjectError{Msg: "Path is not a git repository", Status: 400}
+		return nil, err
 	}
 
 	var existing string
@@ -93,9 +120,14 @@ func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
 		return nil, fmt.Errorf("insert project: %w", err)
 	}
 	if err := syncWorktreesForProject(db, id); err != nil {
+		_, _ = db.Exec(`DELETE FROM projects WHERE id = ?`, id)
 		return nil, err
 	}
-	return GetProject(db, id)
+	p, err := GetProject(db, id)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
 func DeleteProject(db *sql.DB, id string) error {

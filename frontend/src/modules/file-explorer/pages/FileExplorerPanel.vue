@@ -14,6 +14,7 @@ import {
   invalidateWorkspaceFs,
   worktreeQueryOptions,
 } from "@/modules/workspace/queries";
+import { useProjectIsGitRepo } from "@/modules/workspace/hooks/use-project-is-git-repo";
 import CodeMirrorEditor from "@/modules/file-explorer/components/CodeMirrorEditor.vue";
 import FileExplorerTreePanelBridge from "@/modules/file-explorer/components/FileExplorerTreePanelBridge.vue";
 import FileTabList from "@/modules/file-explorer/components/FileTabList.vue";
@@ -164,8 +165,13 @@ function onSplitLayout(sizes: number[]) {
 }
 
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
+const isGitRepo = useProjectIsGitRepo(() => worktree.value?.projectId);
+const gitQueriesEnabled = computed(() => isGitRepo.value === true);
 const { data: paths } = useQuery(fileTreeQueryOptions(() => props.worktreeId));
-const { data: gitStatus } = useQuery(gitStatusQueryOptions(() => props.worktreeId));
+const { data: gitStatus } = useQuery({
+  ...gitStatusQueryOptions(() => props.worktreeId),
+  enabled: gitQueriesEnabled,
+});
 
 const filteredPaths = computed(() => {
   const all = paths.value;

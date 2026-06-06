@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/context-menu";
 import { Button } from "@/components/ui/button";
 import BranchCombobox from "@/modules/workspace/components/BranchCombobox.vue";
+import GitDisabledIndicator from "@/modules/workspace/components/GitDisabledIndicator.vue";
 import {
   branchesQueryOptions,
   useCheckoutBranchMutation,
@@ -30,6 +31,7 @@ import NewWorktreeDialog from "@/modules/workspace/components/NewWorktreeDialog.
 const props = defineProps<{
   projectId: string;
   repoPath: string;
+  isGitRepo: boolean;
   activeWorktreeId?: string;
 }>();
 
@@ -111,7 +113,7 @@ async function removeWorktree(w: Worktree) {
   <SidebarMenuSub>
     <SidebarMenuSubItem v-for="w in worktrees" :key="w.id" class="flex items-center gap-px">
       <BranchCombobox
-        v-if="isMain(w)"
+        v-if="isMain(w) && isGitRepo"
         :model-value="currentBranch ?? ''"
         v-model:open="switcherOpen"
         :branches="branchData?.branches ?? []"
@@ -130,6 +132,10 @@ async function removeWorktree(w: Worktree) {
           </Button>
         </template>
       </BranchCombobox>
+      <GitDisabledIndicator
+        v-else-if="isMain(w) && !isGitRepo"
+        size="sm"
+      />
 
       <ContextMenu>
         <ContextMenuTrigger as-child>
@@ -166,7 +172,7 @@ async function removeWorktree(w: Worktree) {
         </ContextMenuContent>
       </ContextMenu>
     </SidebarMenuSubItem>
-    <SidebarMenuSubItem>
+    <SidebarMenuSubItem v-if="isGitRepo">
       <NewWorktreeDialog :project-id="projectId" />
     </SidebarMenuSubItem>
   </SidebarMenuSub>

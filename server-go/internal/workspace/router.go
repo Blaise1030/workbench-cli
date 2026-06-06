@@ -137,6 +137,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 			wsErr(w, "Project not found", http.StatusNotFound)
 			return
 		}
+		if !git.IsGitRepo(p.RepoPath) {
+			jsonResp(w, map[string]any{"branches": []string{}, "defaultBranch": ""}, http.StatusOK)
+			return
+		}
 		branches, _ := git.ListBranches(p.RepoPath)
 		if branches == nil {
 			branches = []string{}
@@ -149,6 +153,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		p, err := GetProject(db, chi.URLParam(r, "id"))
 		if err != nil || p == nil {
 			wsErr(w, "Project not found", http.StatusNotFound)
+			return
+		}
+		if !git.IsGitRepo(p.RepoPath) {
+			wsErr(w, "Project is not a git repository", http.StatusBadRequest)
 			return
 		}
 		var body struct {
@@ -434,6 +442,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 			wsErr(w, "Worktree not found", http.StatusNotFound)
 			return
 		}
+		if err := requireGitProjectForWorktree(db, wt); err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
+			return
+		}
 		if !wt.IsLinked {
 			wsErr(w, "Worktree path is not available on disk", http.StatusNotFound)
 			return
@@ -455,6 +467,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 			wsErr(w, "Worktree not found", http.StatusNotFound)
 			return
 		}
+		if err := requireGitProjectForWorktree(db, wt); err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
+			return
+		}
 		scope := git.ParseDiffScope(r.URL.Query().Get("scope"))
 		path := r.URL.Query().Get("path")
 		patch, err := git.GetDiff(wt.Path, scope, path)
@@ -468,6 +484,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
 		if err != nil || wt == nil {
 			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		if err := requireGitProjectForWorktree(db, wt); err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
 			return
 		}
 		var body struct {
@@ -494,6 +514,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
 		if err != nil || wt == nil {
 			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		if err := requireGitProjectForWorktree(db, wt); err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
 			return
 		}
 		var body struct {
