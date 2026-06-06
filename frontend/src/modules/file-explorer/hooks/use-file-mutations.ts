@@ -18,7 +18,10 @@ export function useCreateFile(worktreeId: MaybeRefOrGetter<string>) {
       });
       await ensureOk<{ ok: boolean }>(res);
     },
-    onSuccess: () => invalidateWorkspaceFs(queryClient, toValue(worktreeId)),
+    onSuccess: (_data, { type }) => {
+      invalidateWorkspaceFs(queryClient, toValue(worktreeId));
+      toast.success(type === "directory" ? "Directory created" : "File created");
+    },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to create entry");
     },
@@ -39,7 +42,10 @@ export function useDeleteFile(worktreeId: MaybeRefOrGetter<string>) {
       });
       await ensureOk<{ ok: boolean }>(res);
     },
-    onSuccess: () => invalidateWorkspaceFs(queryClient, toValue(worktreeId)),
+    onSuccess: () => {
+      invalidateWorkspaceFs(queryClient, toValue(worktreeId));
+      toast.success("Entry deleted");
+    },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to delete entry");
     },
@@ -60,7 +66,10 @@ export function useMoveFile(worktreeId: MaybeRefOrGetter<string>) {
       });
       await ensureOk<{ ok: boolean }>(res);
     },
-    onSuccess: () => invalidateWorkspaceFs(queryClient, toValue(worktreeId)),
+    onSuccess: () => {
+      invalidateWorkspaceFs(queryClient, toValue(worktreeId));
+      toast.success("Entry moved");
+    },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to move entry");
     },

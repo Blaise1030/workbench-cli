@@ -101,10 +101,8 @@ async function removeWorktree(w: Worktree) {
         await router.push({ name: "home" });
       }
     }
-  } catch (e) {
-    window.alert(
-      e instanceof Error ? e.message : "Failed to remove worktree",
-    );
+  } catch {
+    // handled by mutation onError (toast)
   }
 }
 </script>
