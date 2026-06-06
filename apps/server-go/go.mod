@@ -5,11 +5,8 @@ go 1.23.0
 require (
 	github.com/coder/websocket v1.8.13
 	github.com/creack/pty v1.1.24
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/google/uuid v1.6.0
-	github.com/inconshreveable/mousetrap v1.1.0
-	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.6
 	modernc.org/sqlite v1.37.1
 )
 
