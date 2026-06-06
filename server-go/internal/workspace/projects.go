@@ -79,20 +79,15 @@ func GetProject(db *sql.DB, id string) (*Project, error) {
 }
 
 func resolveProjectDirectory(repoPathInput string) (string, error) {
-	repoPath, err := filepath.Abs(repoPathInput)
-	if err != nil {
-		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
-	}
-	repoPath = filepath.Clean(repoPath)
-	info, err := os.Stat(repoPath) //nolint:gosec // local workspace tool; user-supplied folder paths are intentional
+	repoPath, err := resolveExistingDirectory(repoPathInput)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", &ProjectError{Msg: "Path does not exist", Status: 400}
 		}
+		if err.Error() == "path is not a directory" {
+			return "", &ProjectError{Msg: "Path is not a directory", Status: 400}
+		}
 		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
-	}
-	if !info.IsDir() {
-		return "", &ProjectError{Msg: "Path is not a directory", Status: 400}
 	}
 	return repoPath, nil
 }

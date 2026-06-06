@@ -398,6 +398,13 @@ async function submitCommit() {
         Git is not available for this folder.
       </div>
 
+      <div
+        v-else-if="isGitRepo === undefined"
+        class="p-4 text-sm text-muted-foreground"
+      >
+        Loading…
+      </div>
+
       <Tabs
         v-else-if="isGitRepo === true"
         v-model="activeTab"
