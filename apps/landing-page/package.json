@@ -1,12 +1,12 @@
 {
-  "name": "workbench-landing",
+  "name": "apps-landing-page",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "predev": "cp ../docs/install.sh public/install.sh && cp ../docs/latest.json public/latest.json",
+    "predev": "cp ../../docs/install.sh public/install.sh && cp ../../docs/latest.json public/latest.json",
     "dev": "astro dev",
     "postinstall": "node scripts/ensure-rolldown-binding.mjs",
-    "prebuild": "cp ../docs/install.sh public/install.sh && cp ../docs/latest.json public/latest.json",
+    "prebuild": "cp ../../docs/install.sh public/install.sh && cp ../../docs/latest.json public/latest.json",
     "build": "astro build",
     "preview": "astro preview"
   },
@@ -20,7 +20,8 @@
     "clsx": "^2.1.1",
     "sharp": "^0.33.5",
     "tailwind-merge": "^3.6.0",
-    "vue": "^3.5.35"
+    "vue": "^3.5.35",
+    "wrangler": "^4.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",

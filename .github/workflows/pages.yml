@@ -1,26 +1,9 @@
-name: Deploy GitHub Pages
-
+name: Deploy GitHub Pages (disabled)
+# Replaced by deploy-landing-page.yml — Cloudflare Workers deployment
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - "landing/**"
-      - "docs/install.sh"
-      - "docs/latest.json"
-      - "docs/dev-versions.json"
-      - "scripts/generate-latest-json.mjs"
-      - "scripts/prepare-versioned-install.mjs"
-      - "scripts/merge-versioned-installs.mjs"
-      - ".github/workflows/pages.yml"
-      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
-  deploy:
-    uses: ./.github/workflows/deploy-pages.yml
-    secrets: inherit
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "GitHub Pages deploy is disabled. See deploy-landing-page.yml."

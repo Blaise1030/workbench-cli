@@ -46,6 +46,7 @@ export function useCreateTerminalMutation(worktreeId: MaybeRefOrGetter<string>) 
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.terminals(toValue(worktreeId)),
       });
+      toast.success("Terminal created");
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to create terminal");
@@ -100,6 +101,7 @@ export function useDeleteTerminalMutation(worktreeId: MaybeRefOrGetter<string>) 
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.terminals(toValue(worktreeId)),
       });
+      toast.success("Terminal deleted");
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to delete terminal");

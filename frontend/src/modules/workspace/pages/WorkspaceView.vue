@@ -11,6 +11,8 @@ import {
 import { useQuery } from "@tanstack/vue-query";
 import { queryClient } from "@/lib/query-client";
 import { useGlobalWorkspaceKeybindings } from "@/modules/keyboard/hooks/useGlobalWorkspaceKeybindings";
+import { GitBranchIcon } from "@lucide/vue";
+import { EmptyState } from "@/modules/empty-states";
 
 const route = useRoute();
 const router = useRouter();
@@ -56,15 +58,17 @@ watch(
     >
     </TerminalWorkspace>
 
-    <div v-else class="flex h-full min-h-0 flex-1 flex-col">
-      <header class="flex h-8 shrink-0 items-center border-b bg-muted px-1">
+    <div v-else class="flex min-h-0 flex-1 flex-col">
+      <header class="flex h-8 shrink-0 items-center border-b bg-sidebar px-1">
         <WorkspaceSidebarToggle />
       </header>
-      <div
-        class="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground"
-      >
-        <p class="text-sm">Select a worktree from the sidebar</p>
-        <p class="text-xs">or add a project to begin</p>
+      <div class="relative min-h-0 flex-1 overflow-hidden">
+        <EmptyState
+          class="absolute inset-0"
+          :icon="GitBranchIcon"
+          title="Select a worktree from the sidebar"
+          description="or add a project to begin"
+        />
       </div>
     </div>
   </WorkspaceLayout>
