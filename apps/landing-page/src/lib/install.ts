@@ -1,5 +1,5 @@
-/** GitHub Pages project site root. */
-export const PAGES_BASE = 'https://blaise1030.github.io/workbench-cli';
+/** Cloudflare Workers site root. */
+export const PAGES_BASE = 'https://apps-landing-page.pages.dev';
 
 /** Stable install script (latest release). */
 export const INSTALL_SCRIPT_URL = `${PAGES_BASE}/install.sh`;
