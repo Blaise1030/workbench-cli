@@ -166,10 +166,11 @@ function onSplitLayout(sizes: number[]) {
 
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
 const isGitRepo = useProjectIsGitRepo(() => worktree.value?.projectId);
+const gitQueriesEnabled = computed(() => isGitRepo.value === true);
 const { data: paths } = useQuery(fileTreeQueryOptions(() => props.worktreeId));
 const { data: gitStatus } = useQuery({
   ...gitStatusQueryOptions(() => props.worktreeId),
-  enabled: isGitRepo,
+  enabled: gitQueriesEnabled,
 });
 
 const filteredPaths = computed(() => {

@@ -78,20 +78,29 @@ func GetProject(db *sql.DB, id string) (*Project, error) {
 	return &enriched, nil
 }
 
-func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
+func resolveProjectDirectory(repoPathInput string) (string, error) {
 	repoPath, err := filepath.Abs(repoPathInput)
 	if err != nil {
-		return nil, &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
+		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
 	}
-	info, err := os.Stat(repoPath)
+	repoPath = filepath.Clean(repoPath)
+	info, err := os.Stat(repoPath) //nolint:gosec // local workspace tool; user-supplied folder paths are intentional
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, &ProjectError{Msg: "Path does not exist", Status: 400}
+			return "", &ProjectError{Msg: "Path does not exist", Status: 400}
 		}
-		return nil, &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
+		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
 	}
 	if !info.IsDir() {
-		return nil, &ProjectError{Msg: "Path is not a directory", Status: 400}
+		return "", &ProjectError{Msg: "Path is not a directory", Status: 400}
+	}
+	return repoPath, nil
+}
+
+func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
+	repoPath, err := resolveProjectDirectory(repoPathInput)
+	if err != nil {
+		return nil, err
 	}
 
 	var existing string
@@ -108,6 +117,7 @@ func RegisterProject(db *sql.DB, repoPathInput string) (*Project, error) {
 		return nil, fmt.Errorf("insert project: %w", err)
 	}
 	if err := syncWorktreesForProject(db, id); err != nil {
+		_, _ = db.Exec(`DELETE FROM projects WHERE id = ?`, id)
 		return nil, err
 	}
 	p, err := GetProject(db, id)

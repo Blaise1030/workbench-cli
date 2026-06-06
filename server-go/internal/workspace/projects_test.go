@@ -3,6 +3,7 @@ package workspace
 import (
 	"database/sql"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -69,5 +70,43 @@ func TestRegisterProject_rejectsFilePath(t *testing.T) {
 	_, err := RegisterProject(database, filePath)
 	if err == nil {
 		t.Fatal("expected error for file path")
+	}
+}
+
+func TestRegisterProject_gitRepo(t *testing.T) {
+	database := openTestDB(t)
+	folder := t.TempDir()
+	if out, err := exec.Command("git", "-C", folder, "init").CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+
+	project, err := RegisterProject(database, folder)
+	if err != nil {
+		t.Fatalf("RegisterProject: %v", err)
+	}
+	if !project.IsGitRepo {
+		t.Fatal("expected git project")
+	}
+
+	worktrees, err := ListWorktreesByProject(database, project.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(worktrees) == 0 {
+		t.Fatal("expected at least one worktree for git project")
+	}
+}
+
+func TestCreateWorktreeForProject_rejectsNonGitProject(t *testing.T) {
+	database := openTestDB(t)
+	folder := t.TempDir()
+	project, err := RegisterProject(database, folder)
+	if err != nil {
+		t.Fatalf("RegisterProject: %v", err)
+	}
+
+	_, err = CreateWorktreeForProject(database, project.ID, CreateWorktreeBody{Branch: "feature"})
+	if err == nil {
+		t.Fatal("expected error creating worktree for non-git project")
 	}
 }

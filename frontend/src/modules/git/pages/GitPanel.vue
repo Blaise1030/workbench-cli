@@ -182,7 +182,10 @@ const { data: worktree, isLoading: worktreeLoading } = useQuery(
 const isGitRepo = useProjectIsGitRepo(() => worktree.value?.projectId);
 
 const gitEnabled = computed(
-  () => Boolean(worktree.value?.isLinked) && isGitRepo.value && !worktreeLoading.value,
+  () =>
+    Boolean(worktree.value?.isLinked) &&
+    isGitRepo.value === true &&
+    !worktreeLoading.value,
 );
 
 const {
@@ -389,13 +392,17 @@ async function submitCommit() {
 
     <template v-else-if="worktree">
       <div
-        v-if="!isGitRepo"
+        v-if="isGitRepo === false"
         class="p-4 text-sm text-muted-foreground"
       >
         Git is not available for this folder.
       </div>
 
-      <Tabs v-else v-model="activeTab" class="flex min-h-0 flex-1 flex-col gap-0">
+      <Tabs
+        v-else-if="isGitRepo === true"
+        v-model="activeTab"
+        class="flex min-h-0 flex-1 flex-col gap-0"
+      >
         <header
           class="box-border flex min-h-8 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/60 px-3"
         >

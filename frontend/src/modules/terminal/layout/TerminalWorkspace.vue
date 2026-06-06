@@ -95,10 +95,11 @@ const {
 } = useWorktreeLayoutMode(() => props.worktreeId);
 const { data: worktree } = useQuery(worktreeQueryOptions(() => props.worktreeId));
 const isGitRepo = useProjectIsGitRepo(() => worktree.value?.projectId);
+const gitQueriesEnabled = computed(() => isGitRepo.value === true);
 /** Keep git status warm while on terminal (explorer/git panels unmount). */
 useQuery({
   ...gitStatusQueryOptions(() => props.worktreeId),
-  enabled: isGitRepo,
+  enabled: gitQueriesEnabled,
 });
 const contextQueue = useContextQueue(() => props.worktreeId, sessions);
 provide(contextQueueKey, contextQueue);
@@ -268,7 +269,7 @@ function restoreDefaultRoute(list: { id: string }[]) {
     explorerState.value,
   );
 
-  if (lastRoute === "git" && state.git && isGitRepo.value) {
+  if (lastRoute === "git" && state.git && isGitRepo.value === true) {
     router.replace({
       name: "git",
       params: { worktreeId: props.worktreeId },
@@ -375,15 +376,18 @@ function navigateToFirstTerminal() {
   router.push({ name: "workspace", params: { worktreeId: props.worktreeId } });
 }
 
-watch(isGitRepo, (git) => {
-  if (git) return;
+function exitGitPanelIfUnavailable() {
+  if (isGitRepo.value !== false) return;
   if (splitAuxPanel.value === "git") {
     panelsState.value = { ...panelsState.value, git: false };
   }
   if (route.name === "git") {
     navigateToFirstTerminal();
   }
-});
+}
+
+watch(isGitRepo, exitGitPanelIfUnavailable);
+watch(() => route.name, exitGitPanelIfUnavailable, { immediate: true });
 
 function toggleAuxPanel(type: "git" | "explorer") {
   const isActive = type === "git" ? isGitVisible.value : isExplorerVisible.value;
@@ -517,7 +521,7 @@ function equalizeSplitPanes() {
           <FolderTreeIcon />
         </Button>
         <Button
-          v-if="isGitRepo"
+          v-if="isGitRepo !== false"
           variant="ghost"
           size="icon-xs"
           :class="auxIconClass(isGitVisible)"
@@ -528,7 +532,7 @@ function equalizeSplitPanes() {
         >
           <GitBranchIcon />
         </Button>
-        <GitDisabledIndicator v-else size="xs" />
+        <GitDisabledIndicator v-else-if="isGitRepo === false" size="xs" />
         <slot name="toolbar-end" />
       </div>
     </header>
@@ -558,7 +562,7 @@ function equalizeSplitPanes() {
             <FolderTreeIcon />
           </Button>
           <Button
-            v-if="isGitRepo"
+            v-if="isGitRepo !== false"
             variant="ghost"
             size="icon-xs"
             :class="auxIconClass(isGitVisible)"
@@ -568,7 +572,7 @@ function equalizeSplitPanes() {
           >
             <GitBranchIcon />
           </Button>
-          <GitDisabledIndicator v-else size="xs" />
+          <GitDisabledIndicator v-else-if="isGitRepo === false" size="xs" />
         </div>
       </div>
       <RouterView
@@ -655,7 +659,7 @@ function equalizeSplitPanes() {
                 <FolderTreeIcon />
               </Button>
               <Button
-                v-if="isGitRepo"
+                v-if="isGitRepo !== false"
                 variant="ghost"
                 size="icon-xs"
                 :class="auxIconClass(isGitVisible)"
@@ -665,7 +669,7 @@ function equalizeSplitPanes() {
               >
                 <GitBranchIcon />
               </Button>
-              <GitDisabledIndicator v-else size="xs" />
+              <GitDisabledIndicator v-else-if="isGitRepo === false" size="xs" />
               <slot name="toolbar-end" />
             </div>
           </header>

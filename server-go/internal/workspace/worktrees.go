@@ -102,7 +102,10 @@ func syncWorktreesForProject(db *sql.DB, projectID string) error {
 	}
 	gitEntries, err := git.ListWorktrees(p.RepoPath)
 	if err != nil {
-		return ensureFolderWorktree(db, projectID, p.RepoPath)
+		if !git.IsGitRepo(p.RepoPath) {
+			return ensureFolderWorktree(db, projectID, p.RepoPath)
+		}
+		return nil // transient git failure — keep existing worktrees
 	}
 	existing, err := listWorktreesByProjectID(db, projectID)
 	if err != nil {
@@ -156,6 +159,20 @@ func syncWorktreesForProject(db *sql.DB, projectID string) error {
 	// Mark orphans as unlinked
 	for _, orphan := range byPath {
 		_, _ = db.Exec(`UPDATE worktrees SET is_linked=0 WHERE id=?`, orphan.ID)
+	}
+	return nil
+}
+
+func requireGitProjectForWorktree(db *sql.DB, wt *Worktree) error {
+	p, err := GetProject(db, wt.ProjectID)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return &ProjectError{Msg: "Project not found", Status: 404}
+	}
+	if !p.IsGitRepo {
+		return &ProjectError{Msg: "Project is not a git repository", Status: 400}
 	}
 	return nil
 }

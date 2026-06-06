@@ -9,6 +9,9 @@ export async function openProjectWorkspace(
   router: Router,
   project: Project,
 ) {
+  await queryClient.invalidateQueries({
+    queryKey: worktreesQueryOptions(project.id).queryKey,
+  });
   const worktrees = await queryClient.ensureQueryData(
     worktreesQueryOptions(project.id),
   );
