@@ -11,10 +11,12 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/assets"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/keybindings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/notifications"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/sidecar"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
 )
@@ -36,6 +38,9 @@ func writeJSON(w http.ResponseWriter, v any, code int) {
 }
 
 func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookieSecure bool, registry *terminal.Registry, allowedHosts []string) {
+	hub := sidecar.NewHub(config.DataDir())
+	sidecar.RegisterRoutes(r, hub)
+
 	r.Route("/api", func(r chi.Router) {
 		// Public loopback hook (e.g. Claude hooks) — must bypass the origin guard.
 		notifications.RegisterHookRoute(r, state.DB, state.EventBus)
@@ -178,7 +183,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 			})
 
 			r.Group(func(r chi.Router) {
-				workspace.RegisterRoutes(r, state.DB, state.Session, state.EventBus)
+				workspace.RegisterRoutes(r, state.DB, state.Session, state.EventBus, hub)
 			})
 		})
 	})

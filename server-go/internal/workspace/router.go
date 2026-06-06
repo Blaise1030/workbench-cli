@@ -72,7 +72,13 @@ func domainStatus(err error) int {
 	return http.StatusInternalServerError
 }
 
-func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus) {
+// Refresher is implemented by any type that can trigger a full-page reload
+// in connected browser tabs (e.g. the sidecar Hub).
+type Refresher interface {
+	BroadcastRefresh()
+}
+
+func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus, refresher ...Refresher) {
 	r.Use(auth.RequireSession(session))
 
 	// Projects
@@ -304,6 +310,9 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
+		for _, rf := range refresher {
+			rf.BroadcastRefresh()
+		}
 	})
 
 	r.Post("/worktrees/{id}/files", func(w http.ResponseWriter, r *http.Request) {
