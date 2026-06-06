@@ -60,6 +60,8 @@ type Registry struct {
 	mu      sync.RWMutex
 	entries map[string]*ptyEntry
 
+	pendingLaunch sync.Map // terminalID -> command (one-shot launch on first spawn)
+
 	capBytes                  int
 	idleTTL                   time.Duration
 	serverPort                int
@@ -98,6 +100,24 @@ func NewRegistry(cfg RegistryConfig) *Registry {
 		buildAgentResumeArgv:    cfg.BuildAgentResumeArgv,
 		onCmdComplete:        cfg.OnCmdComplete,
 	}
+}
+
+// SetPendingLaunch queues a one-shot shell command for the terminal's first PTY spawn.
+func (reg *Registry) SetPendingLaunch(terminalID, command string) {
+	command = strings.TrimSpace(command)
+	if command == "" {
+		return
+	}
+	reg.pendingLaunch.Store(terminalID, command)
+}
+
+func (reg *Registry) takePendingLaunch(terminalID string) (string, bool) {
+	v, ok := reg.pendingLaunch.LoadAndDelete(terminalID)
+	if !ok {
+		return "", false
+	}
+	cmd, ok := v.(string)
+	return cmd, ok && strings.TrimSpace(cmd) != ""
 }
 
 func processEnv() map[string]string {
@@ -266,9 +286,11 @@ func (reg *Registry) spawnPTY(terminalID string, e *ptyEntry, cols, rows uint16)
 		cwd = home
 	}
 
-	// Apply trusted custom resume or agent session resume when the agent is not running.
+	// One-shot launch (e.g. agent start from + menu), then trusted resume, then agent auto-resume.
 	args := spawnCfg.Args
-	if e.resumeCommand != nil && e.resumeTrusted && *e.resumeCommand != "" {
+	if cmd, ok := reg.takePendingLaunch(terminalID); ok {
+		args = append(args, "-c", fmt.Sprintf("%s; exec %s -l", cmd, shellPath))
+	} else if e.resumeCommand != nil && e.resumeTrusted && *e.resumeCommand != "" {
 		args = append(args, "-c", fmt.Sprintf("%s; exec %s -l", *e.resumeCommand, shellPath))
 	} else if resumeCmd, ok := reg.shouldAutoResumeAgent(e); ok {
 		args = append(args, "-c", fmt.Sprintf("%s; exec %s -l", resumeCmd, shellPath))

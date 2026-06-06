@@ -168,6 +168,34 @@ export function useCreateWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
   });
 }
 
+export function useDeleteProjectMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (projectId: string) => {
+      const res = await apiClient.projects[":id"].$delete({
+        param: { id: projectId },
+      });
+      await ensureOk<{ ok: true }>(res);
+    },
+    onSuccess: (_, projectId) => {
+      const worktrees =
+        queryClient.getQueryData<Worktree[]>(workspaceKeys.worktrees(projectId)) ??
+        [];
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.projects() });
+      queryClient.removeQueries({ queryKey: workspaceKeys.branches(projectId) });
+      queryClient.removeQueries({ queryKey: workspaceKeys.worktrees(projectId) });
+      for (const w of worktrees) {
+        queryClient.removeQueries({ queryKey: workspaceKeys.worktree(w.id) });
+        queryClient.removeQueries({ queryKey: workspaceKeys.terminals(w.id) });
+      }
+      toast.success("Project removed");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to remove project");
+    },
+  });
+}
+
 export function useDeleteWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
   const queryClient = useQueryClient();
   return useMutation({

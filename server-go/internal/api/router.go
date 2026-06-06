@@ -178,7 +178,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 			})
 
 			r.Group(func(r chi.Router) {
-				workspace.RegisterRoutes(r, state.DB, state.Session, state.EventBus)
+				workspace.RegisterRoutes(r, state.DB, state.Session, state.EventBus, registry)
 			})
 		})
 	})
