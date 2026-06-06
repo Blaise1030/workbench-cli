@@ -31,6 +31,8 @@ import {
   useWorktreePanels,
 } from "@/modules/workspace/lib/worktree-panels-storage";
 import { createFileLinkProvider } from "@/modules/terminal/lib/terminal-file-links";
+import { createURLLinkProvider } from "@/modules/terminal/lib/terminal-url-links";
+import { onElementSelected } from "@/modules/terminal/lib/sidecar-ws";
 import { terminalSelectionColors } from "@/modules/terminal/lib/terminal-theme";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +50,7 @@ let terminal: Terminal | null = null;
 let fitAddon: FitAddon | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let fitInterval: ReturnType<typeof setInterval> | null = null;
+let unsubscribeSidecar: (() => void) | undefined;
 
 const worktreeId = computed(() => route.params.worktreeId as string);
 const { data: worktree } = useQuery(worktreeQueryOptions(worktreeId));
@@ -138,6 +141,15 @@ onMounted(async () => {
         () => fileTreePaths.value,
       ),
     );
+    terminal.registerLinkProvider(
+      createURLLinkProvider(terminal, (url, metaKey) => {
+        if (metaKey) {
+          window.open(`/sidecar/proxy?target=${encodeURIComponent(url)}`, "_blank");
+        } else {
+          window.open(url, "_blank");
+        }
+      }),
+    );
     fitAddon.fit();
 
     terminal.onData((data) => sessions.get(props.sessionId)?.sendInput(data));
@@ -150,6 +162,9 @@ onMounted(async () => {
     fitInterval = setInterval(() => fitAddon?.fit(), 2_000);
 
     sessions.attach(props.sessionId, terminal);
+    unsubscribeSidecar = onElementSelected(({ selector, screenshotPath }) => {
+      insertAtPrompt(`${selector}\nScreenshot: ${screenshotPath}\n`);
+    });
     initError.value = null;
   } catch (err) {
     initError.value =
@@ -165,6 +180,7 @@ onUnmounted(() => {
   terminal?.dispose();
   terminal = null;
   fitAddon = null;
+  unsubscribeSidecar?.();
 });
 
 watch(
