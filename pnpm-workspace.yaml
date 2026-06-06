@@ -2,6 +2,7 @@ packages:
   - frontend
   - cli
   - apps/landing-page
+  - sidecar-client
 allowBuilds:
   esbuild: true
   sharp: true
