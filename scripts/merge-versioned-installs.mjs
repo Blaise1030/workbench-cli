@@ -14,7 +14,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const distDir = process.argv[2] ?? join(root, "landing", "dist");
+const distDir = process.argv[2] ?? join(root, "apps/landing-page/dist");
 const indexPath = join(root, "docs", "dev-versions.json");
 const pagesBase =
   process.env.PAGES_BASE ?? "https://blaise1030.github.io/workbench-cli";

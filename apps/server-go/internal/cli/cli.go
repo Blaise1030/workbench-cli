@@ -7,6 +7,10 @@ import (
 )
 
 func Execute(argv []string) error {
+	if len(argv) > 0 && (argv[0] == "--version" || argv[0] == "-V") {
+		fmt.Println(server.Version())
+		return nil
+	}
 	if len(argv) > 0 && argv[0] == "notify" {
 		return RunNotify(argv[1:])
 	}

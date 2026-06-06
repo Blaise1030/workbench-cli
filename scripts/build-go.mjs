@@ -5,13 +5,13 @@
  *   node scripts/build-go.mjs --skip-ui   # reuse existing dist/public
  */
 import { execFileSync } from "node:child_process";
-import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { goMissingMessage, resolveGoBin } from "./go-bin.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const serverGo = join(root, "server-go");
+const serverGo = join(root, "apps/server-go");
 const indexHtml = join(root, "dist/public/index.html");
 const embedPublic = join(serverGo, "internal/assets/public");
 const outBinary = join(root, "bin", "workbench-cli");
@@ -49,14 +49,17 @@ if (!existsSync(join(embedPublic, "index.html"))) {
 
 mkdirSync(join(root, "bin"), { recursive: true });
 
-console.log("Building Go server (embed, stripped) …");
+const pkgVersion = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
+const versionLdflag = `-X github.com/blaisetiong/workbench-cli/server-go/internal/server.version=${pkgVersion}`;
+
+console.log(`Building Go server (embed, stripped, v${pkgVersion}) …`);
 execFileSync(
   goBin,
   [
     "build",
     "-tags",
     "embed",
-    `-ldflags=-s -w`,
+    `-ldflags=-s -w ${versionLdflag}`,
     "-o",
     outBinary,
     "./cmd/workbench-cli",

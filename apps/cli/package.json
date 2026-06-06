@@ -1,5 +1,5 @@
 {
-  "name": "@workbench/cli",
+  "name": "apps-cli",
   "version": "0.1.0",
   "private": true,
   "type": "module"

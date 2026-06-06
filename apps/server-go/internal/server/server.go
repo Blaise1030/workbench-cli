@@ -24,7 +24,13 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/tlsutil"
 )
 
-const version = "0.1.1"
+// version is set at link time via -ldflags; defaults to "dev" for local go run.
+var version = "dev"
+
+// Version returns the CLI/server build version.
+func Version() string {
+	return version
+}
 
 // buildAllowedHosts lists Origin header hosts permitted for state-changing API calls.
 // WORKBENCH_DEV_UI_PORT adds localhost:<port> when Vite proxies /api during dev:go.

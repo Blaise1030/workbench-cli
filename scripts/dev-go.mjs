@@ -108,7 +108,7 @@ const go = run(
   GO_BIN,
   ["run", "./cmd/workbench-cli", "--http", "-p", GO_PORT, "-y"],
   {
-    cwd: join(ROOT, "server-go"),
+    cwd: join(ROOT, "apps/server-go"),
     env: { WORKBENCH_DEV_UI_PORT: VITE_PORT },
   },
 );
@@ -133,7 +133,7 @@ try {
   shutdown(1);
 }
 
-const vite = run("npx", ["vite", "--config", "frontend/vite.config.ts"], {
+const vite = run("pnpm", ["--filter", "apps-frontend", "dev"], {
   env: {
     WORKBENCH_DEV_BACKEND: "go",
     WORKBENCH_GO_PORT: GO_PORT,

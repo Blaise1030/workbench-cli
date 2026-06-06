@@ -74,8 +74,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: server-go/go.mod
-          cache-dependency-path: server-go/go.sum
+          go-version-file: apps/server-go/go.mod
+          cache-dependency-path: apps/server-go/go.sum
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -85,10 +85,10 @@ jobs:
 
       - name: Stage UI for go:embed
         run: |
-          rm -rf server-go/internal/assets/public
-          mkdir -p server-go/internal/assets/public
-          cp -R dist/public/. server-go/internal/assets/public/
-          test -f server-go/internal/assets/public/index.html
+          rm -rf apps/server-go/internal/assets/public
+          mkdir -p apps/server-go/internal/assets/public
+          cp -R dist/public/. apps/server-go/internal/assets/public/
+          test -f apps/server-go/internal/assets/public/index.html
 
       - name: Build Go binary
         env:
@@ -96,11 +96,12 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
         run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
           mkdir -p dist
-          cd server-go
+          cd apps/server-go
           go build \
             -tags embed \
-            -ldflags="-s -w" \
+            -ldflags="-s -w -X github.com/blaisetiong/workbench-cli/server-go/internal/server.version=${PKG_VERSION}" \
             -o "../dist/${{ matrix.name }}" \
             ./cmd/workbench-cli
 

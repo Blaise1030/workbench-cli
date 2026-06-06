@@ -56,7 +56,7 @@ const fixtures = [
 
 // Add fixture JSON files from server-go/test/contract/fixtures/ if they exist
 try {
-  const fixtureDir = join(ROOT, "server-go", "test", "contract", "fixtures");
+  const fixtureDir = join(ROOT, "apps/server-go", "test", "contract", "fixtures");
   const { readdirSync, readFileSync } = await import("node:fs");
   for (const file of readdirSync(fixtureDir).filter(f => f.endsWith(".json"))) {
     fixtures.push(JSON.parse(readFileSync(join(fixtureDir, file), "utf8")));

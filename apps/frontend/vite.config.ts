@@ -108,15 +108,11 @@ export default defineConfig({
         find: "@",
         replacement: fileURLToPath(new URL("./src", import.meta.url)),
       },
-      {
-        find: "@server",
-        replacement: fileURLToPath(new URL("../server", import.meta.url)),
-      },
     ],
   },
   build: {
     // Monorepo: UI lands in repo-root dist/public (outside frontend/).
-    outDir: "../dist/public",
+    outDir: "../../dist/public",
     emptyOutDir: true,
     target: "es2020",
     minify: "terser",

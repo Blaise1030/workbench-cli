@@ -48,13 +48,13 @@ jobs:
         run: node scripts/generate-latest-json.mjs
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter workbench-landing...
+        run: pnpm install --frozen-lockfile --filter apps-landing-page...
 
       - name: Build landing site
-        run: pnpm --filter workbench-landing run build
+        run: pnpm --filter apps-landing-page run build
 
       - name: Merge dev version install folders
-        run: node scripts/merge-versioned-installs.mjs landing/dist
+        run: node scripts/merge-versioned-installs.mjs apps/landing-page/dist
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -62,7 +62,7 @@ jobs:
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: landing/dist
+          path: apps/landing-page/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

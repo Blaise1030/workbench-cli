@@ -1,7 +1,5 @@
 packages:
-  - frontend
-  - cli
-  - apps/landing-page
+  - apps/*
 allowBuilds:
   esbuild: true
   sharp: true

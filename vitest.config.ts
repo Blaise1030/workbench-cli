@@ -8,12 +8,12 @@ export default defineConfig({
     alias: [
       {
         find: "@",
-        replacement: fileURLToPath(new URL("./frontend/src", import.meta.url)),
+        replacement: fileURLToPath(new URL("./apps/frontend/src", import.meta.url)),
       },
     ],
   },
   test: {
-    include: ["cli/**/*.test.ts", "frontend/src/**/*.test.ts"],
+    include: ["apps/cli/**/*.test.ts", "apps/frontend/src/**/*.test.ts"],
     setupFiles: [fileURLToPath(new URL("./vitest.setup.ts", import.meta.url))],
   },
 });
