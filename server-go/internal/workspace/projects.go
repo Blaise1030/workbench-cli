@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -79,12 +80,19 @@ func GetProject(db *sql.DB, id string) (*Project, error) {
 }
 
 func resolveProjectDirectory(repoPathInput string) (string, error) {
-	repoPath, err := resolveExistingDirectory(repoPathInput)
+	if strings.Contains(repoPathInput, "\x00") {
+		return "", &ProjectError{Msg: "Invalid path", Status: 400}
+	}
+	repoPath, err := filepath.Abs(repoPathInput)
 	if err != nil {
+		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
+	}
+	repoPath = filepath.Clean(repoPath)
+	if err := git.ValidateDirectoryPath(repoPath); err != nil {
 		if os.IsNotExist(err) {
 			return "", &ProjectError{Msg: "Path does not exist", Status: 400}
 		}
-		if err.Error() == "path is not a directory" {
+		if err.Error() == "not a directory" {
 			return "", &ProjectError{Msg: "Path is not a directory", Status: 400}
 		}
 		return "", &ProjectError{Msg: "Invalid path: " + err.Error(), Status: 400}
