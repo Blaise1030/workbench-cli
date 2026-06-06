@@ -72,7 +72,7 @@ watch(() => filterState.search, () => {
 
 watch(allGroups, () => {
   filterItems()
-})
+}, { deep: true })
 
 provideCommandContext({
   allItems,

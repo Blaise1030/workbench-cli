@@ -48,7 +48,7 @@ const gen = spawnSync(
 );
 if (gen.status !== 0) process.exit(gen.status ?? 1);
 
-const template = readFileSync(join(root, "docs", "install.sh"), "utf8");
+const template = readFileSync(join(root, "apps/landing-page/templates/install.sh"), "utf8");
 const manifestUrl = `${manifestBase.replace(/\/$/, "")}/latest.json`;
 const installSh = template.replace(
   /MANIFEST_URL="\$\{WORKBENCH_MANIFEST_URL:-[^"]+\}"/,

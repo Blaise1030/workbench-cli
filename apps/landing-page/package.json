@@ -3,10 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "predev": "cp ../../docs/install.sh public/install.sh && cp ../../docs/latest.json public/latest.json",
     "dev": "astro dev",
     "postinstall": "node scripts/ensure-rolldown-binding.mjs",
-    "prebuild": "cp ../../docs/install.sh public/install.sh && cp ../../docs/latest.json public/latest.json",
     "build": "astro build",
     "preview": "astro preview"
   },

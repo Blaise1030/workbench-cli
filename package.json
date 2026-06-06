@@ -21,6 +21,8 @@
     "install:go": "node scripts/install-go-local.mjs",
     "install:go:global": "node scripts/install-go-local.mjs --global",
     "dev:go": "node scripts/dev-go.mjs",
+    "dev:landing": "pnpm --filter apps-landing-page dev",
+    "serve:landing": "pnpm --filter apps-landing-page preview",
     "test:go:smoke": "node scripts/test-go-smoke.mjs",
     "test:contract": "node scripts/contract-test.mjs",
     "benchmark": "node scripts/benchmark.mjs"

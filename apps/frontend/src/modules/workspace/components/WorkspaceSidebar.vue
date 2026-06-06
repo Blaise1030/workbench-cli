@@ -14,6 +14,7 @@ import AgentKindIcon from "@/modules/workspace/components/AgentKindIcon.vue";
 import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
 import ProjectWorktrees from "@/modules/workspace/components/ProjectWorktrees.vue";
 import ThemeToggle from "@/modules/workspace/components/ThemeToggle.vue";
+import VersionBadge from "@/modules/workspace/components/VersionBadge.vue";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -50,6 +51,7 @@ import {
 import { useSessionsQuery } from "@/modules/sessions/queries";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
 import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
+import SidebarHelpMenu from "@/modules/workspace/components/SidebarHelpMenu.vue";
 
 const STORAGE_KEY_EXPANDED_PROJECTS = "workbench:workspace-projects-expanded";
 const STORAGE_KEY_AGENTS_PANEL_SIZE = "workbench:workspace-sidebar-agents-size";
@@ -217,6 +219,7 @@ async function removeProject(project: Project) {
             <div class="flex flex-1 flex-col px-1">
               <!-- Header — sticky, fades into project list below -->
               <div class="sticky top-0 z-10 flex h-8 shrink-0 items-center justify-between bg-gradient-to-b from-background to-transparent">
+                <VersionBadge />
                 <div class="flex items-center ml-auto">
                   <ThemeToggle />
                   <Button variant="ghost" size="icon-xs" as-child>
@@ -355,4 +358,5 @@ async function removeProject(project: Project) {
   </div>
 
   <AddProjectDialog v-model:open="addProjectOpen" />
+  <SidebarHelpMenu />
 </template>

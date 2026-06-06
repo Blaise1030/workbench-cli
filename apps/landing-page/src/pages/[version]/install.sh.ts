@@ -1,12 +1,6 @@
 import type { APIRoute, GetStaticPaths } from 'astro';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { renderInstallScript } from '../../lib/install-script';
 import { fetchReleaseVersions, PAGES_BASE } from '../../lib/versions';
-
-const template = readFileSync(
-  join(process.cwd(), '..', '..', 'docs', 'install.sh'),
-  'utf8'
-);
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const versions = await fetchReleaseVersions();
@@ -19,11 +13,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const GET: APIRoute = ({ params }) => {
   const { version } = params;
   const manifestUrl = `${PAGES_BASE}/${version}/latest.json`;
-  const installSh = template.replace(
-    /MANIFEST_URL="\$\{WORKBENCH_MANIFEST_URL:-[^"]+\}"/,
-    `MANIFEST_URL="\${WORKBENCH_MANIFEST_URL:-${manifestUrl}}"`
-  );
-  return new Response(installSh, {
+  return new Response(renderInstallScript(manifestUrl), {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
 };

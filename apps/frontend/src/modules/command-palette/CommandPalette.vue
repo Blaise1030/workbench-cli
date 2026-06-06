@@ -2,7 +2,7 @@
 import { computed, defineComponent, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useQuery } from "@tanstack/vue-query";
-import { FileIcon, LoaderIcon, SearchIcon } from "@lucide/vue";
+import { BotIcon, FileIcon, LoaderIcon, SearchIcon, TerminalIcon } from "@lucide/vue";
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandSeparator, useCommand } from "@/components/ui/command";
 import { Kbd } from "@/components/ui/kbd";
 import { closeCommandPalette, savedInput, pendingInitialInput, recentFiles, addRecentFile } from "./useCommandPalette";
@@ -19,6 +19,11 @@ import {
 } from "@/modules/workspace/lib/worktree-panels-storage";
 import type { RouteLocationRaw } from "vue-router";
 import type { KeybindingAction } from "@/modules/keyboard/types";
+import { useAgentsQuery } from "@/modules/settings/queries";
+import AgentBuiltinIcon from "@/modules/settings/components/AgentBuiltinIcon.vue";
+import type { WorkbenchAgent } from "@/modules/settings/types/agents";
+
+const INLINE_BUILTIN_IDS = new Set(["claude", "codex", "cursor", "gemini"]);
 
 // Exposes a setter into the Command's filterState so the parent can seed the
 // initial search value after the Command mounts (filterState lives inside Command).
@@ -94,6 +99,42 @@ const visibleRecentFiles = computed(() =>
 );
 
 const { data: keybindings } = useKeybindingsQuery();
+const { data: agentsData } = useAgentsQuery();
+const agents = computed(() => agentsData.value?.agents ?? []);
+
+const isCommandMode = computed(
+  () => !isFileMode.value && !isContentMode.value,
+);
+const showTerminalGroup = computed(
+  () => Boolean(props.worktreeId) && isCommandMode.value,
+);
+
+function matchesQuery(label: string, query: string) {
+  return !query || label.toLowerCase().includes(query);
+}
+
+const filteredShellTerminal = computed(() => {
+  if (!showTerminalGroup.value) return false;
+  const q = input.value.toLowerCase();
+  return matchesQuery("Terminal", q) || matchesQuery("New Terminal", q);
+});
+
+const filteredAgentTerminals = computed(() => {
+  if (!showTerminalGroup.value) return [];
+  const q = input.value.toLowerCase();
+  return agents.value.filter(
+    (agent) =>
+      matchesQuery(agent.name, q) || matchesQuery(agent.startCommand, q),
+  );
+});
+
+const hasTerminalItems = computed(
+  () => filteredShellTerminal.value || filteredAgentTerminals.value.length > 0,
+);
+
+function agentIconSrc(agent: WorkbenchAgent) {
+  return agent.icon?.trim() || undefined;
+}
 
 const filteredCommands = computed(() => {
   const q = (isFileMode.value || isContentMode.value) ? "" : input.value.toLowerCase();
@@ -113,7 +154,11 @@ function cmdKbd(cmd: { keybindingAction?: string }): string[] {
 }
 
 const navigateCommands = computed(() => filteredCommands.value.filter((c) => c.type === "navigate"));
-const actionCommands = computed(() => filteredCommands.value.filter((c) => c.type === "action"));
+const actionCommands = computed(() =>
+  filteredCommands.value
+    .filter((c) => c.type === "action")
+    .filter((c) => !(showTerminalGroup.value && c.action === "newTerminal")),
+);
 
 function handleOpenChange(value: boolean) {
   if (!value) {
@@ -148,6 +193,11 @@ function openFile(relativePath: string) {
 
 function handleAction(key: string) {
   emit("action", key);
+  handleOpenChange(false);
+}
+
+function handleAgentTerminal(agent: WorkbenchAgent) {
+  emit("action", `newTerminal:agent:${agent.id}`);
   handleOpenChange(false);
 }
 
@@ -304,11 +354,52 @@ const ITEM_CLASS =
                 <!-- Command mode -->
                 <template v-else>
                   <div
-                    v-if="!navigateCommands.length && !actionCommands.length"
+                    v-if="!navigateCommands.length && !actionCommands.length && !hasTerminalItems"
                     class="py-6 text-center text-xs text-muted-foreground"
                   >
                     No commands found
                   </div>
+
+                  <CommandGroup v-if="hasTerminalItems" heading="Terminals" :class="GROUP_HEADING_CLASS">
+                    <CommandItem
+                      v-if="filteredShellTerminal"
+                      value="Terminal"
+                      :class="ITEM_CLASS"
+                      @select="() => handleAction('newTerminal')"
+                    >
+                      <TerminalIcon class="size-4 shrink-0 text-muted-foreground" />
+                      <span class="flex-1 text-sm">Terminal</span>
+                      <span v-if="cmdKbd({ keybindingAction: 'terminal.newTerminal' }).length" class="ml-auto flex items-center gap-0.5">
+                        <Kbd v-for="k in cmdKbd({ keybindingAction: 'terminal.newTerminal' })" :key="k">{{ k }}</Kbd>
+                      </span>
+                    </CommandItem>
+                    <CommandItem
+                      v-for="agent in filteredAgentTerminals"
+                      :key="agent.id"
+                      :value="`Terminal ${agent.name}`"
+                      :class="ITEM_CLASS"
+                      @select="() => handleAgentTerminal(agent)"
+                    >
+                      <AgentBuiltinIcon
+                        v-if="INLINE_BUILTIN_IDS.has(agent.id)"
+                        :agent-id="agent.id"
+                        extra-class="size-4"
+                      />
+                      <img
+                        v-else-if="agentIconSrc(agent)"
+                        :src="agentIconSrc(agent)"
+                        :alt="agent.name"
+                        class="size-4 shrink-0 rounded object-cover"
+                      />
+                      <BotIcon v-else class="size-4 shrink-0 text-muted-foreground" />
+                      <span class="flex-1 text-sm">{{ agent.name }}</span>
+                    </CommandItem>
+                  </CommandGroup>
+
+                  <CommandSeparator
+                    v-if="hasTerminalItems && navigateCommands.length"
+                    class="my-1!"
+                  />
 
                   <CommandGroup v-if="navigateCommands.length" heading="Navigate" :class="GROUP_HEADING_CLASS">
                     <CommandItem
@@ -327,7 +418,7 @@ const ITEM_CLASS =
                   </CommandGroup>
 
                   <CommandSeparator
-                    v-if="navigateCommands.length && actionCommands.length"
+                    v-if="(hasTerminalItems || navigateCommands.length) && actionCommands.length"
                     class="my-1!"
                   />
 

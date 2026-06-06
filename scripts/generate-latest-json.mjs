@@ -1,8 +1,8 @@
 /**
- * Write docs/latest.json for GitHub Pages install.sh
+ * Write a latest.json release manifest for install.sh
  *
- *   VERSION=0.1.0 node scripts/generate-latest-json.mjs
- *   GITHUB_REPOSITORY=owner/repo TAG=v0.1.0 node scripts/generate-latest-json.mjs
+ *   VERSION=0.1.0 OUTPUT_PATH=./out/latest.json node scripts/generate-latest-json.mjs
+ *   GITHUB_REPOSITORY=owner/repo TAG=v0.1.0 OUTPUT_PATH=./out/latest.json node scripts/generate-latest-json.mjs
  *   TAG=workbench-v0.2.0 node scripts/generate-latest-json.mjs  # legacy Release Please tags
  */
 import { writeFileSync } from "node:fs";
@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outPath =
-  process.env.OUTPUT_PATH ?? join(root, "docs", "latest.json");
+  process.env.OUTPUT_PATH ?? join(root, "apps/landing-page/dist/latest.json");
 
 const repo = process.env.GITHUB_REPOSITORY ?? "Blaise1030/workbench-cli";
 const rawTag = process.env.TAG ?? process.env.GITHUB_REF_NAME ?? "";

@@ -22,7 +22,7 @@ const id = `feature-pan-${Math.random().toString(36).slice(2, 7)}`;
 
 <div class="w-full" id={id}>
   <!-- Tabs -->
-  <div class="flex gap-3 max-w-2xl mx-auto sm:px-0 px-4 mb-1.5 font-mono text-[10px] tracking-[0.08em] flex-wrap justify-center" style="position:relative;z-index:1;">
+  <div class="flex gap-3 max-w-2xl sm:px-0 px-4 mb-1.5 font-mono text-[10px] tracking-[0.08em] flex-wrap justify-start" style="position:relative;z-index:1;">
     {tabs.map((t, i) => (
       <button
         class="tab-btn shrink-0 cursor-pointer select-none transition-colors text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"

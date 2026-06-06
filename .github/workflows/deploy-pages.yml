@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       release_tag:
-        description: "Git tag for latest.json (e.g. v0.2.0). Omit to use committed docs/latest.json."
+        description: "Git tag for latest.json (e.g. v0.2.0). Passed to the landing page build as PUBLIC_RELEASE_TAG."
         required: false
         type: string
 
@@ -40,17 +40,12 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: Generate latest.json from release tag
-        if: inputs.release_tag != ''
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          TAG: ${{ inputs.release_tag }}
-        run: node scripts/generate-latest-json.mjs
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter apps-landing-page...
 
       - name: Build landing site
+        env:
+          PUBLIC_RELEASE_TAG: ${{ inputs.release_tag }}
         run: pnpm --filter apps-landing-page run build
 
       - name: Merge dev version install folders
