@@ -22,7 +22,7 @@ if (!arrayMatch) {
 
 const allowed = new Set([...arrayMatch[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]));
 
-const vendorPrefixes = ["vendor-", "index-", "worker-", "shiki-wasm"];
+const vendorPrefixes = ["vendor-", "index-", "worker-", "shiki-wasm", "app-"];
 
 const files = readdirSync(assetsDir).filter((f) => f.endsWith(".js"));
 const langChunks = files.filter(
@@ -31,6 +31,10 @@ const langChunks = files.filter(
 
 const unexpected = langChunks.filter((file) => {
   const id = file.replace(/-[a-zA-Z0-9_-]+\.js$/, "");
+  // Only flag names that look like Shiki language IDs: lowercase letters/digits only,
+  // no dots, hyphens, underscores, or uppercase. App/workspace chunks are excluded
+  // because they use PascalCase, camelCase, or multi-word kebab names.
+  if (!/^[a-z][a-z0-9]*$/.test(id)) return false;
   return !allowed.has(id);
 });
 

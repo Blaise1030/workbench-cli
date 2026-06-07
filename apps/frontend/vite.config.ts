@@ -130,6 +130,21 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
+        chunkFileNames(chunkInfo) {
+          if (
+            chunkInfo.name.startsWith("vendor-") ||
+            chunkInfo.name.startsWith("worker-")
+          ) {
+            return "assets/[name]-[hash].js";
+          }
+          const isFromAppSrc = chunkInfo.moduleIds.some(
+            (id) =>
+              id.includes("/apps/frontend/src/") && !id.startsWith("\0"),
+          );
+          return isFromAppSrc
+            ? "assets/app-[name]-[hash].js"
+            : "assets/[name]-[hash].js";
+        },
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
           if (id.includes("@codemirror") || id.includes("/codemirror")) {
