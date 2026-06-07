@@ -42,6 +42,7 @@ import {
   usePatchAgentsMutation,
 } from "@/modules/settings/queries/agents";
 import type { PatchWorkbenchAgent } from "@/modules/settings/types/agents";
+import { toast } from "vue-sonner";
 import { ApiError } from "@/lib/api-error";
 
 const { data, isPending } = useAgentsQuery();
@@ -50,8 +51,6 @@ const createAgent = useCreateAgentMutation();
 const deleteAgent = useDeleteAgentMutation();
 const applyHooks = useApplyAgentHooksMutation();
 
-const error = ref("");
-const success = ref("");
 const openAccordion = ref<string>("claude");
 
 const addDialogOpen = ref(false);
@@ -92,12 +91,10 @@ function mutationErrorMessage(err: unknown, fallback: string): string {
 }
 
 async function saveAgent(id: string, partial: PatchWorkbenchAgent) {
-  error.value = "";
-  success.value = "";
   try {
     await patch.mutateAsync({ [id]: partial });
   } catch (err) {
-    error.value = mutationErrorMessage(err, "Failed to save agent.");
+    toast.error(mutationErrorMessage(err, "Failed to save agent."));
   }
 }
 
@@ -126,30 +123,25 @@ function onHookTextBlur(id: string, field: "title" | "body", event: Event) {
 async function copyManifest(id: string) {
   const text = data.value?.manifests[id]?.settingsMerge;
   if (!text) return;
-  error.value = "";
   try {
     await navigator.clipboard.writeText(text);
-    success.value = "Copied hook config to clipboard.";
+    toast.success("Copied hook config to clipboard.");
   } catch {
-    error.value = "Could not copy to clipboard.";
+    toast.error("Could not copy to clipboard.");
   }
 }
 
 async function applyToAgent(id: string) {
-  error.value = "";
-  success.value = "";
   try {
     const result = await applyHooks.mutateAsync(id);
-    success.value = `Wrote hooks to ${result.configPath} (backup: ${result.backupPath}).`;
+    toast.success(`Wrote hooks to ${result.configPath} (backup: ${result.backupPath}).`);
   } catch (err) {
-    error.value = mutationErrorMessage(err, "Failed to apply hooks.");
+    toast.error(mutationErrorMessage(err, "Failed to apply hooks."));
   }
 }
 
 async function addAgent() {
   dialogError.value = "";
-  error.value = "";
-  success.value = "";
   try {
     const created = await createAgent.mutateAsync({
       name: newName.value.trim(),
@@ -158,23 +150,21 @@ async function addAgent() {
     });
     addDialogOpen.value = false;
     openAccordion.value = created.agent.id;
-    success.value = "Agent added.";
+    toast.success("Agent added.");
   } catch (err) {
     dialogError.value = mutationErrorMessage(err, "Failed to add agent.");
   }
 }
 
 async function removeAgent(id: string) {
-  error.value = "";
-  success.value = "";
   try {
     await deleteAgent.mutateAsync(id);
     if (openAccordion.value === id) {
       openAccordion.value = data.value?.agents[0]?.id ?? "";
     }
-    success.value = "Agent removed.";
+    toast.success("Agent removed.");
   } catch (err) {
-    error.value = mutationErrorMessage(err, "Failed to remove agent.");
+    toast.error(mutationErrorMessage(err, "Failed to remove agent."));
   }
 }
 </script>
@@ -188,9 +178,6 @@ async function removeAgent(id: string) {
       title="Configured agents"
       description="Expand an agent to edit commands and notify hooks."
     >
-      <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-      <p v-if="success" class="text-sm text-muted-foreground">{{ success }}</p>
-
       <Card class="px-4 py-0 gap-0">
         <Accordion
           v-model="openAccordion"

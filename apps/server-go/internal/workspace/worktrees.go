@@ -3,6 +3,7 @@ package workspace
 import (
 	"database/sql"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -217,11 +218,14 @@ func CreateWorktreeForProject(db *sql.DB, projectID string, body CreateWorktreeB
 	args := []string{"worktree", "add"}
 	wtPath := ""
 	if body.Path != nil && *body.Path != "" {
-		wtPath = *body.Path
+		wtPath = filepath.Clean(*body.Path)
+		if strings.HasPrefix(wtPath, "-") || strings.ContainsRune(wtPath, 0) {
+			return nil, &WorktreeError{Msg: "invalid worktree path", Status: 400}
+		}
 	} else {
 		wtPath = filepath.Clean(p.RepoPath + "/../" + body.Branch)
 	}
-	args = append(args, wtPath)
+	args = append(args, "--", wtPath)
 
 	if body.IsNewBranch != nil && *body.IsNewBranch {
 		args = append(args, "-b", body.Branch)

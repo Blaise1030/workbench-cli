@@ -15,7 +15,7 @@ const props = withDefaults(
   }>(),
   {
     variant: 'outline',
-    size: 'default',
+    size: 'sm',
   },
 )
 

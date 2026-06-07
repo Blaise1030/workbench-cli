@@ -9,6 +9,13 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 )
 
+// confined returns p and true only if p is directly inside base (no traversal).
+func confined(base, p string) (string, bool) {
+	cleanBase := filepath.Clean(base)
+	cleanP := filepath.Clean(p)
+	return cleanP, strings.HasPrefix(cleanP, cleanBase+string(os.PathSeparator))
+}
+
 type ScrollbackMeta struct {
 	TerminalID   string `json:"terminalId"`
 	Cwd          string `json:"cwd"`
@@ -24,13 +31,16 @@ func isValidTerminalID(id string) bool {
 func scrollbackDir() string     { return config.ScrollbackDir() }
 func scrollbackPrevDir() string { return filepath.Join(config.DataDir(), "scrollback", "previous") }
 
-func scrollbackPaths(terminalID string, previous bool) (bin, meta string) {
+func scrollbackPaths(terminalID string, previous bool) (bin, meta string, ok bool) {
 	base := scrollbackDir()
 	if previous {
 		base = scrollbackPrevDir()
 	}
-	return filepath.Join(base, terminalID+".bin"),
-		filepath.Join(base, terminalID+".meta.json")
+	var binOk, metaOk bool
+	bin, binOk = confined(base, filepath.Join(base, terminalID+".bin"))
+	meta, metaOk = confined(base, filepath.Join(base, terminalID+".meta.json"))
+	ok = binOk && metaOk
+	return
 }
 
 func ensureScrollbackDirs() {
@@ -45,8 +55,11 @@ func DumpScrollback(terminalID string, data []byte, meta ScrollbackMeta) {
 	ensureScrollbackDirs()
 	meta.TerminalID = terminalID
 	metaJSON, _ := json.Marshal(meta)
-	binA, metaA := scrollbackPaths(terminalID, false)
-	binP, metaP := scrollbackPaths(terminalID, true)
+	binA, metaA, ok1 := scrollbackPaths(terminalID, false)
+	binP, metaP, ok2 := scrollbackPaths(terminalID, true)
+	if !ok1 || !ok2 {
+		return
+	}
 	_ = os.WriteFile(binA, data, 0o644)
 	_ = os.WriteFile(metaA, metaJSON, 0o644)
 	_ = copyFile(binA, binP)
@@ -57,7 +70,10 @@ func LoadScrollback(terminalID string) (*ScrollbackMeta, []byte) {
 	if !isValidTerminalID(terminalID) {
 		return nil, nil
 	}
-	binPath, metaPath := scrollbackPaths(terminalID, false)
+	binPath, metaPath, ok := scrollbackPaths(terminalID, false)
+	if !ok {
+		return nil, nil
+	}
 	data, err := os.ReadFile(binPath)
 	if err != nil {
 		return nil, nil
@@ -78,7 +94,10 @@ func DeleteScrollback(terminalID string) {
 		return
 	}
 	for _, prev := range []bool{false, true} {
-		bin, meta := scrollbackPaths(terminalID, prev)
+		bin, meta, ok := scrollbackPaths(terminalID, prev)
+		if !ok {
+			continue
+		}
 		_ = os.Remove(bin)
 		_ = os.Remove(meta)
 	}

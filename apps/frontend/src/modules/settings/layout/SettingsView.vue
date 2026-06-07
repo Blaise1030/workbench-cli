@@ -5,7 +5,9 @@ import {
   BotIcon,
   ChevronLeftIcon,
   GlobeIcon,
+  InfoIcon,
   KeyboardIcon,
+  PaletteIcon,
 } from "@lucide/vue";
 import {
   Sidebar,
@@ -33,6 +35,8 @@ const navItems: { label: string; name: string; icon: Component }[] = [
   { label: "Agents", name: "settings-agents", icon: BotIcon },
   { label: "Network", name: "settings-network", icon: GlobeIcon },
   { label: "Keybindings", name: "settings-keybindings", icon: KeyboardIcon },
+  { label: "Appearance", name: "settings-appearance", icon: PaletteIcon },
+  { label: "About", name: "settings-about", icon: InfoIcon },
 ];
 </script>
 

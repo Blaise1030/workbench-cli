@@ -24,13 +24,6 @@ import WorkspacePanelMenu from "@/modules/workspace/components/WorkspacePanelMen
 import GitDisabledIndicator from "@/modules/workspace/components/GitDisabledIndicator.vue";
 import type { AddTerminalChoice } from "@/modules/workspace/types/add-terminal-choice";
 import WorkspaceSidebarToggle from "@/modules/workspace/components/WorkspaceSidebarToggle.vue";
-import TerminalResumeDialog from "@/modules/terminal/components/TerminalResumeDialog.vue";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import {
   terminalSessionsKey,
@@ -216,8 +209,6 @@ const activeId = computed(() => {
   return "";
 });
 
-const resumeDialogOpen = ref(false);
-const resumeDialogTerminalId = ref("");
 
 // Create sessions for loaded terminals
 watch(
@@ -447,10 +438,6 @@ function terminalRow(id: string) {
   return terminalTabs.value.find((t) => t.id === id);
 }
 
-function openResumeDialog(terminalId: string) {
-  resumeDialogTerminalId.value = terminalId;
-  resumeDialogOpen.value = true;
-}
 
 const splitTerminalPanelRef = ref<ComponentPublicInstance & { resize: (size: number) => void } | null>(null);
 
@@ -472,45 +459,33 @@ function equalizeSplitPanes() {
         class="flex h-8 min-w-0 flex-1 items-stretch overflow-x-auto"
         role="tablist"
       >
-        <ContextMenu v-for="(tab, index) in terminalTabItems" :key="tab.id">
-          <ContextMenuTrigger as-child>
-            <button
-              type="button"
-              role="tab"
-              :class="tabTriggerClass(tab.id, index)"
-              :aria-selected="tab.id === activeId"
-              @click="navigateToTerminal(tab.id)"
-            >
-              <TerminalIcon class="size-3.5 shrink-0 opacity-70" />
-              <span class="min-w-0 truncate" :title="tabTitle(tab.id)">
-                {{ sessions.tabLabel(tab.id) }}
-              </span>
-              <span
-                v-if="terminalRow(tab.id)?.agentSessionId"
-                class="size-1.5 shrink-0 rounded-full bg-emerald-500"
-                :title="`Agent session (${terminalRow(tab.id)?.agentKind})`"
-              />
-              <span
-                v-if="terminalRow(tab.id)?.resumeTrusted"
-                class="size-1.5 shrink-0 rounded-full bg-primary"
-                title="Trusted restart command"
-              />
-              <span
-                role="button"
-                :class="tabCloseClass(tab.id)"
-                :aria-label="`Close ${tab.title}`"
-                @click.stop="closeTab(tab.id)"
-              >
-                <XIcon class="size-3" />
-              </span>
-            </button>
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuItem @select="openResumeDialog(tab.id)">
-              Set restart command…
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+        <button
+          v-for="(tab, index) in terminalTabItems"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          :class="tabTriggerClass(tab.id, index)"
+          :aria-selected="tab.id === activeId"
+          @click="navigateToTerminal(tab.id)"
+        >
+          <TerminalIcon class="size-3.5 shrink-0 opacity-70" />
+          <span class="min-w-0 truncate" :title="tabTitle(tab.id)">
+            {{ sessions.tabLabel(tab.id) }}
+          </span>
+          <span
+            v-if="terminalRow(tab.id)?.agentSessionId"
+            class="size-1.5 shrink-0 rounded-full bg-emerald-500"
+            :title="`Agent session (${terminalRow(tab.id)?.agentKind})`"
+          />
+          <span
+            role="button"
+            :class="tabCloseClass(tab.id)"
+            :aria-label="`Close ${tab.title}`"
+            @click.stop="closeTab(tab.id)"
+          >
+            <XIcon class="size-3" />
+          </span>
+        </button>
       </div>
 
       <div class="flex shrink-0 border-s items-center gap-0 px-0.5">
@@ -607,45 +582,33 @@ function equalizeSplitPanes() {
               class="flex h-8 min-w-0 flex-1 items-stretch overflow-x-auto"
               role="tablist"
             >
-              <ContextMenu v-for="(tab, index) in terminalTabItems" :key="tab.id">
-                <ContextMenuTrigger as-child>
-                  <button
-                    type="button"
-                    role="tab"
-                    :class="tabTriggerClass(tab.id, index)"
-                    :aria-selected="tab.id === activeId"
-                    @click="navigateToTerminal(tab.id)"
-                  >
-                    <TerminalIcon class="size-3.5 shrink-0 opacity-70" />
-                    <span class="min-w-0 truncate" :title="tabTitle(tab.id)">
-                      {{ sessions.tabLabel(tab.id) }}
-                    </span>
-                    <span
-                      v-if="terminalRow(tab.id)?.agentSessionId"
-                      class="size-1.5 shrink-0 rounded-full bg-emerald-500"
-                      :title="`Agent session (${terminalRow(tab.id)?.agentKind})`"
-                    />
-                    <span
-                      v-if="terminalRow(tab.id)?.resumeTrusted"
-                      class="size-1.5 shrink-0 rounded-full bg-primary"
-                      title="Trusted restart command"
-                    />
-                    <span
-                      role="button"
-                      :class="tabCloseClass(tab.id)"
-                      :aria-label="`Close ${tab.title}`"
-                      @click.stop="closeTab(tab.id)"
-                    >
-                      <XIcon class="size-3" />
-                    </span>
-                  </button>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                  <ContextMenuItem @select="openResumeDialog(tab.id)">
-                    Set restart command…
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
+              <button
+                v-for="(tab, index) in terminalTabItems"
+                :key="tab.id"
+                type="button"
+                role="tab"
+                :class="tabTriggerClass(tab.id, index)"
+                :aria-selected="tab.id === activeId"
+                @click="navigateToTerminal(tab.id)"
+              >
+                <TerminalIcon class="size-3.5 shrink-0 opacity-70" />
+                <span class="min-w-0 truncate" :title="tabTitle(tab.id)">
+                  {{ sessions.tabLabel(tab.id) }}
+                </span>
+                <span
+                  v-if="terminalRow(tab.id)?.agentSessionId"
+                  class="size-1.5 shrink-0 rounded-full bg-emerald-500"
+                  :title="`Agent session (${terminalRow(tab.id)?.agentKind})`"
+                />
+                <span
+                  role="button"
+                  :class="tabCloseClass(tab.id)"
+                  :aria-label="`Close ${tab.title}`"
+                  @click.stop="closeTab(tab.id)"
+                >
+                  <XIcon class="size-3" />
+                </span>
+              </button>
             </div>
 
             <div class="flex shrink-0 border-s items-center gap-0.5 px-1">
@@ -708,13 +671,5 @@ function equalizeSplitPanes() {
       </ResizablePanelGroup>
     </div>
 
-    <TerminalResumeDialog
-      v-if="resumeDialogTerminalId"
-      v-model:open="resumeDialogOpen"
-      :terminal-id="resumeDialogTerminalId"
-      :worktree-id="worktreeId"
-      :initial-command="terminalRow(resumeDialogTerminalId)?.resumeCommand"
-      :initial-trusted="terminalRow(resumeDialogTerminalId)?.resumeTrusted"
-    />
   </div>
 </template>

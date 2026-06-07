@@ -15,9 +15,20 @@ import {
 import type { KeybindingAction, KeybindingsMap } from "@/modules/keyboard/types";
 import { toast } from "vue-sonner";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item";
 import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
 import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
-import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 
 const { data: serverBindings } = useKeybindingsQuery();
 const updateMutation = useUpdateKeybindingsMutation();
@@ -97,79 +108,89 @@ function resetToOptions() {
     title="Keybindings"
     description="Remap workspace shortcuts. Built-in options use ⌃⇧ for panels, settings, and new terminal; ⌥+symbol for tabs."
   >
-    <template #actions>
-      <Button variant="outline" size="sm" @click="resetToOptions">
-        Reset to options
-      </Button>
-      <Button size="sm" :disabled="updateMutation.isPending.value" @click="save">
-        {{ updateMutation.isPending.value ? "Saving…" : "Save" }}
-      </Button>
-    </template>
-
-    <div
-      v-if="browserReservedChord || browserReservedInDraft.length"
-      class="border-b border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm text-amber-600 dark:text-amber-400"
-    >
-      <template v-if="browserReservedChord">
-        {{ chordLabel(browserReservedChord) }} is usually handled by the browser before this app
-        can use it. Prefer ⌃⇧ (Ctrl+Shift) or another chord.
+    <SettingsSection title="Workspace shortcuts" description="Click a shortcut to capture a new key chord.">
+      <template #actions>
+        <Button variant="outline" size="sm" @click="resetToOptions">
+          Reset to options
+        </Button>
+        <Button size="sm" :disabled="updateMutation.isPending.value" @click="save">
+          {{ updateMutation.isPending.value ? "Saving…" : "Save" }}
+        </Button>
       </template>
-      <template v-else>
-        Some shortcuts may not work in the browser:
-        {{
-          browserReservedInDraft
-            .map((a) => KEYBINDING_DESCRIPTORS.find((d) => d.action === a)?.label)
-            .filter(Boolean)
-            .join(", ")
-        }}.
-        Reset to options or remap with Ctrl+Shift.
-      </template>
-    </div>
+      <Card class="flex flex-col gap-2 p-4">
+        <Alert
+          v-if="browserReservedChord || browserReservedInDraft.length"
+          class="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+        >
+          <AlertDescription>
+            <template v-if="browserReservedChord">
+              {{ chordLabel(browserReservedChord) }} is usually handled by the browser before this app
+              can use it. Prefer ⌃⇧ (Ctrl+Shift) or another chord.
+            </template>
+            <template v-else>
+              Some shortcuts may not work in the browser:
+              {{
+                browserReservedInDraft
+                  .map((a) => KEYBINDING_DESCRIPTORS.find((d) => d.action === a)?.label)
+                  .filter(Boolean)
+                  .join(", ")
+              }}.
+              Reset to options or remap with Ctrl+Shift.
+            </template>
+          </AlertDescription>
+        </Alert>
 
-    <div
-      v-if="hasConflict"
-      class="border-b border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm text-amber-600 dark:text-amber-400"
-    >
-      Conflict: this chord is also assigned to "{{
-        KEYBINDING_DESCRIPTORS.find((d) => d.action === hasConflict)?.label
-      }}". Both will be saved — last key pressed wins.
-    </div>
+        <Alert
+          v-if="hasConflict"
+          class="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+        >
+          <AlertDescription>
+            Conflict: this chord is also assigned to "{{
+              KEYBINDING_DESCRIPTORS.find((d) => d.action === hasConflict)?.label
+            }}". Both will be saved — last key pressed wins.
+          </AlertDescription>
+        </Alert>
 
-    <SettingsSection title="Workspace shortcuts">
-      <SettingsRow
-        v-for="desc in KEYBINDING_DESCRIPTORS"
-        :key="desc.action"
-        :label="desc.label"
-        :description="desc.description"
-      >
-        <div class="flex flex-col items-end gap-1">
-          <button
-            type="button"
-            class="inline-flex min-w-[4rem] items-center justify-center rounded-md border border-input bg-muted/50 px-3 py-1.5 text-xs font-mono hover:bg-muted"
-            :class="[
-              capturingAction === desc.action
-                ? 'border-foreground ring-1 ring-foreground animate-pulse'
-                : '',
-              isBrowserReservedChord(normalizeStoredChord(draft[desc.action]))
-                ? 'border-amber-500/50 text-amber-600 dark:text-amber-400'
-                : '',
-            ]"
-            @click="startCapture(desc.action)"
-          >
-            {{
-              capturingAction === desc.action
-                ? captureDisplay
-                : chordLabel(draft[desc.action])
-            }}
-          </button>
-          <span
-            v-if="isBrowserReservedChord(normalizeStoredChord(draft[desc.action]))"
-            class="text-[10px] text-amber-600 dark:text-amber-400"
-          >
-            Browser may intercept
-          </span>
-        </div>
-      </SettingsRow>
+        <Item
+          v-for="desc in KEYBINDING_DESCRIPTORS"
+          :key="desc.action"
+          variant="outline"
+        >
+          <ItemContent>
+            <ItemTitle>{{ desc.label }}</ItemTitle>
+            <ItemDescription v-if="desc.description">{{ desc.description }}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <div class="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                class="inline-flex min-w-[4rem] items-center justify-center rounded-md border border-input bg-muted/50 px-3 py-1.5 text-xs font-mono hover:bg-muted"
+                :class="[
+                  capturingAction === desc.action
+                    ? 'border-foreground ring-1 ring-foreground animate-pulse'
+                    : '',
+                  isBrowserReservedChord(normalizeStoredChord(draft[desc.action]))
+                    ? 'border-amber-500/50 text-amber-600 dark:text-amber-400'
+                    : '',
+                ]"
+                @click="startCapture(desc.action)"
+              >
+                {{
+                  capturingAction === desc.action
+                    ? captureDisplay
+                    : chordLabel(draft[desc.action])
+                }}
+              </button>
+              <span
+                v-if="isBrowserReservedChord(normalizeStoredChord(draft[desc.action]))"
+                class="text-[10px] text-amber-600 dark:text-amber-400"
+              >
+                Browser may intercept
+              </span>
+            </div>
+          </ItemActions>
+        </Item>
+      </Card>
     </SettingsSection>
   </SettingsPage>
   </div>

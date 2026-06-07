@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item";
 import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
 import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
-import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 import {
   useNetworkSettingsQuery,
   usePatchNetworkSettingsMutation,
@@ -20,7 +28,6 @@ const hostsFileLine = computed(() => networkData.value?.hostsFileLine ?? "");
 
 const hostInput = ref("");
 const portInput = ref("");
-const savedMessage = ref("");
 
 watch(
   networkData,
@@ -31,8 +38,6 @@ watch(
   },
   { immediate: true },
 );
-
-const error = ref("");
 
 const loading = computed(() => networkPending.value || patchNetwork.isPending.value);
 
@@ -49,11 +54,9 @@ function mutationErrorMessage(err: unknown, fallback: string): string {
 }
 
 async function saveNetwork(): Promise<void> {
-  error.value = "";
-  savedMessage.value = "";
   const port = parseInt(portInput.value, 10);
   if (Number.isNaN(port) || port < 1 || port > 65535) {
-    error.value = "Port must be between 1 and 65535.";
+    toast.error("Port must be between 1 and 65535.");
     return;
   }
   try {
@@ -61,9 +64,9 @@ async function saveNetwork(): Promise<void> {
       host: hostInput.value.trim(),
       port,
     });
-    savedMessage.value = "Saved. Restart workbench-cli for changes to take effect.";
+    toast.success("Saved. Restart workbench-cli for changes to take effect.");
   } catch (err) {
-    error.value = mutationErrorMessage(err, "Failed to save network settings.");
+    toast.error(mutationErrorMessage(err, "Failed to save network settings."));
   }
 }
 
@@ -71,9 +74,9 @@ async function copyHostsLine() {
   if (!hostsFileLine.value) return;
   try {
     await navigator.clipboard.writeText(hostsFileLine.value);
-    savedMessage.value = "Copied hosts line to clipboard.";
+    toast.success("Copied hosts line to clipboard.");
   } catch {
-    error.value = "Could not copy to clipboard.";
+    toast.error("Could not copy to clipboard.");
   }
 }
 </script>
@@ -83,71 +86,80 @@ async function copyHostsLine() {
     title="Network"
     description="Local address and port for this terminal."
   >
-    <div v-if="error" class="border-b border-destructive/30 bg-destructive/10 px-8 py-3 text-sm text-destructive">
-      {{ error }}
-    </div>
-    <div
-      v-else-if="savedMessage"
-      class="border-b border-border bg-muted/40 px-8 py-3 text-sm text-muted-foreground"
-    >
-      {{ savedMessage }}
-    </div>
+    <SettingsSection title="Local address" description="Configure the hostname and port for the local server.">
+      <Card class="flex flex-col gap-2 p-4">
+        <div
+          v-if="pendingRestart"
+          class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100"
+        >
+          Restart <code class="text-xs">workbench-cli</code> (or <code class="text-xs">npm run dev</code>) to apply host or port changes.
+        </div>
 
-    <SettingsSection title="Local address">
-      <SettingsRow
-        label="Current URL"
-        :description="localUrl || 'Loading…'"
-      />
+        <Item variant="outline">
+          <ItemContent>
+            <ItemTitle>Current URL</ItemTitle>
+          </ItemContent>
+          <ItemActions>
+            <span class="font-mono text-xs text-muted-foreground">{{ localUrl || 'Loading…' }}</span>
+          </ItemActions>
+        </Item>
 
-      <div
-        v-if="pendingRestart"
-        class="mx-8 mb-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100"
-      >
-        Restart <code class="text-xs">workbench-cli</code> (or <code class="text-xs">npm run dev</code>) to apply host or port changes.
-      </div>
+        <Item variant="outline">
+          <ItemContent>
+            <ItemTitle>Hostname</ItemTitle>
+            <ItemDescription>
+              Friendly name for this machine. Add the hosts line below once if the browser cannot resolve it.
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Input
+              v-model="hostInput"
+              class="w-48 font-mono text-sm"
+              :disabled="loading"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </ItemActions>
+        </Item>
 
-      <SettingsRow
-        label="Hostname"
-        description="Friendly name for this machine. Add the hosts line below once if the browser cannot resolve it."
-      >
-        <Input
-          v-model="hostInput"
-          class="w-48 font-mono text-sm"
-          :disabled="loading"
-          autocomplete="off"
-          spellcheck="false"
-        />
-      </SettingsRow>
+        <Item variant="outline">
+          <ItemContent>
+            <ItemTitle>Port</ItemTitle>
+            <ItemDescription>Avoid 3000 — many dev tools use it.</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Input
+              v-model="portInput"
+              type="number"
+              min="1"
+              max="65535"
+              class="w-28 font-mono text-sm"
+              :disabled="loading"
+            />
+          </ItemActions>
+        </Item>
 
-      <SettingsRow label="Port" description="Avoid 3000 — many dev tools use it.">
-        <Input
-          v-model="portInput"
-          type="number"
-          min="1"
-          max="65535"
-          class="w-28 font-mono text-sm"
-          :disabled="loading"
-        />
-      </SettingsRow>
+        <Item v-if="hostsFileLine" variant="outline">
+          <ItemContent>
+            <ItemTitle>/etc/hosts</ItemTitle>
+            <ItemDescription>One-time setup so your browser can open the hostname.</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <div class="flex items-center gap-2">
+              <code class="truncate rounded bg-muted px-2 py-1 text-xs">{{ hostsFileLine }}</code>
+              <Button variant="outline" size="sm" :disabled="loading" @click="copyHostsLine">
+                Copy
+              </Button>
+            </div>
+          </ItemActions>
+        </Item>
 
-      <SettingsRow
-        v-if="hostsFileLine"
-        label="/etc/hosts"
-        description="One-time setup so your browser can open the hostname."
-      >
-        <div class="flex max-w-md items-center gap-2">
-          <code class="truncate rounded bg-muted px-2 py-1 text-xs">{{ hostsFileLine }}</code>
-          <Button variant="outline" size="sm" :disabled="loading" @click="copyHostsLine">
-            Copy
+        <div class="flex justify-end pt-2">
+          <Button :disabled="loading || !networkDirty" @click="saveNetwork">
+            Save
           </Button>
         </div>
-      </SettingsRow>
-
-      <div class="flex justify-end px-8 pb-4">
-        <Button :disabled="loading || !networkDirty" @click="saveNetwork">
-          Save
-        </Button>
-      </div>
+      </Card>
     </SettingsSection>
   </SettingsPage>
 </template>

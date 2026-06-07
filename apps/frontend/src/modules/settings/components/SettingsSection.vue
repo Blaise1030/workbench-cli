@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Item, ItemContent, ItemTitle, ItemDescription } from "@/components/ui/item";
+import { Item, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@/components/ui/item";
 
 defineProps<{
   title: string;
@@ -15,6 +15,9 @@ defineProps<{
           <ItemTitle>{{ title }}</ItemTitle>
           <ItemDescription v-if="description">{{ description }}</ItemDescription>
         </ItemContent>
+        <ItemActions v-if="$slots.actions">
+          <slot name="actions" />
+        </ItemActions>
       </Item>
       <div class="divide-y divide-border">
         <slot />
