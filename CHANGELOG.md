@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/Blaise1030/workbench-cli/compare/v0.4.1...v0.4.2) (2026-06-07)
+
+
+### Bug Fixes
+
+* added unstaged changes ([627f278](https://github.com/Blaise1030/workbench-cli/commit/627f2787f189ac275a6f093e258185012cd89bc9))
+
 ## [0.4.1](https://github.com/Blaise1030/workbench-cli/compare/v0.4.0...v0.4.1) (2026-06-07)
 
 
