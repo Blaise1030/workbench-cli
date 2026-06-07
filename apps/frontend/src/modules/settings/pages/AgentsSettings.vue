@@ -30,6 +30,7 @@ import {
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item";
+import { Card } from "@/components/ui/card";
 import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
 import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
 import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
@@ -183,77 +184,6 @@ async function removeAgent(id: string) {
     title="Agents"
     description="Configure coding agents: start and resume commands, and hooks that call workbench-cli to register sessions and send notifications. Saved to ~/.workbench/agents.json."
   >
-    <template #actions>
-      <Dialog v-model:open="addDialogOpen">
-        <DialogTrigger as-child>
-          <Button type="button" size="sm" :disabled="loading">
-            <PlusIcon class="size-4" />
-            Add agent
-          </Button>
-        </DialogTrigger>
-        <DialogContent class="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add agent</DialogTitle>
-            <DialogDescription>
-              Custom agents are matched by the first token of the start command.
-            </DialogDescription>
-          </DialogHeader>
-          <form class="grid gap-4" @submit.prevent="addAgent">
-            <div class="space-y-2">
-              <Label for="new-agent-name">Name</Label>
-              <Input
-                id="new-agent-name"
-                v-model="newName"
-                data-native-keyboard
-                placeholder="My Agent"
-                :disabled="loading"
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="new-agent-start">Start command</Label>
-              <Input
-                id="new-agent-start"
-                v-model="newStart"
-                data-native-keyboard
-                placeholder="my-agent"
-                :disabled="loading"
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="new-agent-resume">Resume command</Label>
-              <Input
-                id="new-agent-resume"
-                v-model="newResume"
-                data-native-keyboard
-                placeholder="my-agent --resume {{sessionId}}"
-                :disabled="loading"
-              />
-              <p class="text-xs text-muted-foreground">
-                Use <code v-pre>{{sessionId}}</code> where the session id belongs.
-              </p>
-            </div>
-            <p v-if="dialogError" class="text-sm text-destructive">{{ dialogError }}</p>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                :disabled="loading"
-                @click="addDialogOpen = false"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                :disabled="loading || !canSubmitNewAgent"
-              >
-                Add agent
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </template>
-
     <SettingsSection
       title="Configured agents"
       description="Expand an agent to edit commands and notify hooks."
@@ -261,18 +191,19 @@ async function removeAgent(id: string) {
       <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
       <p v-if="success" class="text-sm text-muted-foreground">{{ success }}</p>
 
-      <Accordion
-        v-model="openAccordion"
-        type="single"
-        collapsible
-        class="w-full"
-      >
-        <AccordionItem
-          v-for="agent in data?.agents ?? []"
-          :key="agent.id"
-          :value="agent.id"
-          class="border-b border-border px-0 last:border-b-0"
+      <Card class="px-4 py-0 gap-0">
+        <Accordion
+          v-model="openAccordion"
+          type="single"
+          collapsible
+          class="w-full"
         >
+          <AccordionItem
+            v-for="agent in data?.agents ?? []"
+            :key="agent.id"
+            :value="agent.id"
+            class="border-b border-border px-0 last:border-b-0"
+          >
           <AccordionTrigger class="px-0 hover:no-underline">
             <div class="flex w-full min-w-0 items-start gap-3 pr-2 text-left">
               <AgentAvatar
@@ -462,8 +393,82 @@ async function removeAgent(id: string) {
               </div>
             </div>
           </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          </AccordionItem>
+        </Accordion>
+
+        <div class="border-t border-border py-3">
+          <Dialog v-model:open="addDialogOpen">
+            <DialogTrigger as-child>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                :disabled="loading"
+              >
+                <PlusIcon class="size-4" />
+                Add agent
+              </Button>
+            </DialogTrigger>
+            <DialogContent class="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add agent</DialogTitle>
+                <DialogDescription>
+                  Custom agents are matched by the first token of the start command.
+                </DialogDescription>
+              </DialogHeader>
+              <form class="grid gap-4" @submit.prevent="addAgent">
+                <div class="space-y-2">
+                  <Label for="new-agent-name">Name</Label>
+                  <Input
+                    id="new-agent-name"
+                    v-model="newName"
+                    data-native-keyboard
+                    placeholder="My Agent"
+                    :disabled="loading"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <Label for="new-agent-start">Start command</Label>
+                  <Input
+                    id="new-agent-start"
+                    v-model="newStart"
+                    data-native-keyboard
+                    placeholder="my-agent"
+                    :disabled="loading"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <Label for="new-agent-resume">Resume command</Label>
+                  <Input
+                    id="new-agent-resume"
+                    v-model="newResume"
+                    data-native-keyboard
+                    placeholder="my-agent --resume {{sessionId}}"
+                    :disabled="loading"
+                  />
+                  <p class="text-xs text-muted-foreground">
+                    Use <code v-pre>{{sessionId}}</code> where the session id belongs.
+                  </p>
+                </div>
+                <p v-if="dialogError" class="text-sm text-destructive">{{ dialogError }}</p>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    :disabled="loading"
+                    @click="addDialogOpen = false"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" :disabled="loading || !canSubmitNewAgent">
+                    Add agent
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </Card>
     </SettingsSection>
   </SettingsPage>
 </template>
