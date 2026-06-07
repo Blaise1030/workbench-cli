@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.4.0](https://github.com/Blaise1030/workbench-cli/compare/v0.3.0...v0.4.0) (2026-06-07)
+
+
+### Features
+
+* add terminal agent picker and project remove context menu ([fea07a5](https://github.com/Blaise1030/workbench-cli/commit/fea07a5380ea804947db413b425713f230862ed6))
+* **frontend:** add context menu, drag-and-drop, delete and new-entry dialogs to file explorer ([67bf983](https://github.com/Blaise1030/workbench-cli/commit/67bf983d9b2b3f847f5b846bf355fcb20099eaa0))
+* **frontend:** add useCreateFile, useDeleteFile, useMoveFile hooks ([8cb17f3](https://github.com/Blaise1030/workbench-cli/commit/8cb17f3c664c1b9b0609af3671acbb994cabab3b))
+* **frontend:** add VanJS file context menu builder ([78e8c71](https://github.com/Blaise1030/workbench-cli/commit/78e8c71b5225856575e1e4e7600dcf83afa91f76))
+* **go:** add CreateFile, DeleteFile, MoveFile to workspace ([2a7586b](https://github.com/Blaise1030/workbench-cli/commit/2a7586b4826c3609cc97a6c1813b1d46e042d017))
+* **go:** register POST /files, DELETE /files, POST /files/move routes ([9bc7ab6](https://github.com/Blaise1030/workbench-cli/commit/9bc7ab62f7825ff8dcda6e3ea4138060db1f78db))
+* terminal agent picker and project remove context menu ([c670cb8](https://github.com/Blaise1030/workbench-cli/commit/c670cb84b071619025a93e93c9b1a23c8d0be564))
+* updated toaster not showing issue ([987e805](https://github.com/Blaise1030/workbench-cli/commit/987e80504315b77b1afe0387183cb8e9723416f3))
+
+
+### Bug Fixes
+
+* add missing install.sh template to git tracking ([fd7af3b](https://github.com/Blaise1030/workbench-cli/commit/fd7af3b8e0b84aec19218ff8b4c5c3ba7abfad91))
+* **frontend:** add success toasts to mutations and fix empty-state layout ([cb25d30](https://github.com/Blaise1030/workbench-cli/commit/cb25d307e6a48c1c0b023189cb940c3296750206))
+* **frontend:** add success toasts to mutations and fix empty-state layout ([ae15859](https://github.com/Blaise1030/workbench-cli/commit/ae158595d2f8c200de7a93eb141b101bd0761811))
+* landing page build issues ([fa71c24](https://github.com/Blaise1030/workbench-cli/commit/fa71c24f5ea616dbbc317a17282f471bc5b10941))
+* **landing:** derive PAGES_BASE from Astro.site instead of hardcoded domain ([ea263b7](https://github.com/Blaise1030/workbench-cli/commit/ea263b76211c32fab95f0d9356e6824e1969cf3e))
+* updated git panel stylings and experiences ([97f54fc](https://github.com/Blaise1030/workbench-cli/commit/97f54fce257e3af9b3e45a90dc7dbc0ef5e4b3dd))
+* **workspace:** address PR review quality concerns ([6366bc5](https://github.com/Blaise1030/workbench-cli/commit/6366bc5ef872c61e04723ef95a76d5670866f512))
+* **workspace:** allow importing non-git directories as projects ([504553f](https://github.com/Blaise1030/workbench-cli/commit/504553faafff297b4461d62487265676c7e19b83))
+* **workspace:** allow importing non-git directories as projects ([231cea2](https://github.com/Blaise1030/workbench-cli/commit/231cea25472b1a57ded4442d6d3897e46e65391a))
+* **workspace:** resolve CodeQL path-injection and git panel loading state ([dadce66](https://github.com/Blaise1030/workbench-cli/commit/dadce66198dad690a92d47f132b6c450454bb75f))
+* **workspace:** validate project paths via git instead of os.Stat ([9dfdb70](https://github.com/Blaise1030/workbench-cli/commit/9dfdb7063f9c657407209bc6e8ce0ff5d348b870))
+
 ## [0.3.0](https://github.com/Blaise1030/workbench-cli/compare/v0.2.0...v0.3.0) (2026-06-04)
 
 
