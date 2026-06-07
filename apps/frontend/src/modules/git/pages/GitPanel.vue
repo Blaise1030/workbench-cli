@@ -331,7 +331,7 @@ const selectionActions = computed(() =>
 const hasSelection = computed(() => selectedPaths.value.length > 0);
 
 const showSelectAllInHeader = computed(
-  () => Boolean(worktree.value?.isLinked) && diffItems.value.length > 0,
+  () => Boolean(worktree.value?.isLinked),
 );
 
 const selectablePaths = computed(() =>
@@ -414,10 +414,12 @@ async function submitCommit() {
         >
           <label
             v-if="showSelectAllInHeader"
-            class="relative z-20 flex shrink-0 cursor-pointer items-center ps-1"
+            class="relative z-20 flex shrink-0 items-center ps-1"
+            :class="diffItems.length ? 'cursor-pointer' : 'cursor-not-allowed'"
           >
             <Checkbox
               :model-value="selectAllCheckboxValue"
+              :disabled="!diffItems.length"
               aria-label="Select all files in this tab"
               @update:model-value="onSelectAllChange"
               @click.stop
@@ -459,50 +461,6 @@ async function submitCommit() {
               </TabsTrigger>
             </TabsList>
 
-            <DropdownMenu v-if="hasSelection">
-              <DropdownMenuTrigger as-child>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-7 gap-1 px-2 text-xs"
-                  :disabled="gitFileActions.isPending.value"
-                >
-                  <ListChecksIcon class="size-3.5 opacity-70" />
-                  {{ selectedPaths.length }} selected
-                  <ChevronDownIcon class="size-3 opacity-70" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" class="w-48">
-                <DropdownMenuItem
-                  :disabled="
-                    !selectionActions.stage || gitFileActions.isPending.value
-                  "
-                  @select="runGitAction('stage')"
-                >
-                  <PlusIcon />
-                  Stage changes
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  :disabled="
-                    !selectionActions.unstage || gitFileActions.isPending.value
-                  "
-                  @select="runGitAction('unstage')"
-                >
-                  <MinusIcon />
-                  Unstage changes
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  :disabled="
-                    !selectionActions.discard || gitFileActions.isPending.value
-                  "
-                  @select="runGitAction('discard')"
-                >
-                  <Trash2Icon />
-                  Discard changes
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           <div class="ml-auto flex shrink-0 items-center gap-0.5">
@@ -569,7 +527,52 @@ async function submitCommit() {
                 </div>
               </PopoverContent>
             </Popover>
-            <Popover v-if="worktree.isLinked" v-model:open="commitOpen">
+            <DropdownMenu v-if="worktree.isLinked">
+              <DropdownMenuTrigger as-child>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-7 gap-1 px-2 text-xs"
+                  :disabled="!hasSelection || gitFileActions.isPending.value"
+                >
+                  <ListChecksIcon class="size-3.5 opacity-70" />
+                  <span v-if="hasSelection">{{ selectedPaths.length }} selected</span>
+                  <span v-else>Actions</span>
+                  <ChevronDownIcon class="size-3 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="w-48">
+                <DropdownMenuItem
+                  :disabled="
+                    !selectionActions.stage || gitFileActions.isPending.value
+                  "
+                  @select="runGitAction('stage')"
+                >
+                  <PlusIcon />
+                  Stage changes
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  :disabled="
+                    !selectionActions.unstage || gitFileActions.isPending.value
+                  "
+                  @select="runGitAction('unstage')"
+                >
+                  <MinusIcon />
+                  Unstage changes
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  :disabled="
+                    !selectionActions.discard || gitFileActions.isPending.value
+                  "
+                  @select="runGitAction('discard')"
+                >
+                  <Trash2Icon />
+                  Discard changes
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Popover v-if="worktree.isLinked && activeTab === 'staged'" v-model:open="commitOpen">
               <PopoverTrigger as-child>
                 <Button variant="default" size="xs" :disabled="commitDisabled">
                   Commit
