@@ -61,7 +61,7 @@ Run:
 ### CI releases (unified pipeline)
 
 1. **Release Please** (on merge to `main`) opens/merges release PRs and creates a Git tag (`v*`; legacy tags `workbench-v*` still work).
-2. **Release** workflow (`.github/workflows/release-go.yml`) on tag push:
+2. **Release** workflow (`.github/workflows/release-go.yml`) is dispatched automatically when Release Please creates a release (tags from `GITHUB_TOKEN` do not trigger workflows on their own). It also runs on manual tag push or `workflow_dispatch`:
    - builds matrix tarballs,
    - uploads them to the GitHub Release for that tag,
    - redeploys GitHub Pages with an updated root `latest.json`.
