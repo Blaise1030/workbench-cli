@@ -37,8 +37,8 @@ const navItems: { label: string; name: string; icon: Component }[] = [
 </script>
 
 <template>
-  <SidebarProvider class="h-svh overflow-hidden">
-    <Sidebar>
+  <SidebarProvider :default-open="true" class="h-svh overflow-hidden">
+    <Sidebar collapsible="none" class="border-r">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Settings</SidebarGroupLabel>

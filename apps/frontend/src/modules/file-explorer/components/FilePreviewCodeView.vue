@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-@import "tailwindcss";
+@import "tailwindcss/utilities";
 @source "../../context-queue/lib/context-queue-annotation-popover.ts";
 
 .file-preview-code-view {

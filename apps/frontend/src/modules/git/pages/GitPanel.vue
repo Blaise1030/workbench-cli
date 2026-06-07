@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import {
   GitBranchIcon,
   Settings2Icon,
+
   Columns2Icon,
   AlignJustifyIcon,
   ChevronsDownUpIcon,
@@ -60,6 +61,10 @@ import {
 import { useQueries, useQuery } from "@tanstack/vue-query";
 import type { DiffIndicators } from "@pierre/diffs";
 import { contextQueueGitItemIdsKey } from "@/modules/context-queue/lib/context-queue-keys";
+import { PanelLoading } from "@/components/ui/panel-loading";
+import IsoAppsOutage from "@/assets/isocons/IsoAppsOutage.vue";
+import IsoErrorMed from "@/assets/isocons/IsoErrorMed.vue";
+import IsoCheckCircle from "@/assets/isocons/IsoCheckCircle.vue";
 
 const props = defineProps<{
   worktreeId: string;
@@ -386,24 +391,18 @@ async function submitCommit() {
 
 <template>
   <div class="flex h-full min-h-0 flex-col bg-background">
-    <div v-if="worktreeLoading" class="p-4 text-sm text-muted-foreground">
-      Loading…
-    </div>
+    <PanelLoading v-if="worktreeLoading" />
 
     <template v-else-if="worktree">
       <div
         v-if="isGitRepo === false"
-        class="p-4 text-sm text-muted-foreground"
+        class="flex flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted-foreground"
       >
+        <IsoAppsOutage class="size-20 text-muted-foreground" />
         Git is not available for this folder.
       </div>
 
-      <div
-        v-else-if="isGitRepo === undefined"
-        class="p-4 text-sm text-muted-foreground"
-      >
-        Loading…
-      </div>
+      <PanelLoading v-else-if="isGitRepo === undefined" />
 
       <Tabs
         v-else-if="isGitRepo === true"
@@ -434,8 +433,9 @@ async function submitCommit() {
 
           <div
             v-if="!worktree.isLinked"
-            class="text-xs text-amber-600 dark:text-amber-400"
+            class="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400"
           >
+            <IsoErrorMed class="size-20 text-muted-foreground" />
             Worktree path is not available on this machine.
           </div>
 
@@ -610,12 +610,7 @@ async function submitCommit() {
         </header>
 
         <template v-if="worktree.isLinked">
-          <div
-            v-if="statusLoading"
-            class="flex-1 px-3 py-2 text-xs text-muted-foreground"
-          >
-            Loading changes…
-          </div>
+          <PanelLoading v-if="statusLoading" />
           <p
             v-else-if="statusError"
             class="flex-1 px-3 py-2 text-xs text-destructive"
@@ -630,19 +625,15 @@ async function submitCommit() {
               :value="tab"
               class="flex min-h-0 flex-1 flex-col mt-0 overflow-hidden"
             >
-              <div
-                v-if="isDiffPending(tab as GitPanelTabScope)"
-                class="flex flex-1 items-center justify-center text-xs text-muted-foreground"
-              >
-                Loading diff…
-              </div>
+              <PanelLoading v-if="isDiffPending(tab as GitPanelTabScope)" />
               <div
                 v-else-if="!diffItemsByTab[tab as GitPanelTabScope].length"
                 class="p-2 flex flex-1"
               >
                 <div
-                  class="flex flex-1 items-center justify-center rounded-md border border-dashed text-xs text-muted-foreground"
+                  class="flex flex-1 flex-col items-center justify-center gap-2 rounded-md border border-dashed text-xs text-muted-foreground"
                 >
+                  <IsoCheckCircle class="size-20 text-muted-foreground" />
                   {{
                     changedFiles.length
                       ? "No diff for this filter"

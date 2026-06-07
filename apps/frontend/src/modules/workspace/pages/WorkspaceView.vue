@@ -11,8 +11,8 @@ import {
 import { useQuery } from "@tanstack/vue-query";
 import { queryClient } from "@/lib/query-client";
 import { useGlobalWorkspaceKeybindings } from "@/modules/keyboard/hooks/useGlobalWorkspaceKeybindings";
-import { GitBranchIcon } from "@lucide/vue";
 import { EmptyState } from "@/modules/empty-states";
+import IsoLeftPanelOpen from "@/assets/isocons/IsoLeftPanelOpen.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -65,7 +65,7 @@ watch(
       <div class="relative min-h-0 flex-1 overflow-hidden">
         <EmptyState
           class="absolute inset-0"
-          :icon="GitBranchIcon"
+          :icon="IsoLeftPanelOpen"
           title="Select a worktree from the sidebar"
           description="or add a project to begin"
         />

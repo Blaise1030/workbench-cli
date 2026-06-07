@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { CheckIcon, ChevronsUpDownIcon, GitBranchIcon } from "@lucide/vue";
+import IsoSearchOff from "@/assets/isocons/IsoSearchOff.vue";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -49,7 +50,10 @@ const open = defineModel<boolean>("open", { default: false });
         <ComboboxInput placeholder="Search branches..." auto-focus group-class="bg-input" />
       </div>
       <ComboboxViewport class="max-h-48">
-        <ComboboxEmpty>No branch found</ComboboxEmpty>
+        <ComboboxEmpty class="flex-col items-center gap-2">
+          <IsoSearchOff class="size-10 text-muted-foreground" />
+          No branch found
+        </ComboboxEmpty>
         <ComboboxItem
           v-for="branch in branches"
           :key="branch"

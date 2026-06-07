@@ -38,6 +38,27 @@ func IsGitRepo(path string) bool {
 	return err == nil && out != ""
 }
 
+// ValidateBranchName returns an error if name is not a safe git ref component.
+// It rejects empty names, names starting with '-' (flag injection), names
+// containing '..' or control characters, and names with disallowed git ref chars.
+func ValidateBranchName(name string) error {
+	if name == "" {
+		return fmt.Errorf("branch name is required")
+	}
+	if strings.HasPrefix(name, "-") {
+		return fmt.Errorf("invalid branch name %q", name)
+	}
+	if strings.Contains(name, "..") {
+		return fmt.Errorf("invalid branch name %q", name)
+	}
+	for _, ch := range name {
+		if ch < 0x20 || ch == 0x7f || strings.ContainsRune(` ~^:?*[\\`, ch) {
+			return fmt.Errorf("invalid branch name %q", name)
+		}
+	}
+	return nil
+}
+
 // ValidateDirectoryPath reports whether path exists and is a directory.
 // Git repositories and plain folders are accepted; files and missing paths error.
 func ValidateDirectoryPath(path string) error {

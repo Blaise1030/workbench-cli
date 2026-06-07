@@ -3,6 +3,8 @@ import { computed, defineComponent, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useQuery } from "@tanstack/vue-query";
 import { BotIcon, FileIcon, LoaderIcon, SearchIcon, TerminalIcon } from "@lucide/vue";
+import IsoSearchOff from "@/assets/isocons/IsoSearchOff.vue";
+import IsoClockLoader from "@/assets/isocons/IsoClockLoader.vue";
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandSeparator, useCommand } from "@/components/ui/command";
 import { Kbd } from "@/components/ui/kbd";
 import { closeCommandPalette, savedInput, pendingInitialInput, recentFiles, addRecentFile } from "./useCommandPalette";
@@ -272,8 +274,14 @@ const ITEM_CLASS =
                   >
                     <span v-if="!worktreeId">No active worktree</span>
                     <span v-else-if="!contentQuery">Type to search file contents</span>
-                    <span v-else-if="contentLoading">Searching...</span>
-                    <span v-else>No results found</span>
+                    <div v-else-if="contentLoading" class="flex flex-col items-center gap-2">
+                      <IsoClockLoader class="size-20 text-muted-foreground" />
+                      Searching...
+                    </div>
+                    <div v-else class="flex flex-col items-center gap-2">
+                      <IsoSearchOff class="size-20 text-muted-foreground" />
+                      No results found
+                    </div>
                   </div>
                   <CommandGroup v-if="contentResults.length" heading="In files" :class="GROUP_HEADING_CLASS">
                     <CommandItem
@@ -332,8 +340,14 @@ const ITEM_CLASS =
                       class="py-6 text-center text-xs text-muted-foreground"
                     >
                       <span v-if="!worktreeId">No active worktree</span>
-                      <span v-else-if="fileLoading">Searching...</span>
-                      <span v-else>No files found</span>
+                      <div v-else-if="fileLoading" class="flex flex-col items-center gap-2">
+                        <IsoClockLoader class="size-20 text-muted-foreground" />
+                        Searching...
+                      </div>
+                      <div v-else class="flex flex-col items-center gap-2">
+                        <IsoSearchOff class="size-20 text-muted-foreground" />
+                        No files found
+                      </div>
                     </div>
                     <CommandGroup v-if="fileResults.length" heading="Files" :class="GROUP_HEADING_CLASS">
                       <CommandItem
@@ -355,8 +369,9 @@ const ITEM_CLASS =
                 <template v-else>
                   <div
                     v-if="!navigateCommands.length && !actionCommands.length && !hasTerminalItems"
-                    class="py-6 text-center text-xs text-muted-foreground"
+                    class="flex flex-col items-center gap-2 py-6 text-center text-xs text-muted-foreground"
                   >
+                    <IsoSearchOff class="size-20 text-muted-foreground" />
                     No commands found
                   </div>
 

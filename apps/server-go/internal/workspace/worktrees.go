@@ -205,6 +205,15 @@ func CreateWorktreeForProject(db *sql.DB, projectID string, body CreateWorktreeB
 		return nil, &WorktreeError{Msg: "Project is not a git repository", Status: 400}
 	}
 
+	if err := git.ValidateBranchName(body.Branch); err != nil {
+		return nil, &WorktreeError{Msg: "invalid branch name", Status: 400}
+	}
+	if body.BaseBranch != nil && *body.BaseBranch != "" {
+		if err := git.ValidateBranchName(*body.BaseBranch); err != nil {
+			return nil, &WorktreeError{Msg: "invalid base branch name", Status: 400}
+		}
+	}
+
 	args := []string{"worktree", "add"}
 	wtPath := ""
 	if body.Path != nil && *body.Path != "" {

@@ -794,7 +794,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-@import "tailwindcss";
+@import "tailwindcss/utilities";
 @source "./git-diff-header.css";
 @source "../../context-queue/lib/context-queue-annotation-popover.ts";
 

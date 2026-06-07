@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 )
@@ -13,6 +14,11 @@ type ScrollbackMeta struct {
 	Cwd          string `json:"cwd"`
 	LastActivity int64  `json:"lastActivity"`
 	ExitCode     *int   `json:"exitCode"`
+}
+
+// isValidTerminalID rejects IDs that could be used for path traversal.
+func isValidTerminalID(id string) bool {
+	return id != "" && !strings.ContainsAny(id, `/\`) && filepath.Clean(id) == id
 }
 
 func scrollbackDir() string     { return config.ScrollbackDir() }
@@ -33,7 +39,7 @@ func ensureScrollbackDirs() {
 }
 
 func DumpScrollback(terminalID string, data []byte, meta ScrollbackMeta) {
-	if len(data) == 0 {
+	if len(data) == 0 || !isValidTerminalID(terminalID) {
 		return
 	}
 	ensureScrollbackDirs()
@@ -48,6 +54,9 @@ func DumpScrollback(terminalID string, data []byte, meta ScrollbackMeta) {
 }
 
 func LoadScrollback(terminalID string) (*ScrollbackMeta, []byte) {
+	if !isValidTerminalID(terminalID) {
+		return nil, nil
+	}
 	binPath, metaPath := scrollbackPaths(terminalID, false)
 	data, err := os.ReadFile(binPath)
 	if err != nil {
@@ -65,6 +74,9 @@ func LoadScrollback(terminalID string) (*ScrollbackMeta, []byte) {
 }
 
 func DeleteScrollback(terminalID string) {
+	if !isValidTerminalID(terminalID) {
+		return
+	}
 	for _, prev := range []bool{false, true} {
 		bin, meta := scrollbackPaths(terminalID, prev)
 		_ = os.Remove(bin)

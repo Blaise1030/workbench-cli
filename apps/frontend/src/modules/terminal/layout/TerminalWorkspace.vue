@@ -8,6 +8,7 @@ import {
   TerminalIcon,
   XIcon,
 } from "@lucide/vue";
+import IsoBottomPanelClose from "@/assets/isocons/IsoBottomPanelClose.vue";
 import { RouterView, useRoute, useRouter } from "vue-router";
 import {
   ResizableHandle,
@@ -67,6 +68,7 @@ import {
   contextQueueGitItemIdsKey,
   contextQueueKey,
 } from "@/modules/context-queue/lib/context-queue-keys";
+import { PanelLoading } from "@/components/ui/panel-loading";
 const props = defineProps<{
   worktreeId: string;
 }>();
@@ -543,16 +545,12 @@ function equalizeSplitPanes() {
     </header>
 
     <div class="relative min-h-0 flex-1 overflow-hidden">
-      <div
-        v-if="isLoading"
-        class="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground"
-      >
-        Loading panels…
-      </div>
+      <PanelLoading v-if="isLoading" class="absolute inset-0" />
       <div
         v-else-if="!hasPanelContent"
         class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground"
       >
+        <IsoBottomPanelClose class="size-20 text-muted-foreground" />
         <p class="text-sm">No panels in this worktree</p>
         <div class="flex items-center gap-0.5">
           <WorkspacePanelMenu @add="addTerminal" />
@@ -583,7 +581,7 @@ function equalizeSplitPanes() {
       <RouterView
         v-else-if="layoutMode === 'page'"
         :key="routerViewKey"
-        class="absolute border-t inset-0"
+        class="absolute inset-0 border-t"
       />
       <ResizablePanelGroup
         v-else

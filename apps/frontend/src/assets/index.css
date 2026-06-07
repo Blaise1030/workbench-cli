@@ -106,8 +106,8 @@
   --accent-foreground: oklch(0.88 0.008 260);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: color-mix(in oklch, white 10%, var(--background));
+  --input: color-mix(in oklch, white 15%, var(--background));
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -120,7 +120,7 @@
   --sidebar-primary-foreground: oklch(0.88 0.008 260);
   --sidebar-accent: oklch(0.28 0.01 265);
   --sidebar-accent-foreground: oklch(0.88 0.008 260);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: color-mix(in oklch, white 10%, var(--sidebar));
   --sidebar-ring: oklch(0.55 0.008 260);
   --diff-addition: oklch(0.62 0.12 150);
 }
@@ -212,8 +212,8 @@ html.theme-evening {
   --accent-foreground: oklch(0.88 0.01 68);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
+  --border: color-mix(in oklch, white 10%, var(--background));
+  --input: color-mix(in oklch, white 12%, var(--background));
   --ring: oklch(0.58 0.012 65);
   --sidebar: oklch(0.3 0.012 52);
   --sidebar-foreground: oklch(0.88 0.01 68);
@@ -221,7 +221,7 @@ html.theme-evening {
   --sidebar-primary-foreground: oklch(0.88 0.01 68);
   --sidebar-accent: oklch(0.34 0.012 52);
   --sidebar-accent-foreground: oklch(0.88 0.01 68);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: color-mix(in oklch, white 10%, var(--sidebar));
   --sidebar-ring: oklch(0.58 0.012 65);
   --diff-addition: oklch(0.62 0.12 150);
 }
@@ -244,8 +244,8 @@ html.theme-night {
   --accent-foreground: oklch(0.88 0.008 260);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 10%);
+  --border: color-mix(in oklch, white 8%, var(--background));
+  --input: color-mix(in oklch, white 10%, var(--background));
   --ring: oklch(0.52 0.008 260);
   --sidebar: oklch(0.22 0.01 265);
   --sidebar-foreground: oklch(0.88 0.008 260);
@@ -253,7 +253,7 @@ html.theme-night {
   --sidebar-primary-foreground: oklch(0.88 0.008 260);
   --sidebar-accent: oklch(0.26 0.01 265);
   --sidebar-accent-foreground: oklch(0.88 0.008 260);
-  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-border: color-mix(in oklch, white 8%, var(--sidebar));
   --sidebar-ring: oklch(0.52 0.008 260);
   --diff-addition: oklch(0.64 0.11 155);
 }
@@ -326,8 +326,9 @@ html.theme-night {
   }
 
   body {
+    border-color: hsl(var(--border)) !important;
     @apply bg-background text-foreground antialiased;
     @apply bg-background text-foreground;
-    @apply font-sans;
+    @apply font-sans;    
   }
 }

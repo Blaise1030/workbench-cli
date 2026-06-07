@@ -52,6 +52,8 @@ import { useSessionsQuery } from "@/modules/sessions/queries";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
 import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
 import SidebarHelpMenu from "@/modules/workspace/components/SidebarHelpMenu.vue";
+import { PanelLoading } from "@/components/ui/panel-loading";
+import IsoTerminal from "@/assets/isocons/IsoTerminal.vue";
 
 const STORAGE_KEY_EXPANDED_PROJECTS = "workbench:workspace-projects-expanded";
 const STORAGE_KEY_AGENTS_PANEL_SIZE = "workbench:workspace-sidebar-agents-size";
@@ -93,7 +95,7 @@ function onVerticalLayout(sizes: number[]) {
     persistAgentsPanelSize(agentsSize);
   }
 }
-const { data: projects } = useQuery(projectsQueryOptions());
+const { data: projects, isPending: projectsPending } = useQuery(projectsQueryOptions());
 const pickProjectFolder = usePickProjectFolderMutation();
 const deleteProject = useDeleteProjectMutation();
 
@@ -154,7 +156,7 @@ async function addProject() {
   }
 }
 
-const { data: sessionsData } = useSessionsQuery();
+const { data: sessionsData, isPending: sessionsPending } = useSessionsQuery();
 const activeSessions = computed(() =>
   (sessionsData.value ?? []).filter((s) => s.isAlive),
 );
@@ -237,8 +239,9 @@ async function removeProject(project: Project) {
                 {{ addProjectError }}
               </p>
 
+              <PanelLoading v-if="projectsPending" class="min-h-12" />
               <p
-                v-if="!projects?.length"
+                v-else-if="!projects?.length"
                 class="px-2 py-4 text-center text-sm text-muted-foreground"
               >
                 No projects yet. Choose a folder to add a project.
@@ -318,7 +321,8 @@ async function removeProject(project: Project) {
         class="flex min-h-0 flex-col"
       >
         <div class="min-h-0 flex-1 overflow-y-auto px-1 pt-1">
-          <div v-if="activeSessions.length > 0" class="flex flex-col gap-0.5">
+          <PanelLoading v-if="sessionsPending" />
+          <div v-else-if="activeSessions.length > 0" class="flex flex-col gap-0.5">
             <RouterLink
               v-for="s in activeSessions"
               :key="s.id"
@@ -349,9 +353,11 @@ async function removeProject(project: Project) {
               </div>
             </RouterLink>
           </div>
-          <div v-else class="flex h-full items-center justify-center">
-            <p class="text-xs text-muted-foreground">No active agents</p>
+          <div v-else class="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+            <IsoTerminal class="size-20 text-muted-foreground" />
+            <p class="text-xs">No active agents</p>
           </div>
+
         </div>
       </ResizablePanel>
     </ResizablePanelGroup>

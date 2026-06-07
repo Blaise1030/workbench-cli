@@ -33,6 +33,7 @@ import {
 import { createFileLinkProvider } from "@/modules/terminal/lib/terminal-file-links";
 import { terminalSelectionColors } from "@/modules/terminal/lib/terminal-theme";
 import { cn } from "@/lib/utils";
+import { PanelLoading } from "@/components/ui/panel-loading";
 
 const props = defineProps<{
   sessionId: string;
@@ -43,6 +44,7 @@ const sessions = useTerminalSessions();
 const terminalElRef = useTemplateRef<HTMLDivElement>("terminalElRef");
 const dropZoneRef = useTemplateRef("dropZoneRef");
 const initError = ref<string | null>(null);
+const terminalReady = ref(false);
 
 let terminal: Terminal | null = null;
 let fitAddon: FitAddon | null = null;
@@ -151,6 +153,7 @@ onMounted(async () => {
 
     sessions.attach(props.sessionId, terminal);
     initError.value = null;
+    terminalReady.value = true;
   } catch (err) {
     initError.value =
       err instanceof Error ? err.message : "Failed to load terminal emulator";
@@ -248,6 +251,7 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
       )
     "
   >
+    <PanelLoading v-if="!terminalReady && !initError" class="absolute inset-0" />
     <p
       v-if="initError"
       class="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-destructive"

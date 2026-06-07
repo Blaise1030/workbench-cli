@@ -2,6 +2,7 @@ name: Deploy GitHub Pages (disabled)
 # Replaced by deploy-landing-page.yml — Cloudflare Workers deployment
 on:
   workflow_dispatch:
+permissions: {}
 jobs:
   noop:
     runs-on: ubuntu-latest

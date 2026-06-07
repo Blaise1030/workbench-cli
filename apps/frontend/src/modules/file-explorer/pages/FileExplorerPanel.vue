@@ -2,7 +2,10 @@
 import { computed, inject, nextTick, onMounted, ref, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useDebounceFn } from "@vueuse/core";
-import { FileIcon, FilePlusIcon, FileTextIcon, FolderPlusIcon, FolderTreeIcon, SearchIcon } from "@lucide/vue";
+import { FilePlusIcon, FileTextIcon, FolderPlusIcon, FolderTreeIcon, SearchIcon } from "@lucide/vue";
+import IsoFileOpen from "@/assets/isocons/IsoFileOpen.vue";
+import IsoClockLoader from "@/assets/isocons/IsoClockLoader.vue";
+import IsoFileDownloadOff from "@/assets/isocons/IsoFileDownloadOff.vue";
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { FileTree } from "@pierre/trees";
 import {
@@ -820,21 +823,23 @@ async function onNewEntryConfirm() {
             @toggle-markdown-preview="markdownPreview = !markdownPreview"
           />
           <div v-if="!selectedRelativePath" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
-            <FileIcon class="size-8 opacity-40" />
+            <IsoFileOpen class="size-20 text-muted-foreground" />
             <p class="text-sm">Select a file to preview</p>
           </div>
 
           <div
             v-else-if="fileLoading"
-            class="flex flex-1 items-center justify-center text-sm text-muted-foreground"
+            class="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-muted-foreground"
           >
+            <IsoClockLoader class="size-20 text-muted-foreground" />
             Loading file…
           </div>
 
           <div
             v-else-if="fileError"
-            class="flex flex-1 items-center justify-center p-6 text-center text-sm text-destructive"
+            class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-destructive"
           >
+            <IsoFileDownloadOff class="size-20 text-muted-foreground" />
             {{ fileErrorObj instanceof Error ? fileErrorObj.message : "Could not load file" }}
           </div>
 

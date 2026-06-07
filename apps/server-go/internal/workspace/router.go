@@ -166,6 +166,10 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 			wsErr(w, "branch is required", http.StatusBadRequest)
 			return
 		}
+		if err := git.ValidateBranchName(body.Branch); err != nil {
+			wsErr(w, "invalid branch name", http.StatusBadRequest)
+			return
+		}
 		if _, err := git.Run(p.RepoPath, []string{"checkout", body.Branch}); err != nil {
 			wsErr(w, err.Error(), http.StatusBadRequest)
 			return
