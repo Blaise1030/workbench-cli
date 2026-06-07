@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/Blaise1030/workbench-cli/compare/v0.4.2...v0.4.3) (2026-06-07)
+
+
+### Bug Fixes
+
+* prevent app code-split chunks from failing Shiki bundle assertion ([9142ec5](https://github.com/Blaise1030/workbench-cli/commit/9142ec5d7e8491b25de291a993ce3e550c1e05f7))
+
 ## [0.4.2](https://github.com/Blaise1030/workbench-cli/compare/v0.4.1...v0.4.2) (2026-06-07)
 
 
