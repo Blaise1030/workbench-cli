@@ -1,0 +1,59 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - generic [ref=e11]:
+            - generic [ref=e13]:
+              - 'button "Theme: Night" [ref=e14]':
+                - img
+              - link "Settings" [ref=e15] [cursor=pointer]:
+                - /url: /settings
+                - img
+                - generic [ref=e16]: Settings
+            - paragraph [ref=e17]: No projects yet. Choose a folder to add a project.
+            - list [ref=e18]:
+              - listitem [ref=e19]:
+                - button "Add project" [ref=e20]:
+                  - img [ref=e21]
+                  - generic [ref=e23]: Add project
+          - separator [ref=e25]
+          - paragraph [ref=e30]: No active agents
+        - button "Help" [expanded] [ref=e32]:
+          - img
+      - separator [ref=e33]
+      - generic [ref=e37]:
+        - banner [ref=e38]:
+          - button "Collapse sidebar" [expanded] [ref=e39]:
+            - img
+        - generic [ref=e41]:
+          - img [ref=e42]
+          - generic [ref=e46]:
+            - paragraph [ref=e47]: Select a worktree from the sidebar
+            - paragraph [ref=e48]: or add a project to begin
+    - region "Notifications alt+T":
+      - list
+  - dialog "Help" [ref=e50]:
+    - link "Docs" [active] [ref=e51] [cursor=pointer]:
+      - /url: https://github.com/Blaise1030/workbench-cli
+      - img [ref=e52]
+      - text: Docs
+    - link "Submit feedback" [ref=e54] [cursor=pointer]:
+      - /url: https://github.com/Blaise1030/workbench-cli/issues/new
+      - img [ref=e55]
+      - text: Submit feedback
+    - link "Settings" [ref=e57] [cursor=pointer]:
+      - /url: /settings
+      - img [ref=e58]
+      - text: Settings
+    - paragraph [ref=e62]: What's new
+    - button "Terminal agent picker" [ref=e63]:
+      - img [ref=e64]
+      - text: Terminal agent picker
+    - button "Non-git project folders" [ref=e67]:
+      - img [ref=e68]
+      - text: Non-git project folders
+    - link "Full changelog" [ref=e72] [cursor=pointer]:
+      - /url: https://github.com/Blaise1030/workbench-cli/releases
+      - img [ref=e73]
+      - text: Full changelog

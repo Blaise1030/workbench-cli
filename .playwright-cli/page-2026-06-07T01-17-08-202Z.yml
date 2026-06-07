@@ -1,0 +1,1218 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - img [ref=e8]
+            - generic [ref=e15]:
+              - generic [ref=e16]: Isocons
+              - generic [ref=e17]: v 2.1
+          - generic [ref=e18]:
+            - button "License" [ref=e19] [cursor=pointer]:
+              - generic [ref=e20]: License
+              - img [ref=e21]
+            - button [ref=e24] [cursor=pointer]
+        - generic [ref=e32]:
+          - paragraph [ref=e34]:
+            - text: Isometric icons For your
+            - generic [ref=e9885]:
+              - generic [ref=e9886]: Presentations
+              - img [ref=e9887]
+          - generic [ref=e41]:
+            - link "Get the Figma Plugin" [ref=e42] [cursor=pointer]:
+              - /url: https://www.figma.com/community/plugin/1413541312472258622/isocons
+              - button "Get the Figma Plugin" [ref=e43]:
+                - img [ref=e44]
+                - text: Get the Figma Plugin
+            - img [ref=e50]
+            - generic [ref=e53]:
+              - link "leye-small" [ref=e55] [cursor=pointer]:
+                - /url: https://x.com/leyeConnect
+                - button "leye-small" [ref=e56]:
+                  - img "leye-small" [ref=e57]
+              - link "moses-small" [ref=e59] [cursor=pointer]:
+                - /url: https://x.com/meandchimso
+                - button "moses-small" [ref=e60]:
+                  - img "moses-small" [ref=e61]
+      - generic [ref=e63]:
+        - generic [ref=e4446]:
+          - generic [ref=e4447]:
+            - button "Categories" [ref=e4448] [cursor=pointer]:
+              - generic [ref=e4449]: Categories
+            - button "Filter" [ref=e4450] [cursor=pointer]:
+              - generic [ref=e4451]: Filter
+              - img [ref=e4453]
+          - generic [ref=e4458]:
+            - generic [ref=e4459]:
+              - generic [ref=e4460]:
+                - img "filter-bg"
+                - img [ref=e4461]
+              - generic [ref=e4466]:
+                - button "Left" [ref=e4467] [cursor=pointer]
+                - button "Top" [ref=e4468] [cursor=pointer]
+                - button "Right" [ref=e4469] [cursor=pointer]
+            - paragraph [ref=e4471]: Fill
+            - generic [ref=e4474]:
+              - paragraph [ref=e4475]: Edge
+              - generic [ref=e4476]:
+                - button [ref=e4477] [cursor=pointer]:
+                  - img [ref=e4479]
+                - button [ref=e4484] [cursor=pointer]:
+                  - img [ref=e4486]
+            - generic [ref=e4490]:
+              - paragraph [ref=e4491]: Stroke
+              - generic [ref=e4493]:
+                - generic [ref=e4498]:
+                  - generic [ref=e4499]: 1px
+                  - button [ref=e4500]
+                - generic:
+                  - slider
+        - generic [ref=e121]:
+          - generic [ref=e124]:
+            - generic [ref=e125]:
+              - button [ref=e4501] [cursor=pointer]:
+                - img [ref=e4502]
+              - generic [ref=e130]:
+                - img [ref=e131]
+                - textbox "Search by descriptors like “add”, or “check”" [ref=e134]
+            - button "Checkout" [ref=e136] [cursor=pointer]:
+              - generic [ref=e137]: Checkout
+              - img [ref=e138]
+          - generic [ref=e4505]:
+            - generic [ref=e4506]:
+              - paragraph [ref=e4507]: UI Actions
+              - generic [ref=e4508]:
+                - paragraph [ref=e4539] [cursor=pointer]: "123"
+                - paragraph [ref=e4543] [cursor=pointer]: ABC
+                - paragraph [ref=e4547] [cursor=pointer]: Action key
+                - paragraph [ref=e4551] [cursor=pointer]: Acute
+                - paragraph [ref=e4555] [cursor=pointer]: Add Box
+                - paragraph [ref=e4559] [cursor=pointer]: Add Circle
+                - paragraph [ref=e4563] [cursor=pointer]: Add Task
+                - paragraph [ref=e4567] [cursor=pointer]: All match
+                - paragraph [ref=e4571] [cursor=pointer]: Alt clock loader 45
+                - paragraph [ref=e4575] [cursor=pointer]: Alt clock loader 60
+                - paragraph [ref=e4579] [cursor=pointer]: Alt clock loader 90
+                - paragraph [ref=e4583] [cursor=pointer]: Amend
+                - paragraph [ref=e4587] [cursor=pointer]: App badging
+                - paragraph [ref=e4591] [cursor=pointer]: App Registration
+                - paragraph [ref=e4595] [cursor=pointer]: Apps
+                - paragraph [ref=e4599] [cursor=pointer]: Apps outage
+                - paragraph [ref=e4603] [cursor=pointer]: Arrow and Edge
+                - paragraph [ref=e4607] [cursor=pointer]: Arrow Back
+                - paragraph [ref=e4611] [cursor=pointer]: Arrow circle down
+                - paragraph [ref=e4615] [cursor=pointer]: Arrow circle left
+                - paragraph [ref=e4619] [cursor=pointer]: Arrow circle right
+                - paragraph [ref=e4623] [cursor=pointer]: Arrow circle up
+                - paragraph [ref=e4627] [cursor=pointer]: Arrow Deep Down Circle
+                - paragraph [ref=e4631] [cursor=pointer]: Arrow Down
+                - paragraph [ref=e4635] [cursor=pointer]: Arrow downward alt
+                - paragraph [ref=e4639] [cursor=pointer]: Arrow forward
+                - paragraph [ref=e4643] [cursor=pointer]: Arrow forward tail
+                - paragraph [ref=e4647] [cursor=pointer]: Arrow insert
+                - paragraph [ref=e4651] [cursor=pointer]: Arrow or edge
+                - paragraph [ref=e4655] [cursor=pointer]: Arrow outward
+                - paragraph [ref=e4659] [cursor=pointer]: Arrow range
+                - paragraph [ref=e4663] [cursor=pointer]: Arrow split
+                - paragraph [ref=e4667] [cursor=pointer]: Arrow top left
+                - paragraph [ref=e4671] [cursor=pointer]: Arrow top right
+                - paragraph [ref=e4675] [cursor=pointer]: Arrow Up
+                - paragraph [ref=e4679] [cursor=pointer]: Arrow upload progress
+                - paragraph [ref=e4683] [cursor=pointer]: Arrow upload ready
+                - paragraph [ref=e4687] [cursor=pointer]: Arrow upward alt
+                - paragraph [ref=e4691] [cursor=pointer]: Arrows outward
+                - paragraph [ref=e4695] [cursor=pointer]: Assistant Direction
+                - paragraph [ref=e4699] [cursor=pointer]: Assistant Navigation
+                - paragraph [ref=e4703] [cursor=pointer]: Auto Renew
+                - paragraph [ref=e4707] [cursor=pointer]: Back to tab
+                - paragraph [ref=e4711] [cursor=pointer]: Backspace
+                - paragraph [ref=e4715] [cursor=pointer]: Block
+                - paragraph [ref=e4719] [cursor=pointer]: Bolt
+                - paragraph [ref=e4723] [cursor=pointer]: Borg
+                - paragraph [ref=e4727] [cursor=pointer]: Bottom app bar
+                - paragraph [ref=e4731] [cursor=pointer]: Bottom drawer
+                - paragraph [ref=e4735] [cursor=pointer]: Bottom navigation
+                - paragraph [ref=e4739] [cursor=pointer]: Bottom panel close 1
+                - paragraph [ref=e4743] [cursor=pointer]: Bottom panel close 2
+                - paragraph [ref=e4747] [cursor=pointer]: Bottom right click
+                - paragraph [ref=e4751] [cursor=pointer]: Bottom sheets
+                - paragraph [ref=e4755] [cursor=pointer]: Browse activity
+                - paragraph [ref=e4759] [cursor=pointer]: Browse Gallery
+                - paragraph [ref=e4763] [cursor=pointer]: Bubble
+                - paragraph [ref=e4767] [cursor=pointer]: Bubbles
+                - paragraph [ref=e4771] [cursor=pointer]: Buttons alt
+                - paragraph [ref=e4775] [cursor=pointer]: Cached
+                - paragraph [ref=e4779] [cursor=pointer]: Cancel
+                - paragraph [ref=e4783] [cursor=pointer]: Cancel Circle
+                - paragraph [ref=e4787] [cursor=pointer]: Captive portal
+                - paragraph [ref=e4791] [cursor=pointer]: Capture
+                - paragraph [ref=e4795] [cursor=pointer]: Cards
+                - paragraph [ref=e4799] [cursor=pointer]: Change Circle
+                - paragraph [ref=e4803] [cursor=pointer]: Check
+                - paragraph [ref=e4807] [cursor=pointer]: Check box
+                - paragraph [ref=e4811] [cursor=pointer]: Check box blank
+                - paragraph [ref=e4815] [cursor=pointer]: Check Circle
+                - paragraph [ref=e4819] [cursor=pointer]: Check small
+                - paragraph [ref=e4823] [cursor=pointer]: Chevron backward
+                - paragraph [ref=e4827] [cursor=pointer]: Chevron Down
+                - paragraph [ref=e4831] [cursor=pointer]: Chevron forward
+                - paragraph [ref=e4835] [cursor=pointer]: Chevron Right
+                - paragraph [ref=e4839] [cursor=pointer]: Chevron up
+                - paragraph [ref=e4843] [cursor=pointer]: Chip extraction
+                - paragraph [ref=e4847] [cursor=pointer]: Chips
+                - paragraph [ref=e4851] [cursor=pointer]: Chronic
+                - paragraph [ref=e4855] [cursor=pointer]: Clear all
+                - paragraph [ref=e4859] [cursor=pointer]: Clock leader 60
+                - paragraph [ref=e4863] [cursor=pointer]: Clock loader 10
+                - paragraph [ref=e4867] [cursor=pointer]: Clock loader 20
+                - paragraph [ref=e4871] [cursor=pointer]: Clock loader 40
+                - paragraph [ref=e4875] [cursor=pointer]: Clock loader 80
+                - paragraph [ref=e4879] [cursor=pointer]: Clock loader 90
+                - paragraph [ref=e4883] [cursor=pointer]: Close Fullscreen
+                - paragraph [ref=e4887] [cursor=pointer]: Close small
+                - paragraph [ref=e4891] [cursor=pointer]: Collapse all
+                - paragraph [ref=e4895] [cursor=pointer]: Collapse content
+                - paragraph [ref=e4899] [cursor=pointer]: Compare Arrow
+                - paragraph [ref=e4903] [cursor=pointer]: Compress
+                - paragraph [ref=e4907] [cursor=pointer]: Create new folder
+                - paragraph [ref=e4911] [cursor=pointer]: CSS
+                - paragraph [ref=e4915] [cursor=pointer]: Cycle
+                - paragraph [ref=e4919] [cursor=pointer]: Data alert
+                - paragraph [ref=e4923] [cursor=pointer]: Data check double
+                - paragraph [ref=e4927] [cursor=pointer]: Data info alert
+                - paragraph [ref=e4931] [cursor=pointer]: Data thresholding
+                - paragraph [ref=e4935] [cursor=pointer]: Dataset
+                - paragraph [ref=e4939] [cursor=pointer]: Dataset linked
+                - paragraph [ref=e4943] [cursor=pointer]: Delete
+                - paragraph [ref=e4947] [cursor=pointer]: Delete Sweep
+                - paragraph [ref=e4951] [cursor=pointer]: Density medium
+                - paragraph [ref=e4955] [cursor=pointer]: Deploy code upload
+                - paragraph [ref=e4959] [cursor=pointer]: Deployed code
+                - paragraph [ref=e4963] [cursor=pointer]: Deployed code account
+                - paragraph [ref=e4967] [cursor=pointer]: Deployed code alert
+                - paragraph [ref=e4971] [cursor=pointer]: Deployed code history
+                - paragraph [ref=e4975] [cursor=pointer]: Desktop landscape
+                - paragraph [ref=e4979] [cursor=pointer]: Desktop landscape add
+                - paragraph [ref=e4983] [cursor=pointer]: Desktop portrait
+                - paragraph [ref=e4987] [cursor=pointer]: Dialog
+                - paragraph [ref=e4991] [cursor=pointer]: Directory sync
+                - paragraph [ref=e4995] [cursor=pointer]: Do not disturb off
+                - paragraph [ref=e4999] [cursor=pointer]: Do not disturb on
+                - paragraph [ref=e5003] [cursor=pointer]: Done all
+                - paragraph [ref=e5007] [cursor=pointer]: Done Outline
+                - paragraph [ref=e5011] [cursor=pointer]: Double Arrow
+                - paragraph [ref=e5015] [cursor=pointer]: Download
+                - paragraph [ref=e5019] [cursor=pointer]: Download 2
+                - paragraph [ref=e5023] [cursor=pointer]: Download done
+                - paragraph [ref=e5027] [cursor=pointer]: Download for offline
+                - paragraph [ref=e5031] [cursor=pointer]: Downloading
+                - paragraph [ref=e5035] [cursor=pointer]: Drag indicator
+                - paragraph [ref=e5039] [cursor=pointer]: Drag pan
+                - paragraph [ref=e5043] [cursor=pointer]: Drag quick
+                - paragraph [ref=e5047] [cursor=pointer]: Dropdown
+                - paragraph [ref=e5051] [cursor=pointer]: Dynamic form
+                - paragraph [ref=e5055] [cursor=pointer]: Eject
+                - paragraph [ref=e5059] [cursor=pointer]: Empty dashboard
+                - paragraph [ref=e5063] [cursor=pointer]: Error med
+                - paragraph [ref=e5067] [cursor=pointer]: Event list
+                - paragraph [ref=e5071] [cursor=pointer]: Exit to App
+                - paragraph [ref=e5075] [cursor=pointer]: Expand
+                - paragraph [ref=e5079] [cursor=pointer]: Expand all
+                - paragraph [ref=e5083] [cursor=pointer]: Expand circle right
+                - paragraph [ref=e5087] [cursor=pointer]: Expand circle up
+                - paragraph [ref=e5091] [cursor=pointer]: Expand content
+                - paragraph [ref=e5095] [cursor=pointer]: Extension off
+                - paragraph [ref=e5099] [cursor=pointer]: Favorite
+                - paragraph [ref=e5103] [cursor=pointer]: Favorite minus
+                - paragraph [ref=e5107] [cursor=pointer]: Favorite plus
+                - paragraph [ref=e5111] [cursor=pointer]: File download off
+                - paragraph [ref=e5115] [cursor=pointer]: File open
+                - paragraph [ref=e5119] [cursor=pointer]: Filter
+                - paragraph [ref=e5123] [cursor=pointer]: Filter Alt Off
+                - paragraph [ref=e5127] [cursor=pointer]: Filter list off
+                - paragraph [ref=e5131] [cursor=pointer]: First page
+                - paragraph [ref=e5135] [cursor=pointer]: Fit Screen
+                - paragraph [ref=e5139] [cursor=pointer]: Float desktop
+                - paragraph [ref=e5143] [cursor=pointer]: Float landscape 2
+                - paragraph [ref=e5147] [cursor=pointer]: Forward
+                - paragraph [ref=e5151] [cursor=pointer]: Fullscreen
+                - paragraph [ref=e5155] [cursor=pointer]: Fullscreen exit
+                - paragraph [ref=e5159] [cursor=pointer]: Fullscreen portrait
+                - paragraph [ref=e5163] [cursor=pointer]: Heart check
+                - paragraph [ref=e5167] [cursor=pointer]: Hide
+                - paragraph [ref=e5171] [cursor=pointer]: Hide Source
+                - paragraph [ref=e5175] [cursor=pointer]: Highlight keyboard focus
+                - paragraph [ref=e5179] [cursor=pointer]: Highlight mouse cursor
+                - paragraph [ref=e5183] [cursor=pointer]: Highlight text cursor
+                - paragraph [ref=e5187] [cursor=pointer]: HLS
+                - paragraph [ref=e5191] [cursor=pointer]: HLS Off
+                - paragraph [ref=e5195] [cursor=pointer]: House
+                - paragraph [ref=e5199] [cursor=pointer]: HTML
+                - paragraph [ref=e5203] [cursor=pointer]: Iframe
+                - paragraph [ref=e5207] [cursor=pointer]: Iframe off
+                - paragraph [ref=e5211] [cursor=pointer]: Indeterminate checkbox
+                - paragraph [ref=e5215] [cursor=pointer]: Input circle
+                - paragraph [ref=e5219] [cursor=pointer]: Install Desktop
+                - paragraph [ref=e5223] [cursor=pointer]: Install mobile
+                - paragraph [ref=e5227] [cursor=pointer]: IOS Share
+                - paragraph [ref=e5231] [cursor=pointer]: Javascript
+                - paragraph [ref=e5235] [cursor=pointer]: Jump to element
+                - paragraph [ref=e5239] [cursor=pointer]: Key
+                - paragraph [ref=e5243] [cursor=pointer]: Key Off
+                - paragraph [ref=e5247] [cursor=pointer]: Key vertical
+                - paragraph [ref=e5251] [cursor=pointer]: Keyboard command key
+                - paragraph [ref=e5255] [cursor=pointer]: Keyboard double arrow down
+                - paragraph [ref=e5259] [cursor=pointer]: Keyboard double arrow left
+                - paragraph [ref=e5263] [cursor=pointer]: Keyboard double arrow right 1
+                - paragraph [ref=e5267] [cursor=pointer]: Keyboard double arrow right 2
+                - paragraph [ref=e5271] [cursor=pointer]: Keyboard double arrow up
+                - paragraph [ref=e5275] [cursor=pointer]: Keyboard option key
+                - paragraph [ref=e5279] [cursor=pointer]: Last Page
+                - paragraph [ref=e5283] [cursor=pointer]: Left click
+                - paragraph [ref=e5287] [cursor=pointer]: Left panel close
+                - paragraph [ref=e5291] [cursor=pointer]: Left panel open
+                - paragraph [ref=e5295] [cursor=pointer]: Library Add
+                - paragraph [ref=e5299] [cursor=pointer]: Linked services
+                - paragraph [ref=e5303] [cursor=pointer]: Login blank
+                - paragraph [ref=e5307] [cursor=pointer]: Logout
+                - paragraph [ref=e5311] [cursor=pointer]: Magnification large
+                - paragraph [ref=e5315] [cursor=pointer]: Magnification small
+                - paragraph [ref=e5319] [cursor=pointer]: Manage Search
+                - paragraph [ref=e5323] [cursor=pointer]: Maximize
+                - paragraph [ref=e5327] [cursor=pointer]: Menu
+                - paragraph [ref=e5331] [cursor=pointer]: Menu Open
+                - paragraph [ref=e5335] [cursor=pointer]: Minimize
+                - paragraph [ref=e5339] [cursor=pointer]: More down
+                - paragraph [ref=e5343] [cursor=pointer]: More Horizontal
+                - paragraph [ref=e5347] [cursor=pointer]: More Vertical
+                - paragraph [ref=e5351] [cursor=pointer]: Move down
+                - paragraph [ref=e5355] [cursor=pointer]: Move group
+                - paragraph [ref=e5359] [cursor=pointer]: Move item
+                - paragraph [ref=e5363] [cursor=pointer]: Move selection down
+                - paragraph [ref=e5367] [cursor=pointer]: Move selection left
+                - paragraph [ref=e5371] [cursor=pointer]: Move selection right
+                - paragraph [ref=e5375] [cursor=pointer]: Move selection up
+                - paragraph [ref=e5379] [cursor=pointer]: Move Up
+                - paragraph [ref=e5383] [cursor=pointer]: Multimodal hand eye
+                - paragraph [ref=e5387] [cursor=pointer]: New window
+                - paragraph [ref=e5391] [cursor=pointer]: Open in full
+                - paragraph [ref=e5395] [cursor=pointer]: Open in new
+                - paragraph [ref=e5399] [cursor=pointer]: Open in new down
+                - paragraph [ref=e5403] [cursor=pointer]: Open in new off
+                - paragraph [ref=e5407] [cursor=pointer]: Open run
+                - paragraph [ref=e5411] [cursor=pointer]: Open with
+                - paragraph [ref=e5415] [cursor=pointer]: Output
+                - paragraph [ref=e5419] [cursor=pointer]: Output circle
+                - paragraph [ref=e5423] [cursor=pointer]: Page control
+                - paragraph [ref=e5427] [cursor=pointer]: Partner reports
+                - paragraph [ref=e5431] [cursor=pointer]: PHP
+                - paragraph [ref=e5435] [cursor=pointer]: Pinch
+                - paragraph [ref=e5439] [cursor=pointer]: Pinch
+                - paragraph [ref=e5443] [cursor=pointer]: PIP
+                - paragraph [ref=e5447] [cursor=pointer]: PIP Exit
+                - paragraph [ref=e5451] [cursor=pointer]: Place Item
+                - paragraph [ref=e5455] [cursor=pointer]: Point scan
+                - paragraph [ref=e5459] [cursor=pointer]: Position bottom left
+                - paragraph [ref=e5463] [cursor=pointer]: Position bottom right
+                - paragraph [ref=e5467] [cursor=pointer]: Position top right
+                - paragraph [ref=e5471] [cursor=pointer]: Preliminary
+                - paragraph [ref=e5475] [cursor=pointer]: Progress activity
+                - paragraph [ref=e5479] [cursor=pointer]: Prompt suggestion
+                - paragraph [ref=e5483] [cursor=pointer]: Publish
+                - paragraph [ref=e5487] [cursor=pointer]: Question exchange
+                - paragraph [ref=e5491] [cursor=pointer]: Quick reference
+                - paragraph [ref=e5495] [cursor=pointer]: Quick references all
+                - paragraph [ref=e5499] [cursor=pointer]: Radio button checked
+                - paragraph [ref=e5503] [cursor=pointer]: Radio button partial
+                - paragraph [ref=e5507] [cursor=pointer]: Radio Button Unchecked
+                - paragraph [ref=e5511] [cursor=pointer]: Rebase
+                - paragraph [ref=e5515] [cursor=pointer]: Rebase edit
+                - paragraph [ref=e5519] [cursor=pointer]: Recenter
+                - paragraph [ref=e5523] [cursor=pointer]: Redo
+                - paragraph [ref=e5527] [cursor=pointer]: Refresh
+                - paragraph [ref=e5531] [cursor=pointer]: Remove done
+                - paragraph [ref=e5535] [cursor=pointer]: Reopen window
+                - paragraph [ref=e5539] [cursor=pointer]: Repartition
+                - paragraph [ref=e5543] [cursor=pointer]: Reply
+                - paragraph [ref=e5547] [cursor=pointer]: Reply all
+                - paragraph [ref=e5551] [cursor=pointer]: Resize
+                - paragraph [ref=e5555] [cursor=pointer]: Responsive layout
+                - paragraph [ref=e5559] [cursor=pointer]: Restart Alt
+                - paragraph [ref=e5563] [cursor=pointer]: Restore from trash
+                - paragraph [ref=e5567] [cursor=pointer]: Right click
+                - paragraph [ref=e5571] [cursor=pointer]: Right panel close
+                - paragraph [ref=e5575] [cursor=pointer]: Right panel open
+                - paragraph [ref=e5579] [cursor=pointer]: Ripples
+                - paragraph [ref=e5583] [cursor=pointer]: Rotate auto
+                - paragraph [ref=e5587] [cursor=pointer]: Rule settings
+                - paragraph [ref=e5591] [cursor=pointer]: Saved Search
+                - paragraph [ref=e5595] [cursor=pointer]: Search check 2
+                - paragraph [ref=e5599] [cursor=pointer]: Search check 3
+                - paragraph [ref=e5603] [cursor=pointer]: Search Off
+                - paragraph [ref=e5607] [cursor=pointer]: Select All
+                - paragraph [ref=e5611] [cursor=pointer]: Select Checkbox
+                - paragraph [ref=e5615] [cursor=pointer]: Send time extension
+                - paragraph [ref=e5619] [cursor=pointer]: Settings
+                - paragraph [ref=e5623] [cursor=pointer]: Settings Accessibility
+                - paragraph [ref=e5627] [cursor=pointer]: Settings application
+                - paragraph [ref=e5631] [cursor=pointer]: Settings backup restore
+                - paragraph [ref=e5635] [cursor=pointer]: Settings heart
+                - paragraph [ref=e5639] [cursor=pointer]: Share reviews
+                - paragraph [ref=e5643] [cursor=pointer]: Share windows
+                - paragraph [ref=e5647] [cursor=pointer]: Shelf auto hide
+                - paragraph [ref=e5651] [cursor=pointer]: Shelf position
+                - paragraph [ref=e5655] [cursor=pointer]: Shopping cart checkout
+                - paragraph [ref=e5659] [cursor=pointer]: Side navigation
+                - paragraph [ref=e5663] [cursor=pointer]: Sliders
+                - paragraph [ref=e5667] [cursor=pointer]: Sort
+                - paragraph [ref=e5671] [cursor=pointer]: Sort by Alpha
+                - paragraph [ref=e5675] [cursor=pointer]: Splitscreen landscape
+                - paragraph [ref=e5679] [cursor=pointer]: Splitscreen Portrait
+                - paragraph [ref=e5683] [cursor=pointer]: Stack off
+                - paragraph [ref=e5687] [cursor=pointer]: Stack star
+                - paragraph [ref=e5691] [cursor=pointer]: Stacks
+                - paragraph [ref=e5695] [cursor=pointer]: Star
+                - paragraph [ref=e5699] [cursor=pointer]: Star Half
+                - paragraph [ref=e5703] [cursor=pointer]: Star rate half
+                - paragraph [ref=e5707] [cursor=pointer]: Start
+                - paragraph [ref=e5711] [cursor=pointer]: Stat 0 double
+                - paragraph [ref=e5715] [cursor=pointer]: Stat 1
+                - paragraph [ref=e5719] [cursor=pointer]: Stat 2
+                - paragraph [ref=e5723] [cursor=pointer]: Stat 3
+                - paragraph [ref=e5727] [cursor=pointer]: Stat minus 1
+                - paragraph [ref=e5731] [cursor=pointer]: Stat minus 2
+                - paragraph [ref=e5735] [cursor=pointer]: Stat minus 3
+                - paragraph [ref=e5739] [cursor=pointer]: Step
+                - paragraph [ref=e5743] [cursor=pointer]: Step intro
+                - paragraph [ref=e5747] [cursor=pointer]: Step out
+                - paragraph [ref=e5751] [cursor=pointer]: Step over
+                - paragraph [ref=e5755] [cursor=pointer]: Steppers
+                - paragraph [ref=e5759] [cursor=pointer]: Subdirectory arrow
+                - paragraph [ref=e5763] [cursor=pointer]: Subdirectory Arrow Right
+                - paragraph [ref=e5767] [cursor=pointer]: Subheader
+                - paragraph [ref=e5771] [cursor=pointer]: Swap Horizontal
+                - paragraph [ref=e5775] [cursor=pointer]: Swap horizontal circle
+                - paragraph [ref=e5779] [cursor=pointer]: Swap vertical
+                - paragraph [ref=e5783] [cursor=pointer]: Swap Vertical
+                - paragraph [ref=e5787] [cursor=pointer]: Swap vertical circle
+                - paragraph [ref=e5791] [cursor=pointer]: Sweep
+                - paragraph [ref=e5795] [cursor=pointer]: Swipe down
+                - paragraph [ref=e5799] [cursor=pointer]: Swipe Left
+                - paragraph [ref=e5803] [cursor=pointer]: Swipe left alt
+                - paragraph [ref=e5807] [cursor=pointer]: Swipe left down
+                - paragraph [ref=e5811] [cursor=pointer]: Swipe Right Alt
+                - paragraph [ref=e5815] [cursor=pointer]: Swipe up
+                - paragraph [ref=e5819] [cursor=pointer]: Switch access 1
+                - paragraph [ref=e5823] [cursor=pointer]: Switch access 2
+                - paragraph [ref=e5827] [cursor=pointer]: Switch access 3
+                - paragraph [ref=e5831] [cursor=pointer]: Switch access shortcut add
+                - paragraph [ref=e5835] [cursor=pointer]: Switch left
+                - paragraph [ref=e5839] [cursor=pointer]: Switch right
+                - paragraph [ref=e5843] [cursor=pointer]: Switches
+                - paragraph [ref=e5847] [cursor=pointer]: Sync
+                - paragraph [ref=e5851] [cursor=pointer]: Sync Alt
+                - paragraph [ref=e5855] [cursor=pointer]: Sync desktop
+                - paragraph [ref=e5859] [cursor=pointer]: Sync disabled
+                - paragraph [ref=e5863] [cursor=pointer]: Sync Problem
+                - paragraph [ref=e5867] [cursor=pointer]: Sync saved locally
+                - paragraph [ref=e5871] [cursor=pointer]: System Update Alt
+                - paragraph [ref=e5875] [cursor=pointer]: Tab
+                - paragraph [ref=e5879] [cursor=pointer]: Tab close
+                - paragraph [ref=e5883] [cursor=pointer]: Tab close right
+                - paragraph [ref=e5887] [cursor=pointer]: Tab duplicate
+                - paragraph [ref=e5891] [cursor=pointer]: Tab group
+                - paragraph [ref=e5895] [cursor=pointer]: Tab inactive
+                - generic [ref=e5896] [cursor=pointer]:
+                  - img [ref=e5898]
+                  - paragraph [ref=e5913]: Tab move
+                - generic [ref=e5914] [cursor=pointer]:
+                  - img [ref=e5916]
+                  - paragraph [ref=e5932]: Tab new right
+                - generic [ref=e5933] [cursor=pointer]:
+                  - img [ref=e5935]
+                  - paragraph [ref=e5947]: Tab recent
+                - generic [ref=e5948] [cursor=pointer]:
+                  - img [ref=e5950]
+                  - paragraph [ref=e5987]: Tab unselected
+                - generic [ref=e5988] [cursor=pointer]:
+                  - img [ref=e5990]
+                  - paragraph [ref=e5999]: Tabs
+                - generic [ref=e6000] [cursor=pointer]:
+                  - img [ref=e6002]
+                  - paragraph [ref=e6016]: Terminal
+                - generic [ref=e6017] [cursor=pointer]:
+                  - img [ref=e6019]
+                  - paragraph [ref=e6026]: Toast
+                - generic [ref=e6027] [cursor=pointer]:
+                  - img [ref=e6029]
+                  - paragraph [ref=e6034]: Toggle Off
+                - generic [ref=e6035] [cursor=pointer]:
+                  - img [ref=e6037]
+                  - paragraph [ref=e6045]: Toggle off alt
+                - generic [ref=e6046] [cursor=pointer]:
+                  - img [ref=e6048]
+                  - paragraph [ref=e6053]: Toggle on
+                - generic [ref=e6054] [cursor=pointer]:
+                  - img [ref=e6056]
+                  - paragraph [ref=e6064]: Toggle on alt
+                - generic [ref=e6065] [cursor=pointer]:
+                  - img [ref=e6067]
+                  - paragraph [ref=e6082]: Token
+                - generic [ref=e6083] [cursor=pointer]:
+                  - img [ref=e6085]
+                  - paragraph [ref=e6093]: Toolbar
+                - generic [ref=e6094] [cursor=pointer]:
+                  - img [ref=e6096]
+                  - paragraph [ref=e6111]: Transcribe
+                - generic [ref=e6112] [cursor=pointer]:
+                  - img [ref=e6114]
+                  - paragraph [ref=e6127]: Unable
+                - generic [ref=e6128] [cursor=pointer]:
+                  - img [ref=e6130]
+                  - paragraph [ref=e6139]: Undo
+                - generic [ref=e6140] [cursor=pointer]:
+                  - img [ref=e6142]
+                  - paragraph [ref=e6152]: Unfold less
+                - generic [ref=e6153] [cursor=pointer]:
+                  - img [ref=e6155]
+                  - paragraph [ref=e6171]: Unfold less double
+                - generic [ref=e6172] [cursor=pointer]:
+                  - img [ref=e6174]
+                  - paragraph [ref=e6184]: Unfold more
+                - generic [ref=e6185] [cursor=pointer]:
+                  - img [ref=e6187]
+                  - paragraph [ref=e6195]: Unknown 5
+                - paragraph [ref=e6199] [cursor=pointer]: Unknown med
+                - paragraph [ref=e6203] [cursor=pointer]: Upload
+                - paragraph [ref=e6207] [cursor=pointer]: Upload 2
+                - paragraph [ref=e6211] [cursor=pointer]: Upload off
+                - paragraph [ref=e6215] [cursor=pointer]: View comfy alt
+                - paragraph [ref=e6219] [cursor=pointer]: View compact alt
+                - paragraph [ref=e6223] [cursor=pointer]: View cozy
+                - paragraph [ref=e6227] [cursor=pointer]: View Kanbab
+                - paragraph [ref=e6231] [cursor=pointer]: View timeline
+                - paragraph [ref=e6235] [cursor=pointer]: Width full
+                - paragraph [ref=e6239] [cursor=pointer]: Width normal
+                - paragraph [ref=e6243] [cursor=pointer]: Width wide
+                - paragraph [ref=e6247] [cursor=pointer]: Youtube Search
+                - paragraph [ref=e6251] [cursor=pointer]: Zoom in
+                - paragraph [ref=e6255] [cursor=pointer]: Zoom out
+            - generic [ref=e6256]:
+              - paragraph [ref=e6257]: Social
+              - generic [ref=e6258]:
+                - paragraph [ref=e6262] [cursor=pointer]: 18 up rating
+                - paragraph [ref=e6266] [cursor=pointer]: 6ft apart
+                - paragraph [ref=e6270] [cursor=pointer]: Add reaction
+                - paragraph [ref=e6274] [cursor=pointer]: Admin meds
+                - paragraph [ref=e6278] [cursor=pointer]: Agender
+                - paragraph [ref=e6282] [cursor=pointer]: Allergies
+                - paragraph [ref=e6286] [cursor=pointer]: Allergy
+                - paragraph [ref=e6290] [cursor=pointer]: Altitude
+                - paragraph [ref=e6294] [cursor=pointer]: Barefoot
+                - paragraph [ref=e6298] [cursor=pointer]: Bedtime
+                - paragraph [ref=e6302] [cursor=pointer]: Bedtime off
+                - paragraph [ref=e6306] [cursor=pointer]: Blind
+                - paragraph [ref=e6310] [cursor=pointer]: Blood Pressure
+                - paragraph [ref=e6314] [cursor=pointer]: Bloodtype
+                - paragraph [ref=e6318] [cursor=pointer]: Body fat
+                - paragraph [ref=e6322] [cursor=pointer]: Body system
+                - paragraph [ref=e6326] [cursor=pointer]: Bomb
+                - paragraph [ref=e6330] [cursor=pointer]: Boys
+                - paragraph [ref=e6334] [cursor=pointer]: Breastfeeding
+                - paragraph [ref=e6338] [cursor=pointer]: Bring your own IP
+                - paragraph [ref=e6342] [cursor=pointer]: Candle
+                - paragraph [ref=e6346] [cursor=pointer]: Cardio Load
+                - paragraph [ref=e6350] [cursor=pointer]: Cardiology
+                - paragraph [ref=e6354] [cursor=pointer]: Cheer
+                - paragraph [ref=e6358] [cursor=pointer]: Chess
+                - paragraph [ref=e6362] [cursor=pointer]: Clean hand
+                - paragraph [ref=e6366] [cursor=pointer]: Clinical notes
+                - paragraph [ref=e6370] [cursor=pointer]: Cloudy snowing
+                - paragraph [ref=e6374] [cursor=pointer]: co2
+                - paragraph [ref=e6378] [cursor=pointer]: Cognition
+                - paragraph [ref=e6382] [cursor=pointer]: Comedy mask
+                - paragraph [ref=e6386] [cursor=pointer]: Comic Bubble
+                - paragraph [ref=e6390] [cursor=pointer]: Communication
+                - paragraph [ref=e6394] [cursor=pointer]: Communities
+                - paragraph [ref=e6398] [cursor=pointer]: Compost
+                - paragraph [ref=e6402] [cursor=pointer]: Conditions
+                - paragraph [ref=e6406] [cursor=pointer]: Congenital
+                - paragraph [ref=e6410] [cursor=pointer]: Connect without contact
+                - paragraph [ref=e6414] [cursor=pointer]: Cookie
+                - paragraph [ref=e6418] [cursor=pointer]: Cookie off
+                - paragraph [ref=e6422] [cursor=pointer]: Coronavirus
+                - paragraph [ref=e6426] [cursor=pointer]: Couples
+                - paragraph [ref=e6430] [cursor=pointer]: Crossword
+                - paragraph [ref=e6434] [cursor=pointer]: Crowdsource
+                - paragraph [ref=e6438] [cursor=pointer]: Cyclone
+                - paragraph [ref=e6442] [cursor=pointer]: Deceased
+                - paragraph [ref=e6446] [cursor=pointer]: Demography
+                - paragraph [ref=e6450] [cursor=pointer]: Dentistry
+                - paragraph [ref=e6454] [cursor=pointer]: Dermatology
+                - paragraph [ref=e6458] [cursor=pointer]: Destruction
+                - paragraph [ref=e6462] [cursor=pointer]: Dew point
+                - paragraph [ref=e6466] [cursor=pointer]: Diamond
+                - paragraph [ref=e6470] [cursor=pointer]: Digital wellbeing
+                - paragraph [ref=e6474] [cursor=pointer]: Diversity 1
+                - paragraph [ref=e6478] [cursor=pointer]: Diversity 2
+                - paragraph [ref=e6482] [cursor=pointer]: Diversity 3
+                - paragraph [ref=e6486] [cursor=pointer]: Diversity 4
+                - paragraph [ref=e6490] [cursor=pointer]: Domino mask
+                - paragraph [ref=e6494] [cursor=pointer]: Earthquake
+                - paragraph [ref=e6498] [cursor=pointer]: Eco
+                - paragraph [ref=e6502] [cursor=pointer]: Editor choice
+                - paragraph [ref=e6506] [cursor=pointer]: Egg
+                - paragraph [ref=e6510] [cursor=pointer]: Egg alt
+                - paragraph [ref=e6514] [cursor=pointer]: Elder woman
+                - paragraph [ref=e6518] [cursor=pointer]: Elderly
+                - paragraph [ref=e6522] [cursor=pointer]: Emoji event
+                - paragraph [ref=e6526] [cursor=pointer]: Emoji food beverage
+                - paragraph [ref=e6530] [cursor=pointer]: Emoji nature
+                - paragraph [ref=e6534] [cursor=pointer]: Emoji objects
+                - paragraph [ref=e6538] [cursor=pointer]: Emoji people
+                - paragraph [ref=e6542] [cursor=pointer]: Emoji symbols
+                - paragraph [ref=e6546] [cursor=pointer]: Emoji transportation
+                - paragraph [ref=e6550] [cursor=pointer]: Emoticon
+                - paragraph [ref=e6554] [cursor=pointer]: Endocrinology
+                - paragraph [ref=e6558] [cursor=pointer]: Ent
+                - paragraph [ref=e6562] [cursor=pointer]: Explosion
+                - paragraph [ref=e6566] [cursor=pointer]: Eyeglasses
+                - paragraph [ref=e6570] [cursor=pointer]: Face
+                - paragraph [ref=e6574] [cursor=pointer]: Face 2
+                - paragraph [ref=e6578] [cursor=pointer]: Face 3
+                - paragraph [ref=e6582] [cursor=pointer]: Face 4
+                - paragraph [ref=e6586] [cursor=pointer]: Face 5
+                - paragraph [ref=e6590] [cursor=pointer]: Face 6
+                - paragraph [ref=e6594] [cursor=pointer]: Face down
+                - paragraph [ref=e6598] [cursor=pointer]: Face left
+                - paragraph [ref=e6602] [cursor=pointer]: Face nod
+                - paragraph [ref=e6606] [cursor=pointer]: face shake
+                - paragraph [ref=e6610] [cursor=pointer]: Face up
+                - paragraph [ref=e6614] [cursor=pointer]: Falling
+                - paragraph [ref=e6618] [cursor=pointer]: Family Star
+                - paragraph [ref=e6622] [cursor=pointer]: Female
+                - paragraph [ref=e6626] [cursor=pointer]: Femur
+                - paragraph [ref=e6630] [cursor=pointer]: Femur alt
+                - paragraph [ref=e6634] [cursor=pointer]: Flood
+                - paragraph [ref=e6638] [cursor=pointer]: Fluid
+                - paragraph [ref=e6642] [cursor=pointer]: Fluid med
+                - paragraph [ref=e6646] [cursor=pointer]: Foggy
+                - paragraph [ref=e6650] [cursor=pointer]: Folded hand
+                - paragraph [ref=e6654] [cursor=pointer]: Follow the signs
+                - paragraph [ref=e6658] [cursor=pointer]: Foot bones
+                - paragraph [ref=e6662] [cursor=pointer]: Footprint
+                - paragraph [ref=e6666] [cursor=pointer]: Footprint alt
+                - paragraph [ref=e6670] [cursor=pointer]: Front hand
+                - paragraph [ref=e6674] [cursor=pointer]: Garden cart
+                - paragraph [ref=e6678] [cursor=pointer]: Gastroenterology
+                - paragraph [ref=e6682] [cursor=pointer]: Gavel
+                - paragraph [ref=e6686] [cursor=pointer]: Genetics
+                - paragraph [ref=e6690] [cursor=pointer]: Girl
+                - paragraph [ref=e6694] [cursor=pointer]: Girl
+                - paragraph [ref=e6698] [cursor=pointer]: Globe
+                - paragraph [ref=e6702] [cursor=pointer]: Globe asia
+                - paragraph [ref=e6706] [cursor=pointer]: Globe UK
+                - paragraph [ref=e6710] [cursor=pointer]: Glucose
+                - paragraph [ref=e6714] [cursor=pointer]: Group
+                - paragraph [ref=e6718] [cursor=pointer]: group 3
+                - paragraph [ref=e6722] [cursor=pointer]: Group add
+                - paragraph [ref=e6726] [cursor=pointer]: Group off
+                - paragraph [ref=e6730] [cursor=pointer]: Group remove
+                - paragraph [ref=e6734] [cursor=pointer]: Group work
+                - paragraph [ref=e6738] [cursor=pointer]: Groups
+                - paragraph [ref=e6742] [cursor=pointer]: Groups 2
+                - paragraph [ref=e6746] [cursor=pointer]: Guardian
+                - paragraph [ref=e6750] [cursor=pointer]: Gynecology
+                - paragraph [ref=e6754] [cursor=pointer]: Hand bones
+                - paragraph [ref=e6758] [cursor=pointer]: Handshake
+                - paragraph [ref=e6762] [cursor=pointer]: Happy
+                - paragraph [ref=e6766] [cursor=pointer]: Heart broken
+                - paragraph [ref=e6770] [cursor=pointer]: Helicopter
+                - paragraph [ref=e6774] [cursor=pointer]: Hematology
+                - paragraph [ref=e6778] [cursor=pointer]: Hive
+                - paragraph [ref=e6782] [cursor=pointer]: Home Health
+                - paragraph [ref=e6786] [cursor=pointer]: Humerus
+                - paragraph [ref=e6790] [cursor=pointer]: Humerus alt
+                - paragraph [ref=e6794] [cursor=pointer]: Humidity Percentage
+                - paragraph [ref=e6798] [cursor=pointer]: Immunology
+                - paragraph [ref=e6802] [cursor=pointer]: Infrared
+                - paragraph [ref=e6806] [cursor=pointer]: Inpatient
+                - paragraph [ref=e6810] [cursor=pointer]: Kid Star
+                - paragraph [ref=e6814] [cursor=pointer]: Lab Panel
+                - paragraph [ref=e6818] [cursor=pointer]: Lab research
+                - paragraph [ref=e6822] [cursor=pointer]: Labs
+                - paragraph [ref=e6826] [cursor=pointer]: Landslide
+                - paragraph [ref=e6830] [cursor=pointer]: Male
+                - paragraph [ref=e6834] [cursor=pointer]: Man
+                - paragraph [ref=e6838] [cursor=pointer]: Man 2
+                - paragraph [ref=e6842] [cursor=pointer]: Man 3
+                - paragraph [ref=e6846] [cursor=pointer]: Man 4
+                - paragraph [ref=e6850] [cursor=pointer]: Manga
+                - paragraph [ref=e6854] [cursor=pointer]: Masks
+                - paragraph [ref=e6858] [cursor=pointer]: Medical information
+                - paragraph [ref=e6862] [cursor=pointer]: Medical Mask
+                - paragraph [ref=e6866] [cursor=pointer]: Medication
+                - paragraph [ref=e6870] [cursor=pointer]: Medication liquid
+                - paragraph [ref=e6874] [cursor=pointer]: Metabolism
+                - paragraph [ref=e6878] [cursor=pointer]: Microbiology
+                - paragraph [ref=e6882] [cursor=pointer]: Military tech
+                - paragraph [ref=e6886] [cursor=pointer]: Mist
+                - paragraph [ref=e6890] [cursor=pointer]: Mixture Med
+                - paragraph [ref=e6894] [cursor=pointer]: Monitor heart
+                - paragraph [ref=e6898] [cursor=pointer]: Mood
+                - paragraph [ref=e6902] [cursor=pointer]: Mood bad
+                - paragraph [ref=e6906] [cursor=pointer]: Mountain flag
+                - paragraph [ref=e6910] [cursor=pointer]: Moving beds
+                - paragraph [ref=e6914] [cursor=pointer]: Mystery
+                - paragraph [ref=e6918] [cursor=pointer]: Nephrology
+                - paragraph [ref=e6922] [cursor=pointer]: Neurology
+                - paragraph [ref=e6926] [cursor=pointer]: Neutral
+                - paragraph [ref=e6930] [cursor=pointer]: Nightlight
+                - paragraph [ref=e6934] [cursor=pointer]: No Adult Content
+                - paragraph [ref=e6938] [cursor=pointer]: Not accessible
+                - paragraph [ref=e6942] [cursor=pointer]: Not Accessible Forward
+                - paragraph [ref=e6946] [cursor=pointer]: Nutrition
+                - paragraph [ref=e6950] [cursor=pointer]: Oil barrel
+                - paragraph [ref=e6954] [cursor=pointer]: Oncology
+                - paragraph [ref=e6958] [cursor=pointer]: Ophthalmology
+                - paragraph [ref=e6962] [cursor=pointer]: Oral disease
+                - paragraph [ref=e6966] [cursor=pointer]: Orbit
+                - paragraph [ref=e6970] [cursor=pointer]: Orthopedics
+                - paragraph [ref=e6974] [cursor=pointer]: Outdoor garden
+                - paragraph [ref=e6978] [cursor=pointer]: Outpatient
+                - paragraph [ref=e6982] [cursor=pointer]: Outpatient Med
+                - paragraph [ref=e6986] [cursor=pointer]: Oxygen Saturation
+                - paragraph [ref=e6990] [cursor=pointer]: Partly cloudy day
+                - paragraph [ref=e6994] [cursor=pointer]: Partly Cloudy Night
+                - paragraph [ref=e6998] [cursor=pointer]: Partner Exchange
+                - paragraph [ref=e7002] [cursor=pointer]: Pediatrics
+                - paragraph [ref=e7006] [cursor=pointer]: Person
+                - paragraph [ref=e7010] [cursor=pointer]: Person 2
+                - paragraph [ref=e7014] [cursor=pointer]: Person 3
+                - paragraph [ref=e7018] [cursor=pointer]: Person 4
+                - paragraph [ref=e7022] [cursor=pointer]: Person add
+                - paragraph [ref=e7026] [cursor=pointer]: Person alert
+                - paragraph [ref=e7030] [cursor=pointer]: Person Apron
+                - paragraph [ref=e7034] [cursor=pointer]: Person Cancel
+                - paragraph [ref=e7038] [cursor=pointer]: Person check
+                - paragraph [ref=e7042] [cursor=pointer]: Person off
+                - paragraph [ref=e7046] [cursor=pointer]: Person raised hand
+                - paragraph [ref=e7050] [cursor=pointer]: Person remove
+                - paragraph [ref=e7054] [cursor=pointer]: Pets
+                - paragraph [ref=e7058] [cursor=pointer]: Pill
+                - paragraph [ref=e7062] [cursor=pointer]: Pill off
+                - paragraph [ref=e7066] [cursor=pointer]: Playing Cards
+                - paragraph [ref=e7070] [cursor=pointer]: Poker Chip
+                - paragraph [ref=e7074] [cursor=pointer]: Potted plant
+                - paragraph [ref=e7078] [cursor=pointer]: Prayer Times
+                - paragraph [ref=e7082] [cursor=pointer]: Pregnancy
+                - paragraph [ref=e7086] [cursor=pointer]: Pregnant woman
+                - paragraph [ref=e7090] [cursor=pointer]: Prescriptions
+                - paragraph [ref=e7094] [cursor=pointer]: Procedure
+                - paragraph [ref=e7098] [cursor=pointer]: Psychiatry
+                - paragraph [ref=e7102] [cursor=pointer]: Psychology
+                - paragraph [ref=e7106] [cursor=pointer]: Psychology alt
+                - paragraph [ref=e7110] [cursor=pointer]: Public
+                - paragraph [ref=e7114] [cursor=pointer]: Public off
+                - paragraph [ref=e7118] [cursor=pointer]: Pulmonology
+                - paragraph [ref=e7122] [cursor=pointer]: Pulse Alert
+                - paragraph [ref=e7126] [cursor=pointer]: Quiz
+                - paragraph [ref=e7130] [cursor=pointer]: Rabbit
+                - paragraph [ref=e7134] [cursor=pointer]: Radiology
+                - paragraph [ref=e7138] [cursor=pointer]: Rain heavy
+                - paragraph [ref=e7142] [cursor=pointer]: Rainy
+                - paragraph [ref=e7146] [cursor=pointer]: Rainy light
+                - paragraph [ref=e7150] [cursor=pointer]: Rainy snow
+                - paragraph [ref=e7154] [cursor=pointer]: Raven
+                - paragraph [ref=e7158] [cursor=pointer]: Recent Patient
+                - paragraph [ref=e7162] [cursor=pointer]: Recommend
+                - paragraph [ref=e7166] [cursor=pointer]: Recycling
+                - paragraph [ref=e7170] [cursor=pointer]: Reduce capacity
+                - paragraph [ref=e7174] [cursor=pointer]: Respiratory Rate
+                - paragraph [ref=e7178] [cursor=pointer]: Rheumatology
+                - paragraph [ref=e7182] [cursor=pointer]: Rib cage
+                - paragraph [ref=e7186] [cursor=pointer]: Rocket
+                - paragraph [ref=e7190] [cursor=pointer]: Rocket launch
+                - paragraph [ref=e7194] [cursor=pointer]: Routine
+                - paragraph [ref=e7198] [cursor=pointer]: Safety divider
+                - paragraph [ref=e7202] [cursor=pointer]: Salinity
+                - paragraph [ref=e7206] [cursor=pointer]: Sanitizer
+                - paragraph [ref=e7210] [cursor=pointer]: Sentiment calm
+                - paragraph [ref=e7214] [cursor=pointer]: Sentiment Content
+                - paragraph [ref=e7218] [cursor=pointer]: Sentiment excited
+                - paragraph [ref=e7222] [cursor=pointer]: Sentiment extremely dissatisfied
+                - paragraph [ref=e7226] [cursor=pointer]: Sentiment Frustrated
+                - paragraph [ref=e7230] [cursor=pointer]: Sentiment sad
+                - paragraph [ref=e7234] [cursor=pointer]: Sentiment stressed
+                - paragraph [ref=e7238] [cursor=pointer]: Sentiment Worried
+                - paragraph [ref=e7242] [cursor=pointer]: Severe cold
+                - paragraph [ref=e7246] [cursor=pointer]: Share off
+                - paragraph [ref=e7250] [cursor=pointer]: Shield
+                - paragraph [ref=e7254] [cursor=pointer]: Short stay
+                - paragraph [ref=e7258] [cursor=pointer]: Sick
+                - paragraph [ref=e7262] [cursor=pointer]: Sign language
+                - paragraph [ref=e7266] [cursor=pointer]: Skeleton
+                - paragraph [ref=e7270] [cursor=pointer]: Skull
+                - paragraph [ref=e7274] [cursor=pointer]: Snowing
+                - paragraph [ref=e7278] [cursor=pointer]: Snowing heavy
+                - paragraph [ref=e7282] [cursor=pointer]: Social distance
+                - paragraph [ref=e7286] [cursor=pointer]: Social leaderboard
+                - paragraph [ref=e7290] [cursor=pointer]: Solar power
+                - paragraph [ref=e7294] [cursor=pointer]: South america
+                - paragraph [ref=e7298] [cursor=pointer]: Specific gravity
+                - paragraph [ref=e7302] [cursor=pointer]: Stethoscope
+                - paragraph [ref=e7306] [cursor=pointer]: Stethoscope Arrow
+                - paragraph [ref=e7310] [cursor=pointer]: Stethoscope Check
+                - paragraph [ref=e7314] [cursor=pointer]: Strategy
+                - paragraph [ref=e7318] [cursor=pointer]: Sunny
+                - paragraph [ref=e7322] [cursor=pointer]: Sunny snowing
+                - paragraph [ref=e7326] [cursor=pointer]: Support agent
+                - paragraph [ref=e7330] [cursor=pointer]: Surgical
+                - paragraph [ref=e7334] [cursor=pointer]: Sword Rose
+                - paragraph [ref=e7338] [cursor=pointer]: Symptoms
+                - paragraph [ref=e7342] [cursor=pointer]: Syringe
+                - paragraph [ref=e7346] [cursor=pointer]: Tactic
+                - paragraph [ref=e7350] [cursor=pointer]: Taunt
+                - paragraph [ref=e7354] [cursor=pointer]: thumb down
+                - paragraph [ref=e7358] [cursor=pointer]: Thumb up
+                - paragraph [ref=e7362] [cursor=pointer]: Thumbs up down
+                - paragraph [ref=e7366] [cursor=pointer]: Thunderstorm
+                - paragraph [ref=e7370] [cursor=pointer]: Tibia
+                - paragraph [ref=e7374] [cursor=pointer]: Tibia alt
+                - paragraph [ref=e7378] [cursor=pointer]: Tornado
+                - paragraph [ref=e7382] [cursor=pointer]: Total Dissolved Solids
+                - paragraph [ref=e7386] [cursor=pointer]: Transgender
+                - paragraph [ref=e7390] [cursor=pointer]: Travel explore
+                - paragraph [ref=e7394] [cursor=pointer]: Travel explore
+                - paragraph [ref=e7398] [cursor=pointer]: Trees
+                - paragraph [ref=e7402] [cursor=pointer]: Tsunami
+                - paragraph [ref=e7406] [cursor=pointer]: Ulna Radius
+                - paragraph [ref=e7410] [cursor=pointer]: Ulna radius alt
+                - paragraph [ref=e7414] [cursor=pointer]: Unhappy
+                - paragraph [ref=e7418] [cursor=pointer]: Urology
+                - paragraph [ref=e7422] [cursor=pointer]: Vaccines
+                - paragraph [ref=e7426] [cursor=pointer]: Vape free
+                - paragraph [ref=e7430] [cursor=pointer]: Vaping rooms
+                - paragraph [ref=e7434] [cursor=pointer]: Very happy
+                - paragraph [ref=e7438] [cursor=pointer]: Vital signs
+                - paragraph [ref=e7442] [cursor=pointer]: Volcano
+                - paragraph [ref=e7446] [cursor=pointer]: Ward
+                - paragraph [ref=e7450] [cursor=pointer]: Water Bottle
+                - paragraph [ref=e7454] [cursor=pointer]: Water Bottle Large
+                - paragraph [ref=e7458] [cursor=pointer]: Water do
+                - paragraph [ref=e7462] [cursor=pointer]: Water drop
+                - paragraph [ref=e7466] [cursor=pointer]: Water Ec
+                - paragraph [ref=e7470] [cursor=pointer]: Water lux
+                - paragraph [ref=e7474] [cursor=pointer]: Water Orp
+                - paragraph [ref=e7478] [cursor=pointer]: Water PH
+                - paragraph [ref=e7482] [cursor=pointer]: Water Voc
+                - paragraph [ref=e7486] [cursor=pointer]: Waving hand
+                - paragraph [ref=e7490] [cursor=pointer]: Weather hail
+                - paragraph [ref=e7494] [cursor=pointer]: Weather mix
+                - paragraph [ref=e7498] [cursor=pointer]: Weight
+                - paragraph [ref=e7502] [cursor=pointer]: Whatshot
+                - paragraph [ref=e7506] [cursor=pointer]: Wind power
+                - paragraph [ref=e7510] [cursor=pointer]: Woman 2
+                - paragraph [ref=e7514] [cursor=pointer]: Workspace premium
+                - paragraph [ref=e7518] [cursor=pointer]: Wounds Injuries
+                - paragraph [ref=e7522] [cursor=pointer]: Wrist
+            - generic [ref=e7523]:
+              - paragraph [ref=e7524]: Privacy & Security
+              - generic [ref=e7525]:
+                - paragraph [ref=e7529] [cursor=pointer]: Add Moderator
+                - paragraph [ref=e7533] [cursor=pointer]: Admin Panel Settings
+                - paragraph [ref=e7537] [cursor=pointer]: Assured Workload
+                - paragraph [ref=e7541] [cursor=pointer]: Badge
+                - paragraph [ref=e7545] [cursor=pointer]: Disabled Visible
+                - paragraph [ref=e7549] [cursor=pointer]: E911 Emergency
+                - paragraph [ref=e7553] [cursor=pointer]: Encrypted
+                - paragraph [ref=e7557] [cursor=pointer]: Encrypted add
+                - paragraph [ref=e7561] [cursor=pointer]: Encrypted Add Circle
+                - paragraph [ref=e7565] [cursor=pointer]: Encrypted Minus Circle
+                - paragraph [ref=e7569] [cursor=pointer]: Encrypted off
+                - paragraph [ref=e7573] [cursor=pointer]: Enhanced encryption
+                - paragraph [ref=e7577] [cursor=pointer]: Exclamation
+                - paragraph [ref=e7581] [cursor=pointer]: ID card
+                - paragraph [ref=e7585] [cursor=pointer]: Key Visualizer
+                - paragraph [ref=e7589] [cursor=pointer]: No encryption
+                - paragraph [ref=e7593] [cursor=pointer]: Passkey
+                - paragraph [ref=e7597] [cursor=pointer]: Policy
+                - paragraph [ref=e7601] [cursor=pointer]: Privacy Tip
+                - paragraph [ref=e7605] [cursor=pointer]: Private Connectivity
+                - paragraph [ref=e7609] [cursor=pointer]: Remove Moderator
+                - paragraph [ref=e7613] [cursor=pointer]: Report
+                - paragraph [ref=e7617] [cursor=pointer]: Report off
+                - paragraph [ref=e7621] [cursor=pointer]: Security
+                - paragraph [ref=e7625] [cursor=pointer]: Shield
+                - paragraph [ref=e7629] [cursor=pointer]: Shield Lock
+                - paragraph [ref=e7633] [cursor=pointer]: Shield locked
+                - paragraph [ref=e7637] [cursor=pointer]: Shield Person
+                - paragraph [ref=e7641] [cursor=pointer]: Shield Question
+                - paragraph [ref=e7645] [cursor=pointer]: Sync lock
+                - paragraph [ref=e7649] [cursor=pointer]: Verified user
+                - paragraph [ref=e7653] [cursor=pointer]: VPN key
+                - paragraph [ref=e7657] [cursor=pointer]: VPN key alert
+                - paragraph [ref=e7661] [cursor=pointer]: VPN Key Off
+                - paragraph [ref=e7665] [cursor=pointer]: VPN lock
+                - paragraph [ref=e7669] [cursor=pointer]: Wifi password
+            - generic [ref=e7670]:
+              - paragraph [ref=e7671]: Business & Payments
+              - generic [ref=e7672]:
+                - paragraph [ref=e7676] [cursor=pointer]: Account balance
+                - paragraph [ref=e7680] [cursor=pointer]: Account balance wallet
+                - paragraph [ref=e7684] [cursor=pointer]: Account Tree
+                - paragraph [ref=e7688] [cursor=pointer]: Add business
+                - paragraph [ref=e7692] [cursor=pointer]: Add chart
+                - paragraph [ref=e7696] [cursor=pointer]: Analytics
+                - paragraph [ref=e7700] [cursor=pointer]: Area chart
+                - paragraph [ref=e7704] [cursor=pointer]: ATM
+                - paragraph [ref=e7708] [cursor=pointer]: ATR
+                - paragraph [ref=e7712] [cursor=pointer]: Attach Money
+                - paragraph [ref=e7716] [cursor=pointer]: Bar chart
+                - paragraph [ref=e7720] [cursor=pointer]: Bar Chart 4 Bars
+                - paragraph [ref=e7724] [cursor=pointer]: Barcode
+                - paragraph [ref=e7728] [cursor=pointer]: Barcode reader
+                - paragraph [ref=e7732] [cursor=pointer]: Barcode scanner
+                - paragraph [ref=e7736] [cursor=pointer]: Bid landscape
+                - paragraph [ref=e7740] [cursor=pointer]: Bid landscape disabled
+                - paragraph [ref=e7744] [cursor=pointer]: Box
+                - paragraph [ref=e7748] [cursor=pointer]: Box add
+                - paragraph [ref=e7752] [cursor=pointer]: Box edit
+                - paragraph [ref=e7756] [cursor=pointer]: Bubble chart
+                - paragraph [ref=e7760] [cursor=pointer]: Calculate
+                - paragraph [ref=e7764] [cursor=pointer]: Candlestick Chart
+                - paragraph [ref=e7768] [cursor=pointer]: Card membership
+                - paragraph [ref=e7772] [cursor=pointer]: Card Travel
+                - paragraph [ref=e7776] [cursor=pointer]: Cases
+                - paragraph [ref=e7780] [cursor=pointer]: Chart Data
+                - paragraph [ref=e7784] [cursor=pointer]: Checkbook
+                - paragraph [ref=e7788] [cursor=pointer]: Contactless
+                - paragraph [ref=e7792] [cursor=pointer]: Contactless off
+                - paragraph [ref=e7796] [cursor=pointer]: Converion path
+                - paragraph [ref=e7800] [cursor=pointer]: Conversion path off
+                - paragraph [ref=e7804] [cursor=pointer]: Conveyor belt
+                - paragraph [ref=e7808] [cursor=pointer]: Copyright
+                - paragraph [ref=e7812] [cursor=pointer]: Corporate fare
+                - paragraph [ref=e7816] [cursor=pointer]: Credit card
+                - paragraph [ref=e7820] [cursor=pointer]: Credit card clock
+                - paragraph [ref=e7824] [cursor=pointer]: Credit card gear
+                - paragraph [ref=e7828] [cursor=pointer]: Credit card heart
+                - paragraph [ref=e7832] [cursor=pointer]: Credit Card Off
+                - paragraph [ref=e7836] [cursor=pointer]: Credit score
+                - paragraph [ref=e7840] [cursor=pointer]: Currency bitcoin
+                - paragraph [ref=e7844] [cursor=pointer]: Currency exchange
+                - paragraph [ref=e7848] [cursor=pointer]: Currency Franc
+                - paragraph [ref=e7852] [cursor=pointer]: Currency lira
+                - paragraph [ref=e7856] [cursor=pointer]: Currency Pound
+                - paragraph [ref=e7860] [cursor=pointer]: Currency Ruble
+                - paragraph [ref=e7864] [cursor=pointer]: Currency Rupee
+                - paragraph [ref=e7868] [cursor=pointer]: Currency rupee circle
+                - paragraph [ref=e7872] [cursor=pointer]: Currency yen
+                - paragraph [ref=e7876] [cursor=pointer]: Currency Yuan
+                - paragraph [ref=e7880] [cursor=pointer]: Data exploration
+                - paragraph [ref=e7884] [cursor=pointer]: Data table
+                - paragraph [ref=e7888] [cursor=pointer]: Dollar
+                - paragraph [ref=e7892] [cursor=pointer]: Domain
+                - paragraph [ref=e7896] [cursor=pointer]: Domain add
+                - paragraph [ref=e7900] [cursor=pointer]: Domain disabled
+                - paragraph [ref=e7904] [cursor=pointer]: Donut large
+                - paragraph [ref=e7908] [cursor=pointer]: Donut small
+                - paragraph [ref=e7912] [cursor=pointer]: Energy
+                - paragraph [ref=e7916] [cursor=pointer]: Enterprise
+                - paragraph [ref=e7920] [cursor=pointer]: Enterprise off
+                - paragraph [ref=e7924] [cursor=pointer]: Ethereum
+                - paragraph [ref=e7928] [cursor=pointer]: Euro
+                - paragraph [ref=e7932] [cursor=pointer]: Family history
+                - paragraph [ref=e7936] [cursor=pointer]: Finance
+                - paragraph [ref=e7940] [cursor=pointer]: Finance Mode
+                - paragraph [ref=e7944] [cursor=pointer]: Flowsheet
+                - paragraph [ref=e7948] [cursor=pointer]: forklift
+                - paragraph [ref=e7952] [cursor=pointer]: Front loader
+                - paragraph [ref=e7956] [cursor=pointer]: Full Stacked bar chart
+                - paragraph [ref=e7960] [cursor=pointer]: Grouped Bar Chart
+                - paragraph [ref=e7964] [cursor=pointer]: Inactive order
+                - paragraph [ref=e7968] [cursor=pointer]: Insert chart
+                - paragraph [ref=e7972] [cursor=pointer]: Leaderboard
+                - paragraph [ref=e7976] [cursor=pointer]: Legend Toggle
+                - paragraph [ref=e7980] [cursor=pointer]: Loyalty
+                - paragraph [ref=e7984] [cursor=pointer]: Mediation
+                - paragraph [ref=e7988] [cursor=pointer]: Meeting room
+                - paragraph [ref=e7992] [cursor=pointer]: MintMark
+                - paragraph [ref=e7996] [cursor=pointer]: Mitre
+                - paragraph [ref=e8000] [cursor=pointer]: Money
+                - paragraph [ref=e8004] [cursor=pointer]: Money off
+                - paragraph [ref=e8008] [cursor=pointer]: Monitoring
+                - paragraph [ref=e8012] [cursor=pointer]: Multiline Chart
+                - paragraph [ref=e8016] [cursor=pointer]: Naira
+                - paragraph [ref=e8020] [cursor=pointer]: Naira alt
+                - paragraph [ref=e8024] [cursor=pointer]: Network node
+                - paragraph [ref=e8028] [cursor=pointer]: Next week
+                - paragraph [ref=e8032] [cursor=pointer]: No meeting room
+                - paragraph [ref=e8036] [cursor=pointer]: Order approve
+                - paragraph [ref=e8040] [cursor=pointer]: Order play
+                - paragraph [ref=e8044] [cursor=pointer]: Orders
+                - paragraph [ref=e8048] [cursor=pointer]: Paid
+                - paragraph [ref=e8052] [cursor=pointer]: Pallet
+                - paragraph [ref=e8056] [cursor=pointer]: Payments
+                - paragraph [ref=e8060] [cursor=pointer]: Pie chart
+                - paragraph [ref=e8064] [cursor=pointer]: Planner review
+                - paragraph [ref=e8068] [cursor=pointer]: Podium
+                - paragraph [ref=e8072] [cursor=pointer]: Precision Manufacturing
+                - paragraph [ref=e8076] [cursor=pointer]: Price change
+                - paragraph [ref=e8080] [cursor=pointer]: Price check
+                - paragraph [ref=e8084] [cursor=pointer]: QR Code
+                - paragraph [ref=e8088] [cursor=pointer]: QR Code 2 add
+                - paragraph [ref=e8092] [cursor=pointer]: QR Code Scanner
+                - paragraph [ref=e8096] [cursor=pointer]: Quantity Limits
+                - paragraph [ref=e8100] [cursor=pointer]: Query Stats
+                - paragraph [ref=e8104] [cursor=pointer]: Quick reorder
+                - paragraph [ref=e8108] [cursor=pointer]: Receipt
+                - paragraph [ref=e8112] [cursor=pointer]: Receipt Long
+                - paragraph [ref=e8116] [cursor=pointer]: Receipt Long Alt
+                - paragraph [ref=e8120] [cursor=pointer]: Redeem
+                - paragraph [ref=e8124] [cursor=pointer]: Remove Shopping Cart
+                - paragraph [ref=e8128] [cursor=pointer]: Room Preferences
+                - paragraph [ref=e8132] [cursor=pointer]: Savings
+                - paragraph [ref=e8136] [cursor=pointer]: Scatter Plot
+                - paragraph [ref=e8140] [cursor=pointer]: Schema
+                - paragraph [ref=e8144] [cursor=pointer]: Search insights
+                - paragraph [ref=e8148] [cursor=pointer]: Sell
+                - paragraph [ref=e8152] [cursor=pointer]: Send money
+                - paragraph [ref=e8156] [cursor=pointer]: Shop
+                - paragraph [ref=e8160] [cursor=pointer]: Shop two
+                - paragraph [ref=e8164] [cursor=pointer]: Shopping bag
+                - paragraph [ref=e8168] [cursor=pointer]: Shopping basket
+                - paragraph [ref=e8172] [cursor=pointer]: Shopping cart
+                - paragraph [ref=e8176] [cursor=pointer]: Shopping cart off
+                - paragraph [ref=e8180] [cursor=pointer]: Shopping mode
+                - paragraph [ref=e8184] [cursor=pointer]: Show chart
+                - paragraph [ref=e8188] [cursor=pointer]: Source environment
+                - paragraph [ref=e8192] [cursor=pointer]: SSID Chart
+                - paragraph [ref=e8196] [cursor=pointer]: Stacked Bar Chart
+                - paragraph [ref=e8200] [cursor=pointer]: Stacked Line Chart
+                - paragraph [ref=e8204] [cursor=pointer]: Store
+                - paragraph [ref=e8208] [cursor=pointer]: Storefront
+                - paragraph [ref=e8212] [cursor=pointer]: Strikethrough S
+                - paragraph [ref=e8216] [cursor=pointer]: Tenancy
+                - paragraph [ref=e8220] [cursor=pointer]: Timeline
+                - paragraph [ref=e8224] [cursor=pointer]: Toll
+                - paragraph [ref=e8228] [cursor=pointer]: Track changes
+                - paragraph [ref=e8232] [cursor=pointer]: Trending down
+                - paragraph [ref=e8236] [cursor=pointer]: Trending flat
+                - paragraph [ref=e8240] [cursor=pointer]: Trending Up
+                - paragraph [ref=e8244] [cursor=pointer]: Trolley
+                - paragraph [ref=e8248] [cursor=pointer]: Troubleshoot
+                - paragraph [ref=e8252] [cursor=pointer]: Universal Currency
+                - paragraph [ref=e8256] [cursor=pointer]: Universal currency alt
+                - paragraph [ref=e8260] [cursor=pointer]: USDC
+                - paragraph [ref=e8264] [cursor=pointer]: Wallet
+                - paragraph [ref=e8268] [cursor=pointer]: Waterfall chart
+                - paragraph [ref=e8272] [cursor=pointer]: Work
+                - paragraph [ref=e8276] [cursor=pointer]: Work alert
+                - paragraph [ref=e8280] [cursor=pointer]: Work history
+                - paragraph [ref=e8284] [cursor=pointer]: Work update
+            - generic [ref=e8285]:
+              - paragraph [ref=e8286]: Transportation
+              - generic [ref=e8287]:
+                - paragraph [ref=e8291] [cursor=pointer]: Agriculture
+                - paragraph [ref=e8295] [cursor=pointer]: Airlines
+                - paragraph [ref=e8299] [cursor=pointer]: Airport shuttle
+                - paragraph [ref=e8303] [cursor=pointer]: Ambulance
+                - paragraph [ref=e8307] [cursor=pointer]: Auto towing
+                - paragraph [ref=e8311] [cursor=pointer]: Auto transmission
+                - paragraph [ref=e8315] [cursor=pointer]: Bike
+                - paragraph [ref=e8319] [cursor=pointer]: Bike dock
+                - paragraph [ref=e8323] [cursor=pointer]: Bike lane
+                - paragraph [ref=e8327] [cursor=pointer]: Boat
+                - paragraph [ref=e8331] [cursor=pointer]: Bus
+                - paragraph [ref=e8335] [cursor=pointer]: Bus alert
+                - paragraph [ref=e8339] [cursor=pointer]: Cable car
+                - paragraph [ref=e8343] [cursor=pointer]: Car crash
+                - paragraph [ref=e8347] [cursor=pointer]: Car Tag
+                - paragraph [ref=e8351] [cursor=pointer]: Commute
+                - paragraph [ref=e8355] [cursor=pointer]: Departure board
+                - paragraph [ref=e8359] [cursor=pointer]: Directions car
+                - paragraph [ref=e8363] [cursor=pointer]: Directions railway
+                - paragraph [ref=e8367] [cursor=pointer]: Directions run
+                - paragraph [ref=e8371] [cursor=pointer]: Directions walk
+                - paragraph [ref=e8375] [cursor=pointer]: Electric bike
+                - paragraph [ref=e8379] [cursor=pointer]: Electric car
+                - paragraph [ref=e8383] [cursor=pointer]: Electric moped
+                - paragraph [ref=e8387] [cursor=pointer]: Electric rickshaw
+                - paragraph [ref=e8391] [cursor=pointer]: Electric scooter
+                - paragraph [ref=e8395] [cursor=pointer]: Flight
+                - paragraph [ref=e8399] [cursor=pointer]: Flight land
+                - paragraph [ref=e8403] [cursor=pointer]: Flight takeoff
+                - paragraph [ref=e8407] [cursor=pointer]: Flyover
+                - paragraph [ref=e8411] [cursor=pointer]: Fork left
+                - paragraph [ref=e8415] [cursor=pointer]: Fork right
+                - paragraph [ref=e8419] [cursor=pointer]: Funicular
+                - paragraph [ref=e8423] [cursor=pointer]: Gondola lift
+                - paragraph [ref=e8427] [cursor=pointer]: Hail
+                - paragraph [ref=e8431] [cursor=pointer]: Hov
+                - paragraph [ref=e8435] [cursor=pointer]: Local shipping
+                - paragraph [ref=e8439] [cursor=pointer]: Local taxi
+                - paragraph [ref=e8443] [cursor=pointer]: Metro
+                - paragraph [ref=e8447] [cursor=pointer]: Monorail
+                - paragraph [ref=e8451] [cursor=pointer]: Motorcycle
+                - paragraph [ref=e8455] [cursor=pointer]: No crash
+                - paragraph [ref=e8459] [cursor=pointer]: no-transfer
+                - paragraph [ref=e8463] [cursor=pointer]: Pedal bike
+                - paragraph [ref=e8467] [cursor=pointer]: Railway 2
+                - paragraph [ref=e8471] [cursor=pointer]: Railway alert
+                - paragraph [ref=e8475] [cursor=pointer]: Railway alert 2
+                - paragraph [ref=e8479] [cursor=pointer]: Road
+                - paragraph [ref=e8483] [cursor=pointer]: RV Hookup
+                - paragraph [ref=e8487] [cursor=pointer]: Sailing
+                - paragraph [ref=e8491] [cursor=pointer]: Scooter
+                - paragraph [ref=e8495] [cursor=pointer]: Snowmobile
+                - paragraph [ref=e8499] [cursor=pointer]: Speed camera
+                - paragraph [ref=e8503] [cursor=pointer]: Subway
+                - paragraph [ref=e8507] [cursor=pointer]: Swap driving app
+                - paragraph [ref=e8511] [cursor=pointer]: Swap driving apps wheel
+                - paragraph [ref=e8515] [cursor=pointer]: Taxi alert
+                - paragraph [ref=e8519] [cursor=pointer]: Train
+                - paragraph [ref=e8523] [cursor=pointer]: Tram
+                - paragraph [ref=e8527] [cursor=pointer]: Trolley cable car
+                - paragraph [ref=e8531] [cursor=pointer]: Turn left
+                - paragraph [ref=e8535] [cursor=pointer]: Turn right
+                - paragraph [ref=e8539] [cursor=pointer]: Turn sharp left
+                - paragraph [ref=e8543] [cursor=pointer]: Turn sharp right
+                - paragraph [ref=e8547] [cursor=pointer]: Turn slight left
+                - paragraph [ref=e8551] [cursor=pointer]: Turn slight right
+                - paragraph [ref=e8555] [cursor=pointer]: two wheeler
+                - paragraph [ref=e8559] [cursor=pointer]: U Turn Left
+                - paragraph [ref=e8563] [cursor=pointer]: U turn right
+                - paragraph [ref=e8567] [cursor=pointer]: Unpaved road
+            - generic [ref=e8568]:
+              - paragraph [ref=e8569]: Maps
+              - generic [ref=e8570]:
+                - paragraph [ref=e8574] [cursor=pointer]: "360"
+                - paragraph [ref=e8578] [cursor=pointer]: Add location
+                - paragraph [ref=e8582] [cursor=pointer]: Add location alt
+                - paragraph [ref=e8586] [cursor=pointer]: Beenhere
+                - paragraph [ref=e8590] [cursor=pointer]: Business center
+                - paragraph [ref=e8594] [cursor=pointer]: Directions
+                - paragraph [ref=e8598] [cursor=pointer]: East
+                - paragraph [ref=e8602] [cursor=pointer]: Electrical services
+                - paragraph [ref=e8606] [cursor=pointer]: Emergency
+                - paragraph [ref=e8610] [cursor=pointer]: Explore
+                - paragraph [ref=e8614] [cursor=pointer]: Factory
+                - paragraph [ref=e8618] [cursor=pointer]: Fastfood
+                - paragraph [ref=e8622] [cursor=pointer]: Flag
+                - paragraph [ref=e8626] [cursor=pointer]: Flag circle
+                - paragraph [ref=e8630] [cursor=pointer]: FMD bad
+                - paragraph [ref=e8634] [cursor=pointer]: Handyman
+                - paragraph [ref=e8638] [cursor=pointer]: Home pin
+                - paragraph [ref=e8642] [cursor=pointer]: Home service repair
+                - paragraph [ref=e8646] [cursor=pointer]: Home work
+                - paragraph [ref=e8650] [cursor=pointer]: Layers
+                - paragraph [ref=e8654] [cursor=pointer]: Local activity
+                - paragraph [ref=e8658] [cursor=pointer]: Local atm
+                - paragraph [ref=e8662] [cursor=pointer]: Local dining
+                - paragraph [ref=e8666] [cursor=pointer]: Local fire department
+                - paragraph [ref=e8670] [cursor=pointer]: Local florist
+                - paragraph [ref=e8674] [cursor=pointer]: Local gas station
+                - paragraph [ref=e8678] [cursor=pointer]: Local hospital
+                - paragraph [ref=e8682] [cursor=pointer]: Local library
+                - paragraph [ref=e8686] [cursor=pointer]: Local mall
+                - paragraph [ref=e8690] [cursor=pointer]: Local parking
+                - paragraph [ref=e8694] [cursor=pointer]: Local police
+                - paragraph [ref=e8698] [cursor=pointer]: Location away
+                - paragraph [ref=e8702] [cursor=pointer]: Location home
+                - paragraph [ref=e8706] [cursor=pointer]: Location on
+                - paragraph [ref=e8710] [cursor=pointer]: location-searching
+                - paragraph [ref=e8714] [cursor=pointer]: Map
+                - paragraph [ref=e8718] [cursor=pointer]: Maps UGC
+                - paragraph [ref=e8722] [cursor=pointer]: Medical services
+                - paragraph [ref=e8726] [cursor=pointer]: My location
+                - paragraph [ref=e8730] [cursor=pointer]: Navigation
+                - paragraph [ref=e8734] [cursor=pointer]: Near me
+                - paragraph [ref=e8738] [cursor=pointer]: North
+                - paragraph [ref=e8742] [cursor=pointer]: North east
+                - paragraph [ref=e8746] [cursor=pointer]: Not listed location
+                - paragraph [ref=e8750] [cursor=pointer]: Package
+                - paragraph [ref=e8754] [cursor=pointer]: Park
+                - paragraph [ref=e8758] [cursor=pointer]: Person pin
+                - paragraph [ref=e8762] [cursor=pointer]: Person pin circle
+                - paragraph [ref=e8766] [cursor=pointer]: Pin drop
+                - paragraph [ref=e8770] [cursor=pointer]: Restaurant
+                - paragraph [ref=e8774] [cursor=pointer]: Share location
+                - paragraph [ref=e8778] [cursor=pointer]: South
+                - paragraph [ref=e8782] [cursor=pointer]: Theater comedy
+                - paragraph [ref=e8786] [cursor=pointer]: Tour
+                - paragraph [ref=e8790] [cursor=pointer]: Trip origin
+                - paragraph [ref=e8794] [cursor=pointer]: West
+                - paragraph [ref=e8798] [cursor=pointer]: Where to vote
+      - generic [ref=e4310]:
+        - button [ref=e4311] [cursor=pointer]:
+          - img [ref=e4312]
+        - button [ref=e4315] [cursor=pointer]:
+          - img [ref=e4316]
+  - alert [ref=e4319]
+  - generic [ref=e9897]:
+    - generic [ref=e9898]:
+      - generic [ref=e9899]:
+        - generic [ref=e9900]: Check Circle
+        - button "Keep style" [ref=e9901] [cursor=pointer]:
+          - text: Keep style
+          - img [ref=e9902]
+        - button "Add to folder" [ref=e9904] [cursor=pointer]:
+          - text: Add to folder
+          - img [ref=e9905]
+      - button "Close" [ref=e9908] [cursor=pointer]:
+        - text: Close
+        - img [ref=e9909]
+    - generic [ref=e9913]:
+      - generic [ref=e9915]:
+        - img "selected-bg" [ref=e9916]
+        - img [ref=e9918]
+      - generic [ref=e9923]:
+        - generic [ref=e9924]:
+          - generic [ref=e9925]:
+            - paragraph [ref=e9927]: Fill
+            - paragraph [ref=e9930]: Duotone
+            - generic [ref=e9933]:
+              - paragraph [ref=e9934]: Direction
+              - generic [ref=e9935]:
+                - button "Left" [ref=e9936] [cursor=pointer]
+                - button "Top" [ref=e9937] [cursor=pointer]
+                - button "Right" [ref=e9938] [cursor=pointer]
+            - generic [ref=e9939]:
+              - paragraph [ref=e9940]: Edge
+              - generic [ref=e9941]:
+                - button [ref=e9942] [cursor=pointer]:
+                  - img [ref=e9943]
+                - button [ref=e9945] [cursor=pointer]:
+                  - img [ref=e9946]
+            - generic [ref=e9948]:
+              - paragraph [ref=e9949]: Stroke
+              - generic [ref=e9951]:
+                - button [ref=e9957]
+                - generic:
+                  - slider
+            - generic [ref=e9958]:
+              - paragraph [ref=e9959]: Size
+              - generic [ref=e9960]:
+                - button [ref=e9961] [cursor=pointer]:
+                  - img [ref=e9962]
+                - button "48px" [ref=e9966] [cursor=pointer]
+                - button [ref=e9967] [cursor=pointer]:
+                  - img [ref=e9968]
+          - generic [ref=e9971]:
+            - generic [ref=e9974]:
+              - button [ref=e9975] [cursor=pointer]:
+                - img [ref=e9976]
+              - button [ref=e9980] [cursor=pointer]:
+                - img [ref=e9981]
+            - button "Copied" [active]:
+              - generic: Copied
+              - img
+        - generic [ref=e9990]:
+          - button "Download SVG" [ref=e9991] [cursor=pointer]:
+            - text: Download SVG
+            - img [ref=e9992]
+          - button "Download PNG" [ref=e9995] [cursor=pointer]:
+            - text: Download PNG
+            - img [ref=e9996]

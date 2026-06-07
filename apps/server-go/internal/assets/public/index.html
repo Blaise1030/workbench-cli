@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link id="workbench-favicon" rel="icon" type="image/svg+xml" href="/favicon-dark.svg" />
+    <script>
+      (function () {
+        var stored = localStorage.getItem("vueuse-color-scheme");
+        var dark =
+          stored === "dark" ||
+          (stored !== "light" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        var link = document.getElementById("workbench-favicon");
+        if (link) link.href = dark ? "/favicon-dark.svg" : "/favicon-light.svg";
+      })();
+    </script>
+    <title>workbench</title>
+    <script type="module" crossorigin src="/assets/index-B6hwVOym.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-vue-1EXfy7N1.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-xterm-COWPMRWK.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-pierre-D2btHD0H.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-codemirror-CieP458L.js">
+    <link rel="stylesheet" crossorigin href="/assets/vendor-xterm-LZoznX6r.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-CK2gGCmd.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

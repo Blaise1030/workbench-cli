@@ -1,0 +1,92 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - img [ref=e8]
+            - generic [ref=e15]:
+              - generic [ref=e16]: Isocons
+              - generic [ref=e17]: v 2.1
+          - generic [ref=e18]:
+            - button "License" [ref=e19] [cursor=pointer]:
+              - generic [ref=e20]: License
+              - img [ref=e21]
+            - button [ref=e24] [cursor=pointer]
+        - generic [ref=e32]:
+          - paragraph [ref=e34]:
+            - text: Isometric icons For your
+            - generic [ref=e4439]:
+              - generic [ref=e4440]: Projects
+              - img [ref=e4441]
+          - generic [ref=e41]:
+            - link "Get the Figma Plugin" [ref=e42] [cursor=pointer]:
+              - /url: https://www.figma.com/community/plugin/1413541312472258622/isocons
+              - button "Get the Figma Plugin" [active] [ref=e43]:
+                - img [ref=e44]
+                - text: Get the Figma Plugin
+            - img [ref=e50]
+            - generic [ref=e53]:
+              - link "leye-small" [ref=e55] [cursor=pointer]:
+                - /url: https://x.com/leyeConnect
+                - button "leye-small" [ref=e56]:
+                  - img "leye-small" [ref=e57]
+              - link "moses-small" [ref=e59] [cursor=pointer]:
+                - /url: https://x.com/meandchimso
+                - button "moses-small" [ref=e60]:
+                  - img "moses-small" [ref=e61]
+      - generic [ref=e63]:
+        - generic [ref=e4446]:
+          - generic [ref=e4447]:
+            - button "Categories" [ref=e4448] [cursor=pointer]:
+              - generic [ref=e4449]: Categories
+            - button "Filter" [ref=e4450] [cursor=pointer]:
+              - generic [ref=e4451]: Filter
+              - img [ref=e4453]
+          - generic [ref=e4458]:
+            - generic [ref=e4459]:
+              - generic [ref=e4460]:
+                - img "filter-bg"
+                - img [ref=e4461]
+              - generic [ref=e4466]:
+                - button "Left" [ref=e4467] [cursor=pointer]
+                - button "Top" [ref=e4468] [cursor=pointer]
+                - button "Right" [ref=e4469] [cursor=pointer]
+            - paragraph [ref=e4471]: Fill
+            - generic [ref=e4474]:
+              - paragraph [ref=e4475]: Edge
+              - generic [ref=e4476]:
+                - button [ref=e4477] [cursor=pointer]:
+                  - img [ref=e4479]
+                - button [ref=e4484] [cursor=pointer]:
+                  - img [ref=e4486]
+            - generic [ref=e4490]:
+              - paragraph [ref=e4491]: Stroke
+              - generic [ref=e4493]:
+                - generic [ref=e4498]:
+                  - generic [ref=e4499]: 1px
+                  - button [ref=e4500]
+                - generic:
+                  - slider
+        - generic [ref=e121]:
+          - generic [ref=e124]:
+            - generic [ref=e125]:
+              - button [ref=e4501] [cursor=pointer]:
+                - img [ref=e4502]
+              - generic [ref=e130]:
+                - img [ref=e131] [cursor=pointer]
+                - textbox "Search by descriptors like “add”, or “check”" [ref=e134]: terminal
+            - button "Checkout" [ref=e136] [cursor=pointer]:
+              - generic [ref=e137]: Checkout
+              - img [ref=e138]
+          - generic [ref=e4506]:
+            - paragraph [ref=e4507]: UI Actions
+            - generic [ref=e4509] [cursor=pointer]:
+              - img [ref=e4511]
+              - paragraph [ref=e4525]: Terminal
+      - generic [ref=e4310]:
+        - button [ref=e4311] [cursor=pointer]:
+          - img [ref=e4312]
+        - button [ref=e4315] [cursor=pointer]:
+          - img [ref=e4316]
+  - alert [ref=e4319]
