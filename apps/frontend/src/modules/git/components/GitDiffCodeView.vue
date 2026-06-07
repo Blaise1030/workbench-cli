@@ -784,13 +784,11 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<template>
-  <div class="relative flex min-h-0 flex-1 flex-col">
+<template>  
     <div
       ref="rootRef"
-      class="git-diff-code-view min-h-0 flex-1 overflow-auto"
-    />
-  </div>
+      class="git-diff-code-view flex min-h-0 flex-1 flex-col min-h-0 pb-4 flex-1 overflow-auto"
+    />  
 </template>
 
 <style>

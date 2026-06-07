@@ -390,7 +390,7 @@ async function submitCommit() {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col bg-background">
+  <div class="flex min-h-0 h-full flex-col bg-background">
     <PanelLoading v-if="worktreeLoading" />
 
     <template v-else-if="worktree">
@@ -623,7 +623,7 @@ async function submitCommit() {
               v-for="tab in GIT_PANEL_TAB_SCOPES"
               :key="tab"
               :value="tab"
-              class="flex min-h-0 flex-1 flex-col mt-0 overflow-hidden"
+              class="flex min-h-0 flex-1 flex-col mt-0 overflow-hidden"              
             >
               <PanelLoading v-if="isDiffPending(tab as GitPanelTabScope)" />
               <div
