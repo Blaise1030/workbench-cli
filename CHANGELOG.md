@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/Blaise1030/workbench-cli/compare/v0.4.0...v0.4.1) (2026-06-07)
+
+
+### Bug Fixes
+
+* restore missing frontend files and auto-trigger release pipeline ([f44daf9](https://github.com/Blaise1030/workbench-cli/commit/f44daf9354a81f3b3954eba4feadee223d208c8a))
+
 ## [0.4.0](https://github.com/Blaise1030/workbench-cli/compare/v0.3.0...v0.4.0) (2026-06-07)
 
 
