@@ -16,6 +16,8 @@ export interface FileExplorerWorktreeState {
   markdownOnly?: boolean;
   /** Whether markdown files open in rendered preview instead of the editor. */
   markdownPreview?: boolean;
+  /** Whether image files open in rendered preview instead of showing a binary notice. */
+  imagePreview?: boolean;
   /** Editor scroll position per file (relative path → scrollTop pixels). */
   scrollPositions?: Record<string, number>;
 }

@@ -13,11 +13,13 @@ import { useWorkbenchDocumentTitle } from '@/modules/workspace/hooks/use-workben
 import { useAppColorMode } from '@/shared/hooks/useAppColorMode'
 import { useServerEvents } from '@/lib/server-events'
 import { useWhatsNew } from '@/modules/workspace/hooks/use-whats-new'
+import { useFaviconBadge } from '@/shared/hooks/useFaviconBadge'
 
 useWorkbenchDocumentTitle()
 useAppColorMode()
 useServerEvents()
 useWhatsNew()
+useFaviconBadge()
 
 function handleBeforeUnload(e: BeforeUnloadEvent) {
   e.preventDefault()

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { basename } from "@/modules/file-explorer/lib/file-tabs";
 import FileTabIcon from "@/modules/file-explorer/components/FileTabIcon.vue";
 import { Button } from "@/components/ui/button";
+import type { FilePreviewType } from "@/modules/file-explorer/lib/file-preview-type";
 
 const props = defineProps<{
   tabs: string[];
@@ -22,6 +23,7 @@ const props = defineProps<{
   isSaving?: boolean;
   treeCollapsed?: boolean;
   markdownPreview?: boolean;
+  activePreviewType?: FilePreviewType;
 }>();
 
 const tabListEl = ref<HTMLElement | null>(null);
@@ -48,14 +50,17 @@ const emit = defineEmits<{
   toggleMarkdownPreview: [];
 }>();
 
+const isImageActive = computed(() => props.activePreviewType === "image");
+
 const canSave = computed(
   () =>
+    !isImageActive.value &&
     props.activePath != null &&
     (props.dirtyPaths?.has(props.activePath) ?? false),
 );
 
 const isMarkdownActive = computed(
-  () => props.activePath != null && props.activePath.endsWith(".md"),
+  () => !isImageActive.value && props.activePath != null && props.activePath.endsWith(".md"),
 );
 
 function tabClass(relativePath: string) {
@@ -136,7 +141,7 @@ function closeClass(relativePath: string) {
       Save
     </Button>
     <Button
-      v-if="isMarkdownActive"
+      v-if="isMarkdownActive || isImageActive"
       variant="ghost"
       size="icon-xs"
       :aria-label="markdownPreview ? 'Switch to editor' : 'Switch to preview'"
@@ -148,6 +153,7 @@ function closeClass(relativePath: string) {
       <CodeIcon v-else class="size-3.5" />
     </Button>
     <Button
+      v-if="!isImageActive"
       variant="ghost"
       size="icon-xs"
       aria-label="Find in file"

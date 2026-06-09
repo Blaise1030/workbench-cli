@@ -284,6 +284,26 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		}
 		jsonResp(w, map[string]any{"matches": matches}, http.StatusOK)
 	})
+	r.Get("/worktrees/{id}/files/raw", func(w http.ResponseWriter, r *http.Request) {
+		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
+		if err != nil || wt == nil {
+			wsErr(w, "Worktree not found", http.StatusNotFound)
+			return
+		}
+		path := r.URL.Query().Get("path")
+		if path == "" {
+			wsErr(w, "path query parameter is required", http.StatusBadRequest)
+			return
+		}
+		data, mimeType, err := ReadFileRaw(wt.Path, path)
+		if err != nil {
+			wsErr(w, err.Error(), domainStatus(err))
+			return
+		}
+		w.Header().Set("Content-Type", mimeType)
+		w.Header().Set("Cache-Control", "no-cache")
+		_, _ = w.Write(data)
+	})
 	r.Get("/worktrees/{id}/files/content", func(w http.ResponseWriter, r *http.Request) {
 		wt, err := GetWorktree(db, chi.URLParam(r, "id"))
 		if err != nil || wt == nil {

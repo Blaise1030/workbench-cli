@@ -9,6 +9,54 @@ import (
 	"strings"
 )
 
+func mimeTypeFromExt(ext string) string {
+	switch strings.ToLower(ext) {
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".webp":
+		return "image/webp"
+	case ".svg":
+		return "image/svg+xml"
+	case ".ico":
+		return "image/x-icon"
+	case ".bmp":
+		return "image/bmp"
+	case ".avif":
+		return "image/avif"
+	default:
+		return "application/octet-stream"
+	}
+}
+
+func ReadFileRaw(worktreePath, relativePath string) ([]byte, string, error) {
+	normalized := strings.ReplaceAll(relativePath, "\\", "/")
+	normalized = strings.TrimLeft(normalized, "/")
+	if normalized == "" || strings.HasSuffix(normalized, "/") {
+		return nil, "", &FileError{Msg: "Invalid file path", Status: 400}
+	}
+	abs, err := AssertPathWithinRoot(worktreePath, normalized)
+	if err != nil {
+		return nil, "", &FileError{Msg: err.Error(), Status: 400}
+	}
+	fi, err := os.Stat(abs)
+	if err != nil {
+		return nil, "", &FileError{Msg: "File not found", Status: 404}
+	}
+	if !fi.Mode().IsRegular() {
+		return nil, "", &FileError{Msg: "Not a file", Status: 400}
+	}
+	data, err := os.ReadFile(abs)
+	if err != nil {
+		return nil, "", &FileError{Msg: "Cannot read file", Status: 500}
+	}
+	mimeType := mimeTypeFromExt(filepath.Ext(normalized))
+	return data, mimeType, nil
+}
+
 const maxFilePreviewBytes = 512 * 1024
 
 var noiseDirs = map[string]bool{

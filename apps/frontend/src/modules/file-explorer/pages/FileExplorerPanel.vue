@@ -22,6 +22,8 @@ import CodeMirrorEditor from "@/modules/file-explorer/components/CodeMirrorEdito
 import FileExplorerTreePanelBridge from "@/modules/file-explorer/components/FileExplorerTreePanelBridge.vue";
 import FileTabList from "@/modules/file-explorer/components/FileTabList.vue";
 import MarkdownPreview from "@/modules/file-explorer/components/MarkdownPreview.vue";
+import ImagePreview from "@/modules/file-explorer/components/ImagePreview.vue";
+import { getFilePreviewType } from "@/modules/file-explorer/lib/file-preview-type";
 import {
   adjacentFileAfterClose,
   closeFileTab,
@@ -114,6 +116,26 @@ const markdownPreview = computed({
   },
 });
 
+const imagePreview = computed({
+  get: () => explorerState.value.imagePreview ?? true,
+  set: (val: boolean) => {
+    explorerState.value = { ...explorerState.value, imagePreview: val };
+  },
+});
+
+const activePreviewEnabled = computed(() => {
+  if (activePreviewType.value === "image") return imagePreview.value;
+  return markdownPreview.value;
+});
+
+function toggleActivePreview() {
+  if (activePreviewType.value === "image") {
+    imagePreview.value = !imagePreview.value;
+  } else {
+    markdownPreview.value = !markdownPreview.value;
+  }
+}
+
 const treeEl = ref<HTMLElement | null>(null);
 const treePanelBridgeRef = ref<InstanceType<typeof FileExplorerTreePanelBridge> | null>(
   null,
@@ -198,10 +220,16 @@ const selectedRelativePath = computed(() => {
   return explorerState.value.lastFilePath ?? null;
 });
 
+const activePreviewType = computed(() =>
+  selectedRelativePath.value ? getFilePreviewType(selectedRelativePath.value) : "code",
+);
+
 const showMarkdownPreview = computed(
-  () =>
-    markdownPreview.value &&
-    (selectedRelativePath.value?.endsWith(".md") ?? false),
+  () => markdownPreview.value && activePreviewType.value === "markdown",
+);
+
+const showImagePreview = computed(
+  () => imagePreview.value && activePreviewType.value === "image",
 );
 
 useExplorerContextQueueBridge({
@@ -323,12 +351,17 @@ const {
   isLoading: fileLoading,
   isError: fileError,
   error: fileErrorObj,
-} = useQuery(
-  fileContentQueryOptions(
+} = useQuery({
+  ...fileContentQueryOptions(
     () => props.worktreeId,
     () => selectedRelativePath.value,
   ),
-);
+  enabled: computed(
+    () =>
+      Boolean(props.worktreeId && selectedRelativePath.value) &&
+      !showImagePreview.value,
+  ),
+});
 
 type PierreGitStatus = "added" | "modified" | "deleted" | "renamed" | "untracked" | "ignored";
 
@@ -814,13 +847,14 @@ async function onNewEntryConfirm() {
             :dirty-paths="dirtyPaths"
             :is-saving="isSaving"
             :tree-collapsed="treeCollapsed"
-            :markdown-preview="markdownPreview"
+            :markdown-preview="activePreviewEnabled"
+            :active-preview-type="activePreviewType"
             @select="openFileInTab"
             @close="closeFileTabHandler"
             @save="handleSaveFromTab"
             @search="handleSearchFromTab"
             @toggle-tree="toggleTree"
-            @toggle-markdown-preview="markdownPreview = !markdownPreview"
+            @toggle-markdown-preview="toggleActivePreview"
           />
           <div v-if="!selectedRelativePath" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
             <IsoFileOpen class="size-20 text-muted-foreground" />
@@ -842,6 +876,12 @@ async function onNewEntryConfirm() {
             <IsoFileDownloadOff class="size-20 text-muted-foreground" />
             {{ fileErrorObj instanceof Error ? fileErrorObj.message : "Could not load file" }}
           </div>
+
+          <ImagePreview
+            v-else-if="showImagePreview && selectedRelativePath"
+            :worktree-id="worktreeId"
+            :relative-path="selectedRelativePath"
+          />
 
           <template v-else-if="fileContent">
             <p
