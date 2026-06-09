@@ -3,7 +3,6 @@ export {
   usePatchAgentsMutation,
   useCreateAgentMutation,
   useDeleteAgentMutation,
-  useApplyAgentHooksMutation,
 } from "@/modules/settings/queries/agents";
 export {
   settingsKeys,

@@ -1,6 +1,8 @@
 package agents
 
 import (
+	"bufio"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -93,7 +95,7 @@ var geminiAdapter = Adapter{
 	},
 	FindLatest: func(cwd, home string) string {
 		root := filepath.Join(home, ".gemini", "tmp")
-		var bestID string
+		var bestPath string
 		var bestMtime int64
 		_ = filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
 			if err != nil || fi.IsDir() {
@@ -104,12 +106,38 @@ var geminiAdapter = Adapter{
 			}
 			if fi.ModTime().UnixMilli() > bestMtime {
 				bestMtime = fi.ModTime().UnixMilli()
-				bestID = strings.TrimSuffix(filepath.Base(path), ".jsonl")
+				bestPath = path
 			}
 			return nil
 		})
-		return bestID
+		return readGeminiSessionID(bestPath)
 	},
+}
+
+func readGeminiSessionID(path string) string {
+	if path == "" {
+		return ""
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	if !scanner.Scan() {
+		return ""
+	}
+	var header struct {
+		SessionID string `json:"sessionId"`
+		Kind      string `json:"kind"`
+	}
+	if err := json.Unmarshal(scanner.Bytes(), &header); err != nil || header.SessionID == "" {
+		return ""
+	}
+	if header.Kind == "subagent" {
+		return ""
+	}
+	return header.SessionID
 }
 
 var cursorAdapter = Adapter{

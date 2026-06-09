@@ -3,7 +3,6 @@ import { computed, ref, watch } from "vue";
 import { PlusIcon, Trash2Icon } from "@lucide/vue";
 import AgentAvatar from "@/modules/settings/components/AgentAvatar.vue";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,10 +24,6 @@ import {
 import {
   Item,
   ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemTitle,
 } from "@/components/ui/item";
 import { Card } from "@/components/ui/card";
 import SettingsPage from "@/modules/settings/components/SettingsPage.vue";
@@ -36,7 +31,6 @@ import SettingsSection from "@/modules/settings/components/SettingsSection.vue";
 import SettingsRow from "@/modules/settings/components/SettingsRow.vue";
 import {
   useAgentsQuery,
-  useApplyAgentHooksMutation,
   useCreateAgentMutation,
   useDeleteAgentMutation,
   usePatchAgentsMutation,
@@ -49,7 +43,6 @@ const { data, isPending } = useAgentsQuery();
 const patch = usePatchAgentsMutation();
 const createAgent = useCreateAgentMutation();
 const deleteAgent = useDeleteAgentMutation();
-const applyHooks = useApplyAgentHooksMutation();
 
 const openAccordion = ref<string>("claude");
 
@@ -64,8 +57,7 @@ const loading = computed(
     isPending.value ||
     patch.isPending.value ||
     createAgent.isPending.value ||
-    deleteAgent.isPending.value ||
-    applyHooks.isPending.value,
+    deleteAgent.isPending.value,
 );
 
 const canSubmitNewAgent = computed(
@@ -98,10 +90,6 @@ async function saveAgent(id: string, partial: PatchWorkbenchAgent) {
   }
 }
 
-function onHooksEnabledChange(id: string, enabled: boolean) {
-  void saveAgent(id, { hooks: { enabled } });
-}
-
 function onFieldBlur(
   id: string,
   field: "name" | "startCommand" | "resumeCommand",
@@ -113,30 +101,33 @@ function onFieldBlur(
   void saveAgent(id, { [field]: value });
 }
 
-function onHookTextBlur(id: string, field: "title" | "body", event: Event) {
-  const value = (event.target as HTMLInputElement).value.trim();
+function buildPrompt(id: string): string {
+  const manifest = data.value?.manifests[id];
   const agent = data.value?.agents.find((a) => a.id === id);
-  if (!agent || agent.hooks[field] === value) return;
-  void saveAgent(id, { hooks: { [field]: value } });
+  if (!manifest?.settingsMerge) return "";
+  const configPath = agent?.configPath ?? "the agent config file";
+  const agentName = agent?.name ?? id;
+  return [
+    `Update the hooks configuration for ${agentName}.`,
+    ``,
+    `Merge the following JSON into \`${configPath}\`:`,
+    ``,
+    "```json",
+    manifest.settingsMerge,
+    "```",
+    ``,
+    manifest.installHint ?? `Save the file when done.`,
+  ].join("\n");
 }
 
-async function copyManifest(id: string) {
-  const text = data.value?.manifests[id]?.settingsMerge;
-  if (!text) return;
+async function copyPrompt(id: string) {
+  const prompt = buildPrompt(id);
+  if (!prompt) return;
   try {
-    await navigator.clipboard.writeText(text);
-    toast.success("Copied hook config to clipboard.");
+    await navigator.clipboard.writeText(prompt);
+    toast.success("Copied install prompt to clipboard.");
   } catch {
     toast.error("Could not copy to clipboard.");
-  }
-}
-
-async function applyToAgent(id: string) {
-  try {
-    const result = await applyHooks.mutateAsync(id);
-    toast.success(`Wrote hooks to ${result.configPath} (backup: ${result.backupPath}).`);
-  } catch (err) {
-    toast.error(mutationErrorMessage(err, "Failed to apply hooks."));
   }
 }
 
@@ -205,9 +196,6 @@ async function removeAgent(id: string) {
                   <span v-if="agent.builtin">Built-in</span>
                   <span v-else>Custom</span>
                   · <code class="text-[11px]">{{ agent.startCommand }}</code>
-                  <span v-if="agent.hooks.enabled" class="ml-1.5 text-foreground/70">
-                    · hooks on
-                  </span>
                 </p>
               </div>
               <Button
@@ -264,117 +252,30 @@ async function removeAgent(id: string) {
                 </div>
               </div>
 
-              <div class="space-y-3">
-                <Item variant="outline">
-                  <ItemContent>
-                    <ItemTitle>Agent hooks</ItemTitle>
-                    <ItemDescription>
-                      When enabled, hooks call <code>workbench-cli register</code> to track
-                      session state (<span class="text-green-600 dark:text-green-400">Running</span> /
-                      <span class="text-orange-600 dark:text-orange-400">Needs Attention</span> /
-                      Idle) and <code>workbench-cli notify</code> to send desktop notifications.
-                      Use <b>Sync config</b> to write hooks to the agent's config file.
-                    </ItemDescription>
-                  </ItemContent>
-                  <ItemActions>
-                    <Label
-                      :for="`${agent.id}-hooks-enabled`"
-                      class="text-sm text-muted-foreground"
-                    >
-                      Enabled
-                    </Label>
-                    <Switch
-                      :id="`${agent.id}-hooks-enabled`"
-                      :checked="agent.hooks.enabled"
-                      :disabled="loading"
-                      @update:checked="(checked) => onHooksEnabledChange(agent.id, checked)"
-                    />
-                  </ItemActions>
-                </Item>
-
-                <div v-if="agent.hooks.enabled" class="space-y-4">
-                  <div class="space-y-2">
-                    <p class="text-sm font-medium">Hooks</p>
-                    <ItemGroup class="flex flex-col gap-1.5">
-                      <Item
-                        v-for="ev in data?.meta[agent.id]?.supportedEvents ?? []"
-                        :key="ev.id"
-                        variant="outline"
-                        size="sm"
-                      >
-                        <ItemContent>
-                          <div class="flex items-center gap-2">
-                            <ItemTitle>{{ ev.label }}</ItemTitle>
-                            <span
-                              v-if="ev.state"
-                              :class="[
-                                'rounded px-1.5 py-0.5 text-[10px] font-medium leading-none',
-                                ev.state === 'running' && 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
-                                ev.state === 'needs_attention' && 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
-                                ev.state === 'idle' && 'bg-muted text-muted-foreground',
-                              ]"
-                            >
-                              {{ ev.state === 'needs_attention' ? 'Needs Attention' : ev.state === 'running' ? 'Running' : 'Idle' }}
-                            </span>
-                            <span
-                              v-else
-                              class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground"
-                            >
-                              notify
-                            </span>
-                          </div>
-                          <ItemDescription>{{ ev.description }}</ItemDescription>
-                        </ItemContent>
-                      </Item>
-                    </ItemGroup>
-                  </div>
-
-                  <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="space-y-2">
-                      <Label :for="`${agent.id}-hook-title`">Notification title</Label>
-                      <Input
-                        :id="`${agent.id}-hook-title`"
-                        data-native-keyboard
-                        :model-value="agent.hooks.title"
-                        :disabled="loading"
-                        @blur="(e) => onHookTextBlur(agent.id, 'title', e)"
-                      />
-                    </div>
-                    <div class="space-y-2">
-                      <Label :for="`${agent.id}-hook-body`">Notification body</Label>
-                      <Input
-                        :id="`${agent.id}-hook-body`"
-                        data-native-keyboard
-                        :model-value="agent.hooks.body"
-                        :disabled="loading"
-                        @blur="(e) => onHookTextBlur(agent.id, 'body', e)"
-                      />
-                    </div>
-                  </div>
+              <div class="space-y-2">
+                <div class="space-y-2">
+                  <p class="text-xs text-muted-foreground">Copy the prompt below and paste it into your agent to enable hooks and session notifications.</p>
 
                   <div v-if="agent.configPath" class="text-xs text-muted-foreground">
                     Config: <code>{{ agent.configPath }}</code>
                   </div>
 
-                  <div class="flex flex-wrap gap-2">
-                    <Button
-                      v-if="agent.canApplyHooks"
-                      type="button"
-                      size="sm"
-                      :disabled="loading"
-                      @click="applyToAgent(agent.id)"
-                    >
-                      Sync config
-                    </Button>
+                  <div class="space-y-2 px-1 relative">
                     <Button
                       type="button"
+                      class="top-2 right-3 absolute"
                       variant="outline"
-                      size="sm"
+                      size="xs"
                       :disabled="loading"
-                      @click="copyManifest(agent.id)"
+                      @click="copyPrompt(agent.id)"
                     >
-                      Copy JSON
+                      Copy prompt
                     </Button>
+                    <Textarea
+                      readonly
+                      :model-value="buildPrompt(agent.id)"
+                      class="font-mono text-xs min-h-[180px] resize-none bg-muted"
+                    />                    
                   </div>
                 </div>
               </div>

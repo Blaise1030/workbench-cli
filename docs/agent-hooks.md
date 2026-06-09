@@ -15,7 +15,7 @@ Both hooks are configured in **Settings → Agents** and written to the agent's 
 workbench-cli register --source claude --state running
 ```
 
-Called on `PreToolUse` so it fires early in the session. The hook reads the `session_id` from stdin (Claude Code hook payload JSON) and the terminal/worktree context from `WORKBENCH_*` env vars injected at PTY spawn.
+Called early in the session (Claude: `PreToolUse`; Cursor: `sessionStart` / `beforeSubmitPrompt`). The hook reads the session id from stdin hook JSON — `session_id` for Claude Code, `conversation_id` for Cursor native hooks — and the terminal/worktree context from `WORKBENCH_*` env vars injected at PTY spawn.
 
 `register` POST body sent to `POST /api/register`:
 
@@ -46,6 +46,30 @@ workbench-cli notify \
 Configured per lifecycle event (toggleable in the UI). The title and body are editable in Settings → Agents. The command POSTs to `POST /api/notifications/hook` on the loopback server.
 
 See [notifications.md](./notifications.md) for the full notification flow (panel, desktop alerts, read semantics).
+
+## Generated Cursor hooks.json
+
+Cursor uses `~/.cursor/hooks.json` with camelCase event names and no `type` field on entries:
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      { "command": "workbench-cli register --source cursor --state running || true" }
+    ],
+    "beforeSubmitPrompt": [
+      { "command": "workbench-cli register --source cursor --state running || true" }
+    ],
+    "stop": [
+      { "command": "workbench-cli register --source cursor --state idle || true" },
+      { "command": "workbench-cli notify --worktree-id \"$WORKBENCH_WORKTREE_ID\" --terminal-id \"$WORKBENCH_TERMINAL_ID\" --title \"Cursor Agent\" --body \"Session finished\" || true" }
+    ]
+  }
+}
+```
+
+Cursor hook stdin uses `conversation_id` (not Claude's `session_id`). `workbench-cli register` accepts both.
 
 ## Generated Claude settings.json
 

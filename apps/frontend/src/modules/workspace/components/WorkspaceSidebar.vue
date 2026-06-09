@@ -44,10 +44,7 @@ import {
 import { useQuery, useQueries } from "@tanstack/vue-query";
 import { isLocalHost } from "@/lib/is-local-host";
 import { cn } from "@/lib/utils";
-import {
-  agentStatusClass,
-  formatAgentStatus,
-} from "@/modules/sessions/agent-status";
+import { agentStatusClass } from "@/modules/sessions/agent-status";
 import { useSessionsQuery } from "@/modules/sessions/queries";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
 import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
@@ -330,19 +327,12 @@ async function removeProject(project: Project) {
               class="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': route.params.terminalId === s.id }"
             >
-              <AgentKindIcon :kind="s.agentKind" class="mt-0.5 size-4" />
+              <AgentKindIcon :kind="s.agentKind" :status-class="agentStatusClass(s.agentStatus)" class="mt-0.5 size-4" />
               <div class="min-w-0 flex-1">
                 <div class="flex items-baseline gap-2">
                   <div class="min-w-0 flex-1 truncate text-foreground">
                     {{ sessionTitle(s.id, s.title) }}
                   </div>
-                  <span
-                    v-if="formatAgentStatus(s.agentStatus)"
-                    class="shrink-0 text-[10px] font-medium"
-                    :class="agentStatusClass(s.agentStatus)"
-                  >
-                    {{ formatAgentStatus(s.agentStatus) }}
-                  </span>
                 </div>
                 <div
                   v-if="worktreeContextMap.get(s.worktreeId)"

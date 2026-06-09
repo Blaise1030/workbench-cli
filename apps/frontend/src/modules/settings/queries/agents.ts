@@ -3,7 +3,6 @@ import { toast } from "vue-sonner";
 import { ensureOk } from "@/lib/api-error";
 import type {
   AgentsResponse,
-  ApplyAgentHooksResult,
   PatchWorkbenchAgent,
   WorkbenchAgent,
 } from "@/modules/settings/types/agents";
@@ -19,6 +18,7 @@ export function agentsQueryOptions() {
       const res = await fetch("/api/settings/agents", {
         credentials: "include",
       });
+      console.log(res)
       return ensureOk<AgentsResponse>(res);
     },
   };
@@ -97,23 +97,3 @@ export function useDeleteAgentMutation() {
   });
 }
 
-export function useApplyAgentHooksMutation() {
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(
-        `/api/settings/agents/${encodeURIComponent(id)}/apply-hooks`,
-        {
-          method: "POST",
-          credentials: "include",
-        },
-      );
-      return ensureOk<ApplyAgentHooksResult>(res);
-    },
-    onSuccess: () => {
-      toast.success("Agent hooks applied");
-    },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to apply agent hooks");
-    },
-  });
-}

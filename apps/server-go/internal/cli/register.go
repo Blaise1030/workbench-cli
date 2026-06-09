@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -11,9 +12,11 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
 )
 
-// hookPayload is the subset of the Claude Code (and compatible) hook stdin JSON we care about.
+// hookPayload is the subset of agent hook stdin JSON we care about.
+// Claude Code and Gemini CLI send session_id; Cursor native hooks send conversation_id.
 type hookPayload struct {
-	SessionID string `json:"session_id"`
+	SessionID      string `json:"session_id"`
+	ConversationID string `json:"conversation_id"`
 }
 
 // RunRegister registers the current terminal as an agent session.
@@ -86,15 +89,14 @@ func RunRegister(argv []string) error {
 		return nil // not inside a Workbench PTY session; nothing to register
 	}
 
-	// If no --session-id given, try env var then stdin JSON.
+	// If no --session-id given, try env vars then stdin JSON (Claude + Cursor + Gemini formats).
 	if sessionID == "" {
-		sessionID = strings.TrimSpace(os.Getenv("CLAUDE_CODE_SESSION_ID"))
-	}
-	if sessionID == "" {
-		var payload hookPayload
-		if err := json.NewDecoder(os.Stdin).Decode(&payload); err == nil && payload.SessionID != "" {
-			sessionID = payload.SessionID
-		}
+		sessionID = resolveHookSessionID(
+			os.Getenv("CLAUDE_CODE_SESSION_ID"),
+			os.Getenv("CURSOR_SESSION_ID"),
+			os.Getenv("GEMINI_SESSION_ID"),
+			os.Stdin,
+		)
 	}
 
 	port := notifyPort()
@@ -130,4 +132,30 @@ func RunRegister(argv []string) error {
 		return fmt.Errorf("register failed: HTTP %d", res.StatusCode)
 	}
 	return nil
+}
+
+func resolveHookSessionID(claudeEnv, cursorEnv, geminiEnv string, stdin interface {
+	Read([]byte) (int, error)
+}) string {
+	if s := strings.TrimSpace(claudeEnv); s != "" {
+		return s
+	}
+	if s := strings.TrimSpace(cursorEnv); s != "" {
+		return s
+	}
+	if s := strings.TrimSpace(geminiEnv); s != "" {
+		return s
+	}
+	raw, err := io.ReadAll(stdin)
+	if err != nil || len(raw) == 0 {
+		return ""
+	}
+	var payload hookPayload
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return ""
+	}
+	if s := strings.TrimSpace(payload.ConversationID); s != "" {
+		return s
+	}
+	return strings.TrimSpace(payload.SessionID)
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref, watch, type ComponentPublicInstance } from "vue";
+import { computed, nextTick, provide, ref, watch, type ComponentPublicInstance } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useQuery } from "@tanstack/vue-query";
 import {
@@ -441,6 +441,22 @@ function terminalRow(id: string) {
 
 const splitTerminalPanelRef = ref<ComponentPublicInstance & { resize: (size: number) => void } | null>(null);
 
+const terminalTabListPageRef = ref<HTMLElement | null>(null);
+const terminalTabListSplitRef = ref<HTMLElement | null>(null);
+
+watch(
+  activeId,
+  async (id) => {
+    if (!id) return;
+    await nextTick();
+    const list = terminalTabListPageRef.value ?? terminalTabListSplitRef.value;
+    if (!list) return;
+    const el = list.querySelector<HTMLElement>(`[data-terminal-tab-id="${CSS.escape(id)}"]`);
+    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  },
+  { flush: "post" },
+);
+
 function equalizeSplitPanes() {
   splitTerminalPanelRef.value?.resize(50);
   persistSplitTerminalSize(50);
@@ -456,6 +472,7 @@ function equalizeSplitPanes() {
         <WorkspaceSidebarToggle />
       </div>
       <div
+        ref="terminalTabListPageRef"
         class="flex h-8 min-w-0 flex-1 items-stretch overflow-x-auto"
         role="tablist"
       >
@@ -464,6 +481,7 @@ function equalizeSplitPanes() {
           :key="tab.id"
           type="button"
           role="tab"
+          :data-terminal-tab-id="tab.id"
           :class="tabTriggerClass(tab.id, index)"
           :aria-selected="tab.id === activeId"
           @click="navigateToTerminal(tab.id)"
@@ -579,6 +597,7 @@ function equalizeSplitPanes() {
               <WorkspaceSidebarToggle />
             </div>
             <div
+              ref="terminalTabListSplitRef"
               class="flex h-8 min-w-0 flex-1 items-stretch overflow-x-auto"
               role="tablist"
             >
@@ -587,6 +606,7 @@ function equalizeSplitPanes() {
                 :key="tab.id"
                 type="button"
                 role="tab"
+                :data-terminal-tab-id="tab.id"
                 :class="tabTriggerClass(tab.id, index)"
                 :aria-selected="tab.id === activeId"
                 @click="navigateToTerminal(tab.id)"

@@ -198,9 +198,6 @@ func ListAgentTerminals(db *sql.DB) ([]Terminal, error) {
 }
 
 func UpdateTerminalAgentSession(db *sql.DB, id, agentKind, agentSessionID string) error {
-	// Only set agent_kind when it is not yet assigned; subsequent calls (e.g. status
-	// heartbeats from Claude Code PreToolUse hooks) must not overwrite a kind that was
-	// already registered by a different agent (e.g. cursor).
-	_, err := db.Exec(`UPDATE terminals SET agent_kind=COALESCE(agent_kind,?), agent_session_id=? WHERE id=?`, agentKind, agentSessionID, id)
+	_, err := db.Exec(`UPDATE terminals SET agent_kind=?, agent_session_id=? WHERE id=?`, agentKind, agentSessionID, id)
 	return err
 }

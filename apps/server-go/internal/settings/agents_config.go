@@ -24,6 +24,12 @@ type ClaudeHookCommand struct {
 	Command string `json:"command"`
 }
 
+// ClaudeHookEntry is the wrapper object Claude Code expects around hook commands.
+type ClaudeHookEntry struct {
+	Matcher string              `json:"matcher"`
+	Hooks   []ClaudeHookCommand `json:"hooks"`
+}
+
 // BuildRegisterCommand returns a shell command that registers the agent session via workbench-cli.
 // The session ID is read from stdin (Claude Code hook payload format).
 func BuildRegisterCommand(agentID string) string {
@@ -115,7 +121,7 @@ type AgentResponseMeta struct {
 type AgentManifest struct {
 	Enabled       bool                           `json:"enabled"`
 	NotifyCommand string                         `json:"-"`
-	ClaudeHooks   map[string][]ClaudeHookCommand `json:"claudeHooks,omitempty"`
+	ClaudeHooks   map[string][]ClaudeHookEntry `json:"claudeHooks,omitempty"`
 	SettingsMerge string                         `json:"settingsMerge,omitempty"`
 	InstallHint   string                         `json:"installHint,omitempty"`
 }
@@ -175,6 +181,7 @@ var builtinHookEvents = map[string][]AgentHookEventMeta{
 		{ID: "SubagentStop", Label: "Subagent stop", Description: "Fired when a subagent completes. Sends a desktop notification."},
 	},
 	"cursor": {
+		{ID: "sessionStart", Label: "Session start", Description: "Fired when a Cursor agent session begins.", State: "running"},
 		{ID: "beforeSubmitPrompt", Label: "Before submit", Description: "Fired when you submit a prompt.", State: "running"},
 		{ID: "stop", Label: "Stop", Description: "Fired when the agent run completes. Also sends a desktop notification.", State: "idle"},
 	},
@@ -486,8 +493,8 @@ func hookMetaForAgent(a WorkbenchAgent) AgentResponseMeta {
 
 // buildClaudeStyleHooks generates the full hook set for an agent using Claude-format hook JSON.
 // State events always get a register command; events that also notify append the notify command.
-func buildClaudeStyleHooks(agentID string, events []AgentHookEventMeta, notifyCmd string) map[string][]ClaudeHookCommand {
-	hooks := map[string][]ClaudeHookCommand{}
+func buildClaudeStyleHooks(agentID string, events []AgentHookEventMeta, notifyCmd string) map[string][]ClaudeHookEntry {
+	hooks := map[string][]ClaudeHookEntry{}
 	for _, ev := range events {
 		var cmds []ClaudeHookCommand
 		if ev.State != "" {
@@ -498,7 +505,7 @@ func buildClaudeStyleHooks(agentID string, events []AgentHookEventMeta, notifyCm
 			cmds = append(cmds, ClaudeHookCommand{Type: "command", Command: notifyCmd + " || true"})
 		}
 		if len(cmds) > 0 {
-			hooks[ev.ID] = cmds
+			hooks[ev.ID] = []ClaudeHookEntry{{Matcher: "", Hooks: cmds}}
 		}
 	}
 	return hooks
