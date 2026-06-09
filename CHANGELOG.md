@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/Blaise1030/workbench-cli/compare/v0.4.3...v0.4.4) (2026-06-09)
+
+
+### Bug Fixes
+
+* **ci:** fix go binary output path after apps/ reorganization ([85b5b6d](https://github.com/Blaise1030/workbench-cli/commit/85b5b6df286f4dd9e52ba82a65267e2f8561a9b3))
+
 ## [0.4.3](https://github.com/Blaise1030/workbench-cli/compare/v0.4.2...v0.4.3) (2026-06-07)
 
 
