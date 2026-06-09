@@ -102,7 +102,7 @@ jobs:
           go build \
             -tags embed \
             -ldflags="-s -w -X github.com/blaisetiong/workbench-cli/server-go/internal/server.version=${PKG_VERSION}" \
-            -o "../dist/${{ matrix.name }}" \
+            -o "../../dist/${{ matrix.name }}" \
             ./cmd/workbench-cli
 
       - name: Package tarball
