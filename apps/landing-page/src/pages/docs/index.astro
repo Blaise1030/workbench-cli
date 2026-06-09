@@ -13,7 +13,7 @@ const sorted = allDocs.sort((a, b) => a.data.order - b.data.order);
     <div class="flex pl-[1ch] text-[hsl(var(--muted-foreground))]">
       <span class="shrink-0 text-[hsl(var(--foreground))]"> -</span>
       <span>
-        <span class="whitespace-nowrap">{'['}<a href={withBase(`/docs/${entry.slug}`)}>{entry.data.title}</a>{']'}</span>
+        <span class="whitespace-nowrap">{'['}<a href={withBase(`/docs/${entry.id.replace(/\.mdx?$/, '')}`)}>{entry.data.title}</a>{']'}</span>
         {entry.data.description && <span> — {entry.data.description}</span>}
       </span>
     </div>

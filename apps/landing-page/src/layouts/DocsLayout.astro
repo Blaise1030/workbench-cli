@@ -23,12 +23,13 @@ const sorted = [...allDocs].sort((a, b) => (a.data.order ?? 999) - (b.data.order
         <summary class="font-semibold tracking-[0.04em] mb-2 cursor-pointer">DOCS:</summary>
         <ul>
           {sorted.map(entry => {
-            const isActive = entry.slug === currentSlug;
+            const entryId = entry.id.replace(/\.mdx?$/, '');
+            const isActive = entryId === currentSlug;
             return (
               <li class={isActive ? 'font-semibold' : 'font-normal'}>
                 <MarkdownLink
                   label={`${isActive ? '> ' : ''}${entry.data.title}`}
-                  href={`/docs/${entry.slug}`}
+                  href={`/docs/${entryId}`}
                 />
               </li>
             );
