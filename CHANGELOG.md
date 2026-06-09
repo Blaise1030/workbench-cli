@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/Blaise1030/workbench-cli/compare/v0.4.4...v0.5.0) (2026-06-09)
+
+
+### Features
+
+* updated settings module ([39c1203](https://github.com/Blaise1030/workbench-cli/commit/39c1203ac03cb92de0f88f546af2aa25f7b8fbe4))
+
+
+### Bug Fixes
+
+* fixed vulnerability ([a3b2c2d](https://github.com/Blaise1030/workbench-cli/commit/a3b2c2d4fd23bcceb3c47a7470fcbecdcd0f880f))
+
 ## [0.4.4](https://github.com/Blaise1030/workbench-cli/compare/v0.4.3...v0.4.4) (2026-06-09)
 
 
