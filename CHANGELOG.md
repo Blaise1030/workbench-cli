@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/Blaise1030/workbench-cli/compare/v0.5.0...v0.6.0) (2026-06-09)
+
+
+### Features
+
+* added file watcher and notification ([13d0bba](https://github.com/Blaise1030/workbench-cli/commit/13d0bba820b7178591404acdec4602a5097c672c))
+* revert agent page syncing code, replaced with prompt instead ([45ba7d8](https://github.com/Blaise1030/workbench-cli/commit/45ba7d835d31ed02e5f5e7248cd23e4711f897d2))
+
 ## [0.5.0](https://github.com/Blaise1030/workbench-cli/compare/v0.4.4...v0.5.0) (2026-06-09)
 
 
