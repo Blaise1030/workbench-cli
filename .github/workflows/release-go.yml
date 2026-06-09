@@ -3,7 +3,7 @@ name: Release
 # Stable release pipeline:
 #   1. Release Please merges a release PR → creates tag (v* from now on; workbench-v* legacy).
 #   2. This workflow builds Go binaries and uploads them to that GitHub Release.
-#   3. deploy-pages refreshes latest.json on GitHub Pages so `curl | sh` installs that version.
+#   3. deploy-cloudflare refreshes latest.json on Cloudflare so `curl | sh` installs that version.
 on:
   push:
     tags:
@@ -152,14 +152,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy-pages:
-    name: Refresh install manifest on GitHub Pages
+  deploy-cloudflare:
+    name: Refresh install manifest on Cloudflare
     needs: release
     permissions:
       contents: read
       pages: write
       id-token: write
-    uses: ./.github/workflows/deploy-pages.yml
+    uses: ./.github/workflows/deploy-cloudflare.yml
     with:
       release_tag: ${{ needs.release.outputs.release_tag }}
     secrets: inherit
