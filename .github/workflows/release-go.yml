@@ -157,8 +157,6 @@ jobs:
     needs: release
     permissions:
       contents: read
-      pages: write
-      id-token: write
     uses: ./.github/workflows/deploy-cloudflare.yml
     with:
       release_tag: ${{ needs.release.outputs.release_tag }}
