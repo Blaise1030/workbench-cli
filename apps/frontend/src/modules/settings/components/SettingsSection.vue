@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <section class="border-b border-border px-8 py-6 last:border-b-0">
+  <section class="px-8 py-6">
     <div class="mx-auto w-full max-w-3xl">
       <Item variant="default">
         <ItemContent class="gap-0">
