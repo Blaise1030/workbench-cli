@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "publishedAt": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "heroIcon": {
+      "type": "string",
+      "enum": [
+        "bot",
+        "folder"
+      ]
+    },
+    "image": {
+      "type": "string"
+    },
+    "sections": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "heading": {
+            "type": "string"
+          },
+          "shortcut": {
+            "type": "object",
+            "properties": {
+              "before": {
+                "type": "string"
+              },
+              "keys": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "after": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "before",
+              "keys",
+              "after"
+            ]
+          },
+          "link": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "href": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "href"
+            ]
+          }
+        }
+      }
+    },
+    "$schema": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "summary",
+    "publishedAt"
+  ]
+}

@@ -62,15 +62,11 @@ func ValidateBranchName(name string) error {
 // ValidateDirectoryPath reports whether path exists and is a directory.
 // Git repositories and plain folders are accepted; files and missing paths error.
 func ValidateDirectoryPath(path string) error {
-	_, err := Run(path, []string{"rev-parse"})
-	if err == nil {
-		return nil
-	}
-	errMsg := strings.ToLower(err.Error())
-	if strings.Contains(errMsg, "no such file or directory") {
+	info, err := os.Stat(path)
+	if err != nil {
 		return os.ErrNotExist
 	}
-	if strings.Contains(errMsg, "not a directory") {
+	if !info.IsDir() {
 		return fmt.Errorf("not a directory")
 	}
 	return nil

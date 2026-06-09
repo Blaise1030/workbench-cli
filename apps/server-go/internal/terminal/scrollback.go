@@ -36,9 +36,10 @@ func scrollbackPaths(terminalID string, previous bool) (bin, meta string, ok boo
 	if previous {
 		base = scrollbackPrevDir()
 	}
+	safeID := filepath.Base(filepath.Clean(terminalID))
 	var binOk, metaOk bool
-	bin, binOk = confined(base, filepath.Join(base, terminalID+".bin"))
-	meta, metaOk = confined(base, filepath.Join(base, terminalID+".meta.json"))
+	bin, binOk = confined(base, filepath.Join(base, safeID+".bin"))
+	meta, metaOk = confined(base, filepath.Join(base, safeID+".meta.json"))
 	ok = binOk && metaOk
 	return
 }
