@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQueryClient } from "@tanstack/vue-query";
 import CommandPalette from "./CommandPalette.vue";
@@ -14,8 +14,6 @@ import {
 import { agentsQueryKeys } from "@/modules/settings/queries/agents";
 import type { AgentsResponse } from "@/modules/settings/types/agents";
 import { useAppColorMode } from "@/shared/hooks/useAppColorMode";
-import { isLocalHost } from "@/lib/is-local-host";
-import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
 import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
 import { toast } from "vue-sonner";
 import { useWorktreeLayoutMode } from "@/modules/workspace/hooks/use-worktree-layout-mode";
@@ -34,7 +32,6 @@ function setPaletteOpen(value: boolean) {
 
 const pickProjectFolder = usePickProjectFolderMutation();
 const { toggleTheme } = useAppColorMode();
-const addProjectOpen = ref(false);
 
 const worktreeId = computed(() => route.params.worktreeId as string | undefined);
 const createTerminal = useCreateTerminalMutation(worktreeId);
@@ -54,10 +51,6 @@ async function navigateToNewTerminal(input?: CreateTerminalInput) {
 
 async function handlePaletteAction(key: string) {
   if (key === "addProject") {
-    if (!isLocalHost()) {
-      addProjectOpen.value = true;
-      return;
-    }
     try {
       const result = await pickProjectFolder.mutateAsync();
       if (result.cancelled) return;
@@ -104,5 +97,4 @@ async function handlePaletteAction(key: string) {
     @update:open="setPaletteOpen"
     @action="handlePaletteAction"
   />
-  <AddProjectDialog v-model:open="addProjectOpen" />
 </template>

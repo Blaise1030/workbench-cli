@@ -107,10 +107,6 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		publishEvent(bus, "worktrees")
 	})
 	r.Post("/projects/pick-folder", func(w http.ResponseWriter, r *http.Request) {
-		if !auth.IsLocalRequest(r) {
-			wsErr(w, "Folder picker is only available on localhost", http.StatusForbidden)
-			return
-		}
 		repoPath, cancelled := PickFolder()
 		if cancelled {
 			jsonResp(w, map[string]any{"cancelled": true}, http.StatusOK)

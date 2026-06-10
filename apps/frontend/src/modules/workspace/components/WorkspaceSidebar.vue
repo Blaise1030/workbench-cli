@@ -11,7 +11,6 @@ import {
   Trash2Icon,
 } from "@lucide/vue";
 import AgentKindIcon from "@/modules/workspace/components/AgentKindIcon.vue";
-import AddProjectDialog from "@/modules/workspace/components/AddProjectDialog.vue";
 import ProjectWorktrees from "@/modules/workspace/components/ProjectWorktrees.vue";
 import ThemeToggle from "@/modules/workspace/components/ThemeToggle.vue";
 import VersionBadge from "@/modules/workspace/components/VersionBadge.vue";
@@ -42,7 +41,6 @@ import {
   type Project,
 } from "@/modules/workspace/queries";
 import { useQuery, useQueries } from "@tanstack/vue-query";
-import { isLocalHost } from "@/lib/is-local-host";
 import { cn } from "@/lib/utils";
 import { agentStatusClass } from "@/modules/sessions/agent-status";
 import { useSessionsQuery } from "@/modules/sessions/queries";
@@ -65,7 +63,6 @@ function clampAgentsPanelSize(size: number): number {
 
 const router = useRouter();
 const queryClient = useQueryClient();
-const addProjectOpen = ref(false);
 const addProjectError = ref("");
 const expandedProjects = useLocalStorage<Record<string, boolean>>(
   STORAGE_KEY_EXPANDED_PROJECTS,
@@ -138,10 +135,6 @@ function setExpanded(projectId: string, open: boolean) {
 
 async function addProject() {
   addProjectError.value = "";
-  if (!isLocalHost()) {
-    addProjectOpen.value = true;
-    return;
-  }
   try {
     const result = await pickProjectFolder.mutateAsync();
     if (result.cancelled) return;
@@ -353,6 +346,5 @@ async function removeProject(project: Project) {
     </ResizablePanelGroup>
   </div>
 
-  <AddProjectDialog v-model:open="addProjectOpen" />
   <SidebarHelpMenu />
 </template>
