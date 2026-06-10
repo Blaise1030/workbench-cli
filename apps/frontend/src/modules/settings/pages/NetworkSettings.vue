@@ -18,6 +18,7 @@ import {
   usePatchNetworkSettingsMutation,
 } from "@/modules/settings/queries/settings";
 import { ApiError } from "@/lib/api-error";
+import { buildHostsSetupPrompt } from "@/modules/settings/lib/hosts-setup-prompt";
 
 const { data: networkData, isPending: networkPending } = useNetworkSettingsQuery();
 const patchNetwork = usePatchNetworkSettingsMutation();
@@ -75,6 +76,17 @@ async function copyHostsLine() {
   try {
     await navigator.clipboard.writeText(hostsFileLine.value);
     toast.success("Copied hosts line to clipboard.");
+  } catch {
+    toast.error("Could not copy to clipboard.");
+  }
+}
+
+async function copySetupPrompt() {
+  const host = networkData.value?.host;
+  if (!host) return;
+  try {
+    await navigator.clipboard.writeText(buildHostsSetupPrompt(host));
+    toast.success("Copied setup prompt to clipboard.");
   } catch {
     toast.error("Could not copy to clipboard.");
   }
@@ -149,6 +161,9 @@ async function copyHostsLine() {
               <code class="truncate rounded bg-muted px-2 py-1 text-xs">{{ hostsFileLine }}</code>
               <Button variant="outline" size="sm" :disabled="loading" @click="copyHostsLine">
                 Copy
+              </Button>
+              <Button variant="outline" size="sm" :disabled="loading" @click="copySetupPrompt">
+                Copy prompt
               </Button>
             </div>
           </ItemActions>
