@@ -66,6 +66,15 @@ func Run(cfg Config) error {
 	}
 	defer state.DB.Close()
 
+	// Seed the filesystem watcher with already-registered worktrees so a
+	// restart still pushes git-status/file-tree updates for live projects.
+	if wts, err := workspace.ListAllWorktrees(state.DB); err == nil {
+		for _, wt := range wts {
+			_ = state.WorktreeWatcher.Watch(wt.ID, wt.Path)
+		}
+	}
+	defer state.WorktreeWatcher.Close()
+
 	ts := settings.GetTerminalSettings(state.SettingsStore)
 	registry := terminal.NewRegistry(terminal.RegistryConfig{
 		CapBytes:             settings.ScrollbackCapBytes(ts.ScrollbackCapKb),

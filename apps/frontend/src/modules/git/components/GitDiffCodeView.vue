@@ -98,6 +98,10 @@ const {
   onAnnotationsChange: () => applyViewerItems(),
 });
 const viewer = shallowRef<CodeView | null>(null);
+/** Synchronous guard: `viewer` is only set after an await, so concurrent mountViewer
+ * calls would otherwise both pass the `viewer.value` check and setup() two CodeViews
+ * into the same root (duplicated diff list). */
+let mounting = false;
 const { colorMode } = useAppColorMode();
 const optionsVersion = ref(0);
 
@@ -604,24 +608,30 @@ function applyCollapseUpdates(changedItemIds: string[]) {
 
 async function mountViewer() {
   const root = rootRef.value;
-  if (!root || viewer.value) return;
+  if (!root || viewer.value || mounting) return;
+  mounting = true;
 
-  await whenPierreWorkerReady();
+  try {
+    await whenPierreWorkerReady();
+    if (viewer.value || !rootRef.value) return;
 
-  const instance = new CodeView(
-    {
-      ...diffOptions(),
-      ...pierreCodeViewOptions,
-      stickyHeaders: true,
-      layout: { paddingTop: 8, paddingBottom: 8, gap: 0 },
-    },
-    getPierreWorkerPool(),
-  );
-  instance.setup(root);
-  instance.setItems(itemsForView());
-  viewer.value = instance;
-  scheduleEnhanceAllHeaderLinks();
-  scheduleSyncCheckboxInputs();
+    const instance = new CodeView(
+      {
+        ...diffOptions(),
+        ...pierreCodeViewOptions,
+        stickyHeaders: true,
+        layout: { paddingTop: 8, paddingBottom: 8, gap: 0 },
+      },
+      getPierreWorkerPool(),
+    );
+    instance.setup(rootRef.value);
+    instance.setItems(itemsForView());
+    viewer.value = instance;
+    scheduleEnhanceAllHeaderLinks();
+    scheduleSyncCheckboxInputs();
+  } finally {
+    mounting = false;
+  }
 }
 
 const persistCollapsedIds = useDebounceFn(() => {

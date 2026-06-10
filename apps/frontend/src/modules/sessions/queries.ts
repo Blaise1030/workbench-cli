@@ -1,5 +1,5 @@
-import { queryOptions, useQuery } from "@tanstack/vue-query";
-import { fetchSessions } from "./sessions-api";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { ackSession, fetchSessions } from "./sessions-api";
 
 export const sessionKeys = {
   all: ["sessions"] as const,
@@ -11,9 +11,20 @@ export function sessionsQueryOptions() {
     queryFn: fetchSessions,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
+    refetchOnWindowFocus: "always",
   });
 }
 
 export function useSessionsQuery() {
   return useQuery(sessionsQueryOptions());
+}
+
+export function useAckSessionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (terminalId: string) => ackSession(terminalId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionKeys.all });
+    },
+  });
 }

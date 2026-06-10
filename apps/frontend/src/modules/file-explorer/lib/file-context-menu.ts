@@ -9,6 +9,7 @@ const { div, button, hr } = van.tags;
 
 export type FileContextMenuActions = {
   onCopyName: (name: string) => void;
+  onCopyPath: (path: string) => void;
   onNewFile: (parentPath: string) => void;
   onNewFolder: (parentPath: string) => void;
   onRename: (path: string) => void;
@@ -50,12 +51,17 @@ export function createFileContextMenu(
 ): HTMLElement {
   const isMultiSelect = selectedPaths.length > 1 && selectedPaths.includes(item.path);
   const copyLabel = item.kind === "directory" ? "Copy folder name" : "Copy filename";
+  const copyPathLabel = item.kind === "directory" ? "Copy folder path" : "Copy file path";
   const deleteLabel = isMultiSelect ? `Delete ${selectedPaths.length} items` : "Delete";
   const parent = parentPath(item);
 
   const items: HTMLElement[] = [
     menuItem(copyLabel, false, () => {
       actions.onCopyName(item.name);
+      context.close();
+    }),
+    menuItem(copyPathLabel, false, () => {
+      actions.onCopyPath(item.path);
       context.close();
     }),
     menuItem("Rename", false, () => {

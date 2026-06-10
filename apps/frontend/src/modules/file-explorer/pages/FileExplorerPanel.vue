@@ -562,6 +562,7 @@ function mountTree(newPaths: string[]) {
       render: (item, context) =>
         createFileContextMenu(item, context, {
           onCopyName: (name) => navigator.clipboard.writeText(name),
+          onCopyPath: (path) => navigator.clipboard.writeText(path),
           onNewFile: (parent) => handleNewEntry(parent, "file"),
           onNewFolder: (parent) => handleNewEntry(parent, "directory"),
           onRename: (path) => tree!.startRenaming(path),

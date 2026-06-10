@@ -16,6 +16,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/config"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/git"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/watcher"
 )
 
 // PendingLaunchSetter queues a one-shot command for a terminal's first PTY spawn.
@@ -77,7 +78,7 @@ func domainStatus(err error) int {
 	return http.StatusInternalServerError
 }
 
-func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus, launches PendingLaunchSetter) {
+func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events.Bus, wtWatcher *watcher.WorktreeWatcher, launches PendingLaunchSetter) {
 	r.Use(auth.RequireSession(session))
 
 	// Projects
@@ -201,6 +202,9 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		}
 		jsonResp(w, map[string]any{"worktree": wt}, http.StatusCreated)
 		publishEvent(bus, "worktrees")
+		if wtWatcher != nil && wt != nil {
+			_ = wtWatcher.Watch(wt.ID, wt.Path)
+		}
 	})
 
 	// Individual worktree
@@ -213,12 +217,16 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		jsonResp(w, map[string]any{"worktree": wt}, http.StatusOK)
 	})
 	r.Delete("/worktrees/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if err := DeleteWorktree(db, chi.URLParam(r, "id")); err != nil {
+		id := chi.URLParam(r, "id")
+		if err := DeleteWorktree(db, id); err != nil {
 			wsErr(w, err.Error(), domainStatus(err))
 			return
 		}
 		jsonResp(w, map[string]bool{"ok": true}, http.StatusOK)
 		publishEvent(bus, "worktrees")
+		if wtWatcher != nil {
+			wtWatcher.Unwatch(id)
+		}
 	})
 
 	// Files

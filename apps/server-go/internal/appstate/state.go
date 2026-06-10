@@ -11,15 +11,17 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/lan"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
+	"github.com/blaisetiong/workbench-cli/server-go/internal/watcher"
 )
 
 type AppState struct {
-	mu            sync.RWMutex
-	Session       *auth.Session
-	Lan           *lan.Manager
-	SettingsStore settings.Store
-	DB            *sql.DB
-	EventBus      *events.Bus
+	mu              sync.RWMutex
+	Session         *auth.Session
+	Lan             *lan.Manager
+	SettingsStore   settings.Store
+	DB              *sql.DB
+	EventBus        *events.Bus
+	WorktreeWatcher *watcher.WorktreeWatcher
 }
 
 func New(port int, host string, forceHTTP bool) (*AppState, error) {
@@ -28,12 +30,14 @@ func New(port int, host string, forceHTTP bool) (*AppState, error) {
 	if err != nil {
 		return nil, err
 	}
+	bus := events.NewBus()
 	return &AppState{
-		Session:       auth.CreateSession(),
-		Lan:           lan.New(port, host, forceHTTP),
-		SettingsStore: settings.NewFileStore(storeFile),
-		DB:            database,
-		EventBus:      events.NewBus(),
+		Session:         auth.CreateSession(),
+		Lan:             lan.New(port, host, forceHTTP),
+		SettingsStore:   settings.NewFileStore(storeFile),
+		DB:              database,
+		EventBus:        bus,
+		WorktreeWatcher: watcher.New(bus),
 	}, nil
 }
 

@@ -177,8 +177,24 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 				writeJSON(w, map[string]any{"sessions": sessions}, http.StatusOK)
 			})
 
+			// Clear an agent's needs_attention status when the user opens the
+			// terminal. Compare-and-set so a concurrent running/idle update is
+			// not clobbered. Sits alongside GET /sessions (origin-guarded).
+			r.Post("/sessions/{terminalId}/ack", func(w http.ResponseWriter, req *http.Request) {
+				terminalID := strings.TrimSpace(chi.URLParam(req, "terminalId"))
+				if terminalID == "" {
+					writeJSON(w, map[string]string{"error": "terminalId is required"}, http.StatusBadRequest)
+					return
+				}
+				changed := registry.SetAgentStatusIf(terminalID, "needs_attention", "idle")
+				if changed {
+					publishEvent(state.EventBus, "sessions")
+				}
+				writeJSON(w, map[string]bool{"ok": true, "changed": changed}, http.StatusOK)
+			})
+
 			r.Group(func(r chi.Router) {
-				workspace.RegisterRoutes(r, state.DB, state.Session, state.EventBus, registry)
+				workspace.RegisterRoutes(r, state.DB, state.Session, state.EventBus, state.WorktreeWatcher, registry)
 			})
 		})
 	})
