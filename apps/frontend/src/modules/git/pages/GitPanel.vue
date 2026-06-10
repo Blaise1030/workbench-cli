@@ -1,12 +1,9 @@
 <script setup lang="ts">
+const hello= "blaise"
 import { computed, inject, ref, toValue, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
-  GitBranchIcon,
   Settings2Icon,
-
-  Columns2Icon,
-  AlignJustifyIcon,
   ChevronsDownUpIcon,
   ChevronsUpDownIcon,
   AlignLeftIcon,
@@ -178,6 +175,10 @@ function toggleCollapseAll() {
     return;
   }
   allCollapsed.value = true;
+  setCollapsedIdsForTab(
+    activeTab.value,
+    diffItems.value.map((item) => item.id),
+  );
 }
 
 const { data: worktree, isLoading: worktreeLoading } = useQuery(
@@ -244,10 +245,12 @@ const diffItemsByTab = computed(() => {
       const ignoredPaths = new Set(
         statusFiles.filter((f) => f.unstaged === "ignored").map((f) => f.path),
       );
+      const seenIds = new Set(scopeItems.map((item) => item.id));
       const untrackedPatch = untrackedDiffData.value?.patch ?? "";
       const untrackedItems = patchToCodeViewItems(untrackedPatch, `${props.worktreeId}-untracked`)
         .filter((item) => {
           if (ignoredPaths.has(item.id)) return false;
+          if (seenIds.has(item.id)) return false;
           const firstSegment = item.id.split("/")[0];
           return !firstSegment.startsWith(".");
         });
@@ -276,14 +279,6 @@ function isDiffPending(tab: GitPanelTabScope): boolean {
   if (!query) return true;
   return toValue(query.isPending) ?? true;
 }
-
-watch(allCollapsed, (collapsed) => {
-  if (!diffItems.value.length) return;
-  setCollapsedIdsForTab(
-    activeTab.value,
-    collapsed ? diffItems.value.map((item) => item.id) : [],
-  );
-});
 
 function onExpandOneDiff(itemId: string) {
   allCollapsed.value = false;
@@ -429,8 +424,18 @@ async function submitCommit() {
             v-if="worktree.isLinked"
             class="flex shrink-0 items-center gap-2 text-sm font-medium"
           >
-            <GitBranchIcon class="size-4 opacity-70" />
-            <span class="max-w-[12rem] truncate">{{ displayBranch }}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+              :class="collapseAllActive ? 'text-foreground' : ''"
+              :aria-label="collapseAllActive ? 'Expand all' : 'Collapse all'"
+              @click="toggleCollapseAll"
+            >
+              <ChevronsDownUpIcon v-if="collapseAllActive" class="size-3.5" />
+              <ChevronsUpDownIcon v-else class="size-3.5" />
+            </Button>
+            <span class="max-w-[8rem] truncate" :title="displayBranch">{{ displayBranch }}</span>
           </div>
 
           <div
@@ -464,26 +469,6 @@ async function submitCommit() {
           </div>
 
           <div class="ml-auto flex shrink-0 items-center gap-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-7 text-muted-foreground hover:text-foreground"
-              :class="collapseAllActive ? 'text-foreground' : ''"
-              @click="toggleCollapseAll"
-            >
-              <ChevronsDownUpIcon v-if="collapseAllActive" class="size-3.5" />
-              <ChevronsUpDownIcon v-else class="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-7 text-muted-foreground hover:text-foreground"
-              :class="diffStyle === 'split' ? 'text-foreground' : ''"
-              @click="diffStyle = diffStyle === 'split' ? 'unified' : 'split'"
-            >
-              <Columns2Icon v-if="diffStyle === 'unified'" class="size-3.5" />
-              <AlignJustifyIcon v-else class="size-3.5" />
-            </Button>
             <Popover>
               <PopoverTrigger as-child>
                 <Button
@@ -496,6 +481,15 @@ async function submitCommit() {
               </PopoverTrigger>
               <PopoverContent align="end" class="w-56 p-3 text-sm">
                 <div class="flex flex-col gap-3">
+                  <div class="flex items-center justify-between">
+                    <Label class="font-normal">Split view</Label>
+                    <Switch
+                      :checked="diffStyle === 'split'"
+                      @update:checked="
+                        (v: boolean) => (diffStyle = v ? 'split' : 'unified')
+                      "
+                    />
+                  </div>
                   <div class="flex items-center justify-between">
                     <Label class="font-normal">Backgrounds</Label>
                     <Switch v-model:checked="showBackgrounds" />

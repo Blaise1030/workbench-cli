@@ -472,6 +472,26 @@ func (reg *Registry) SetAgentStatus(terminalID, status string) bool {
 	return true
 }
 
+// SetAgentStatusIf flips a terminal's agent status to `set` only when the
+// current status equals `want` (case-insensitive, trimmed). Returns true if
+// the status changed. Used to clear needs_attention → idle without clobbering
+// a concurrent state change.
+func (reg *Registry) SetAgentStatusIf(terminalID, want, set string) bool {
+	reg.mu.RLock()
+	e, ok := reg.entries[terminalID]
+	reg.mu.RUnlock()
+	if !ok {
+		return false
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if !strings.EqualFold(strings.TrimSpace(e.agentStatus), strings.TrimSpace(want)) {
+		return false
+	}
+	e.agentStatus = set
+	return true
+}
+
 func (reg *Registry) maybeInjectAgentResume(terminalID string, e *ptyEntry) {
 	resumeCmd, ok := reg.shouldAutoResumeAgent(e)
 	if !ok {

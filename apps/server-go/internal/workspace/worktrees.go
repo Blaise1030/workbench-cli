@@ -76,6 +76,28 @@ func listWorktreesByProjectID(db *sql.DB, projectID string) ([]Worktree, error) 
 	return out, nil
 }
 
+// ListAllWorktrees returns every worktree across all projects. Used at startup
+// to seed the filesystem watcher for already-registered worktrees.
+func ListAllWorktrees(db *sql.DB) ([]Worktree, error) {
+	rows, err := db.Query(`SELECT id, project_id, path, branch, base_branch, git_dir, is_linked, created_at FROM worktrees`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Worktree
+	for rows.Next() {
+		w, err := scanWorktree(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, w)
+	}
+	if out == nil {
+		out = []Worktree{}
+	}
+	return out, nil
+}
+
 func ensureFolderWorktree(db *sql.DB, projectID, folderPath string) error {
 	existing, err := listWorktreesByProjectID(db, projectID)
 	if err != nil {
@@ -225,14 +247,23 @@ func CreateWorktreeForProject(db *sql.DB, projectID string, body CreateWorktreeB
 	} else {
 		wtPath = filepath.Clean(p.RepoPath + "/../" + body.Branch)
 	}
+	// Options (e.g. -b) must come BEFORE the "--" end-of-options marker.
+	// Anything after "--" is treated as a positional arg, so placing "-b"
+	// there makes git see too many positionals and exit 129 (usage error).
+	isNewBranch := body.IsNewBranch != nil && *body.IsNewBranch
+	if isNewBranch {
+		args = append(args, "-b", body.Branch)
+	}
+
 	args = append(args, "--", wtPath)
 
-	if body.IsNewBranch != nil && *body.IsNewBranch {
-		args = append(args, "-b", body.Branch)
+	if isNewBranch {
+		// commit-ish to base the new branch on
 		if body.BaseBranch != nil && *body.BaseBranch != "" {
 			args = append(args, *body.BaseBranch)
 		}
 	} else {
+		// existing branch to check out
 		args = append(args, body.Branch)
 	}
 

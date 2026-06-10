@@ -4,6 +4,7 @@ import { toast } from "vue-sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Item,
   ItemActions,
@@ -18,6 +19,8 @@ import {
   usePatchNetworkSettingsMutation,
 } from "@/modules/settings/queries/settings";
 import { ApiError } from "@/lib/api-error";
+import { buildHostsSetupPrompt } from "@/modules/settings/lib/hosts-setup-prompt";
+import { buildTlsSetupPrompt } from "@/modules/settings/lib/tls-setup-prompt";
 
 const { data: networkData, isPending: networkPending } = useNetworkSettingsQuery();
 const patchNetwork = usePatchNetworkSettingsMutation();
@@ -25,6 +28,14 @@ const patchNetwork = usePatchNetworkSettingsMutation();
 const localUrl = computed(() => networkData.value?.localUrl ?? "");
 const pendingRestart = computed(() => networkData.value?.pendingRestart ?? false);
 const hostsFileLine = computed(() => networkData.value?.hostsFileLine ?? "");
+const setupPrompt = computed(() =>
+  networkData.value?.host ? buildHostsSetupPrompt(networkData.value.host) : "",
+);
+const tlsSetupPrompt = computed(() =>
+  networkData.value?.host && networkData.value.scheme === "http"
+    ? buildTlsSetupPrompt(networkData.value.host)
+    : "",
+);
 
 const hostInput = ref("");
 const portInput = ref("");
@@ -75,6 +86,26 @@ async function copyHostsLine() {
   try {
     await navigator.clipboard.writeText(hostsFileLine.value);
     toast.success("Copied hosts line to clipboard.");
+  } catch {
+    toast.error("Could not copy to clipboard.");
+  }
+}
+
+async function copySetupPrompt() {
+  if (!setupPrompt.value) return;
+  try {
+    await navigator.clipboard.writeText(setupPrompt.value);
+    toast.success("Copied setup prompt to clipboard.");
+  } catch {
+    toast.error("Could not copy to clipboard.");
+  }
+}
+
+async function copyTlsSetupPrompt() {
+  if (!tlsSetupPrompt.value) return;
+  try {
+    await navigator.clipboard.writeText(tlsSetupPrompt.value);
+    toast.success("Copied HTTPS setup prompt to clipboard.");
   } catch {
     toast.error("Could not copy to clipboard.");
   }
@@ -153,6 +184,52 @@ async function copyHostsLine() {
             </div>
           </ItemActions>
         </Item>
+
+        <div v-if="setupPrompt" class="space-y-2 px-1">
+          <p class="text-xs text-muted-foreground">
+            Or copy the prompt below and paste it into your agent to set up the hosts entry for you.
+          </p>
+          <div class="relative">
+            <Button
+              type="button"
+              class="top-2 right-3 absolute"
+              variant="outline"
+              size="xs"
+              :disabled="loading"
+              @click="copySetupPrompt"
+            >
+              Copy prompt
+            </Button>
+            <Textarea
+              readonly
+              :model-value="setupPrompt"
+              class="font-mono text-xs min-h-[120px] resize-none bg-muted pt-10 pr-28"
+            />
+          </div>
+        </div>
+
+        <div v-if="tlsSetupPrompt" class="space-y-2 px-1">
+          <p class="text-xs text-muted-foreground">
+            Serving over HTTP. Copy the prompt below and paste it into your agent to install mkcert and generate the PEM files for HTTPS.
+          </p>
+          <div class="relative">
+            <Button
+              type="button"
+              class="top-2 right-3 absolute"
+              variant="outline"
+              size="xs"
+              :disabled="loading"
+              @click="copyTlsSetupPrompt"
+            >
+              Copy prompt
+            </Button>
+            <Textarea
+              readonly
+              :model-value="tlsSetupPrompt"
+              class="font-mono text-xs min-h-[120px] resize-none bg-muted pt-10 pr-28"
+            />
+          </div>
+        </div>
 
         <div class="flex justify-end pt-2">
           <Button :disabled="loading || !networkDirty" @click="saveNetwork">

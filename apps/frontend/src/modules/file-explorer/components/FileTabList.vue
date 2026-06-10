@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch, computed } from "vue";
+import { ref, computed } from "vue";
 import {
   XIcon,
   SaveIcon,
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { basename } from "@/modules/file-explorer/lib/file-tabs";
 import FileTabIcon from "@/modules/file-explorer/components/FileTabIcon.vue";
 import { Button } from "@/components/ui/button";
+import { useScrollActiveTabIntoView } from "@/shared/hooks/useScrollActiveTabIntoView";
 import type { FilePreviewType } from "@/modules/file-explorer/lib/file-preview-type";
 
 const props = defineProps<{
@@ -28,18 +29,14 @@ const props = defineProps<{
 
 const tabListEl = ref<HTMLElement | null>(null);
 
-watch(
-  () => props.activePath,
-  async (activePath) => {
-    if (!activePath) return;
-    await nextTick();
-    const el = tabListEl.value?.querySelector<HTMLElement>(
-      `[data-file-tab-path="${CSS.escape(activePath)}"]`,
-    );
-    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  },
-  { flush: "post" },
-);
+useScrollActiveTabIntoView({
+  container: tabListEl,
+  activeKey: () => props.activePath,
+  tabsKey: () => props.tabs,
+  attribute: "data-file-tab-path",
+  // Sticky gradient fade overlay on the right edge (min-w-10 = 2.5rem).
+  fadeOverlayPx: 40,
+});
 
 const emit = defineEmits<{
   select: [relativePath: string];

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, provide, ref, watch, type ComponentPublicInstance } from "vue";
+import { computed, provide, ref, watch, type ComponentPublicInstance } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useQuery } from "@tanstack/vue-query";
 import {
@@ -29,6 +29,7 @@ import {
   terminalSessionsKey,
   useTerminalSessions,
 } from "@/modules/terminal/hooks/terminal-sessions";
+import { useClearAttentionOnVisit } from "@/modules/sessions/use-clear-attention-on-visit";
 import {
   useCreateTerminalMutation,
   useDeleteTerminalMutation,
@@ -52,6 +53,7 @@ import { gitStatusQueryOptions } from "@/modules/git/queries";
 import { worktreeQueryOptions } from "@/modules/workspace/queries";
 import { useProjectIsGitRepo } from "@/modules/workspace/hooks/use-project-is-git-repo";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
+import { useScrollActiveTabIntoView } from "@/shared/hooks/useScrollActiveTabIntoView";
 import ContextQueuePopover from "@/modules/context-queue/components/ContextQueuePopover.vue";
 import { useContextQueue } from "@/modules/context-queue/hooks/use-context-queue";
 import { useContextQueueKeybinding } from "@/modules/context-queue/hooks/use-context-queue-keybinding";
@@ -209,6 +211,7 @@ const activeId = computed(() => {
   return "";
 });
 
+useClearAttentionOnVisit(computed(() => activeId.value || null));
 
 // Create sessions for loaded terminals
 watch(
@@ -444,18 +447,13 @@ const splitTerminalPanelRef = ref<ComponentPublicInstance & { resize: (size: num
 const terminalTabListPageRef = ref<HTMLElement | null>(null);
 const terminalTabListSplitRef = ref<HTMLElement | null>(null);
 
-watch(
-  activeId,
-  async (id) => {
-    if (!id) return;
-    await nextTick();
-    const list = terminalTabListPageRef.value ?? terminalTabListSplitRef.value;
-    if (!list) return;
-    const el = list.querySelector<HTMLElement>(`[data-terminal-tab-id="${CSS.escape(id)}"]`);
-    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  },
-  { flush: "post" },
-);
+// Only one of the two tab strips (page vs split layout) is mounted at a time.
+useScrollActiveTabIntoView({
+  container: () => terminalTabListPageRef.value ?? terminalTabListSplitRef.value,
+  activeKey: activeId,
+  tabsKey: () => terminalTabItems.value,
+  attribute: "data-terminal-tab-id",
+});
 
 function equalizeSplitPanes() {
   splitTerminalPanelRef.value?.resize(50);

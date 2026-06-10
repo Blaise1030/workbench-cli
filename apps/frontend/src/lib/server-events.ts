@@ -1,5 +1,6 @@
 import { onUnmounted } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
+import { invalidateWorkspaceFs } from '@/modules/workspace/queries/invalidate-workspace-fs';
 
 export function useServerEvents() {
   const qc = useQueryClient();
@@ -19,6 +20,9 @@ export function useServerEvents() {
           const worktreeId = topic.slice('git-status:'.length);
           void qc.invalidateQueries({ queryKey: ['workspace', 'git-status', worktreeId] });
           void qc.invalidateQueries({ queryKey: ['workspace', 'git-diff', worktreeId] });
+        } else if (topic.startsWith('file-tree:')) {
+          const worktreeId = topic.slice('file-tree:'.length);
+          void invalidateWorkspaceFs(qc, worktreeId);
         }
       }
     } catch {
