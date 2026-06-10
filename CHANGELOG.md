@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.0](https://github.com/Blaise1030/workbench-cli/compare/v0.6.0...v0.7.0) (2026-06-10)
+
+
+### Features
+
+* push-driven updates, clear attention on visit, and UI polish ([5953630](https://github.com/Blaise1030/workbench-cli/commit/5953630d109e3cc458dc4c6c4b9ebf1e6f44fc1c))
+* **settings:** add Copy prompt button for /etc/hosts setup ([8d3c114](https://github.com/Blaise1030/workbench-cli/commit/8d3c114bf5186fa67637c97541230a0afcff3a48))
+* **settings:** add hosts setup prompt builder ([5606ae2](https://github.com/Blaise1030/workbench-cli/commit/5606ae2b2104a7ba8de6c47da5b69b0d42bebbfa))
+
 ## [0.6.0](https://github.com/Blaise1030/workbench-cli/compare/v0.5.0...v0.6.0) (2026-06-09)
 
 
