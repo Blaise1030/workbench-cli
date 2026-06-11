@@ -29,7 +29,7 @@ func ParseDiffScope(s string) DiffScope {
 func runGitAllowExit1(repoPath string, args []string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoPath
-	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+	cmd.Env = gitEnv()
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

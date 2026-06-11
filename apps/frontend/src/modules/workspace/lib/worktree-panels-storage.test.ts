@@ -130,13 +130,9 @@ describe("worktree-panels-storage", () => {
     expect(query).toEqual({ tab: "unstaged" });
   });
 
-  it("buildWorkspaceQuery normalizes legacy untracked tab", () => {
-    const query = buildWorkspaceQuery(
-      "/wt",
-      { activeTab: "untracked" as "unstaged" },
-      {},
-    );
-    expect(query.tab).toBe("unstaged");
+  it("buildWorkspaceQuery preserves the untracked tab", () => {
+    const query = buildWorkspaceQuery("/wt", { activeTab: "untracked" }, {});
+    expect(query.tab).toBe("untracked");
   });
 
   it("clampSplitTerminalSize enforces bounds", () => {

@@ -64,9 +64,9 @@ func ApplyFileAction(repoPath string, action FileAction, paths []string) error {
 
 	switch action {
 	case ActionStage:
-		_, err = Run(repoPath, append([]string{"add", "--"}, applicable...))
+		_, err = RunLocked(repoPath, append([]string{"add", "--"}, applicable...))
 	case ActionUnstage:
-		_, err = Run(repoPath, append([]string{"restore", "--staged", "--"}, applicable...))
+		_, err = RunLocked(repoPath, append([]string{"restore", "--staged", "--"}, applicable...))
 	case ActionDiscard:
 		var tracked, untracked []string
 		for _, p := range applicable {
@@ -77,12 +77,12 @@ func ApplyFileAction(repoPath string, action FileAction, paths []string) error {
 			}
 		}
 		if len(tracked) > 0 {
-			if _, err = Run(repoPath, append([]string{"restore", "--worktree", "--"}, tracked...)); err != nil {
+			if _, err = RunLocked(repoPath, append([]string{"restore", "--worktree", "--"}, tracked...)); err != nil {
 				return err
 			}
 		}
 		if len(untracked) > 0 {
-			if _, err = Run(repoPath, append([]string{"clean", "-fd", "--"}, untracked...)); err != nil {
+			if _, err = RunLocked(repoPath, append([]string{"clean", "-fd", "--"}, untracked...)); err != nil {
 				return err
 			}
 		}

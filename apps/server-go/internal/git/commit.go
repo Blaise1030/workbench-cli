@@ -30,6 +30,6 @@ func CommitStaged(repoPath string, message string) error {
 	if !staged {
 		return fmt.Errorf("nothing staged to commit")
 	}
-	_, err = Run(repoPath, []string{"commit", "-m", trimmed})
+	_, err = RunLocked(repoPath, []string{"commit", "-m", trimmed})
 	return err
 }
