@@ -73,10 +73,14 @@ const router = useRouter();
 const { effectiveTheme } = useAppTheme();
 const sessions = useTerminalSessions();
 
-/** Remount terminal emulator when theme changes so xterm picks up new CSS tokens. */
+/** Remount only on theme change; terminal switches reuse the instance (see below). */
 const routerViewKey = computed(() => {
   if (route.name === "terminal") {
-    return `${route.params.terminalId as string}:${effectiveTheme.value}`;
+    // Key by theme only — NOT terminalId — so the xterm instance is reused
+    // across terminal switches. Terminal.vue's watch(() => props.sessionId)
+    // re-attaches the persistent emulator to the new session in place. Theme
+    // stays in the key because xterm reads CSS tokens at construction time.
+    return `terminal:${effectiveTheme.value}`;
   }
   return route.fullPath;
 });
@@ -162,7 +166,9 @@ const isExplorerVisible = computed(() =>
 );
 
 const splitTerminalKey = computed(
-  () => `${activeTerminalId.value}:${effectiveTheme.value}`,
+  // Theme only — see routerViewKey. activeTerminalId drives the in-place attach
+  // through the :session-id binding, so it must NOT force a remount here.
+  () => `terminal-split:${effectiveTheme.value}`,
 );
 
 const splitTerminalDefaultSize = computed(() =>
