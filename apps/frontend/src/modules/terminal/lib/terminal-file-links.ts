@@ -77,6 +77,26 @@ export function extractFilePaths(
 }
 
 /**
+ * Memoizes the Set derived from a file-path array. The file-tree query returns
+ * a stable array reference (staleTime: Infinity), so the Set is rebuilt only
+ * when that reference changes — not on every row xterm scans for links.
+ */
+export function createMemoizedPathSet(
+  getFilePaths?: () => string[] | undefined,
+): () => Set<string> | undefined {
+  let lastArr: string[] | undefined;
+  let lastSet: Set<string> | undefined;
+  return () => {
+    if (!getFilePaths) return undefined;
+    const arr = getFilePaths();
+    if (arr === lastArr) return lastSet;
+    lastArr = arr;
+    lastSet = arr ? new Set(arr) : undefined;
+    return lastSet;
+  };
+}
+
+/**
  * Creates an xterm ILinkProvider that highlights file paths in terminal output.
  */
 export function createFileLinkProvider(
@@ -85,6 +105,7 @@ export function createFileLinkProvider(
   onActivate: (path: string) => void,
   getFilePaths?: () => string[] | undefined,
 ): ILinkProvider {
+  const getPathSet = createMemoizedPathSet(getFilePaths);
   return {
     provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
       const line = terminal.buffer.active.getLine(y - 1);
@@ -93,7 +114,7 @@ export function createFileLinkProvider(
         return;
       }
       const text = line.translateToString(true);
-      const filePathSet = getFilePaths ? new Set(getFilePaths() ?? []) : undefined;
+      const filePathSet = getPathSet();
       const matches = extractFilePaths(text, getWorktreePath(), filePathSet);
       if (matches.length === 0) {
         callback(undefined);
