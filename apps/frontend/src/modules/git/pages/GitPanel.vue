@@ -208,7 +208,11 @@ const gitDiffQueries = useQueries({
   queries: computed(() =>
     GIT_PANEL_TAB_SCOPES.map((scope) => ({
       ...gitDiffQueryOptions(() => props.worktreeId, scope, () => null),
-      enabled: gitEnabled.value,
+      // Only the visible tab's diff stays live. Inactive scopes load lazily on
+      // tab switch (and keep their cached data via gcTime, so switching back is
+      // instant). Without this, every git-status change refetched all three
+      // diffs — tripling the request fan-out on a busy worktree.
+      enabled: gitEnabled.value && scope === activeTab.value,
     })),
   ),
 });

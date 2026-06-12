@@ -12,9 +12,10 @@ import { workspaceKeys } from "@/modules/workspace/queries/keys";
 import { invalidateWorkspaceFs } from "@/modules/workspace/queries/invalidate-workspace-fs";
 import type { GitDiffScope, GitStatusEntry } from "./types";
 
-/** Poll git status while a subscriber is mounted (Git panel, file explorer tree). */
-export const GIT_STATUS_REFETCH_INTERVAL_MS = 30_000;
-
+// No polling: the FS watcher pushes a `git-status:<id>` SSE event on real
+// changes (working-tree edits and .git HEAD/refs/index), and git mutations
+// invalidate optimistically. refetchOnWindowFocus self-heals the rare miss
+// (e.g. an external `git add` inside a linked worktree).
 export function gitStatusQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
   return queryOptions({
     queryKey: computed(() => workspaceKeys.gitStatus(toValue(worktreeId))),
@@ -27,8 +28,6 @@ export function gitStatusQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
     },
     enabled: computed(() => Boolean(toValue(worktreeId))),
     staleTime: 0,
-    refetchInterval: GIT_STATUS_REFETCH_INTERVAL_MS,
-    refetchIntervalInBackground: false,
     refetchOnWindowFocus: "always",
   });
 }
@@ -61,8 +60,6 @@ export function gitDiffQueryOptions(
     },
     enabled: computed(() => Boolean(toValue(worktreeId))),
     staleTime: 0,
-    refetchInterval: GIT_STATUS_REFETCH_INTERVAL_MS,
-    refetchIntervalInBackground: false,
     refetchOnWindowFocus: "always",
   });
 }
