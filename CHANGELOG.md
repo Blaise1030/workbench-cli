@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.1](https://github.com/Blaise1030/workbench-cli/compare/v0.7.0...v0.7.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **git:** stop git-panel polling storm + terminal tab/perf fixes ([3fd5e1c](https://github.com/Blaise1030/workbench-cli/commit/3fd5e1c99a4b65cc84a99087f839d55a520c08c9))
+* **git:** stop git-panel polling storm from .git/index chmod echo ([c3aec22](https://github.com/Blaise1030/workbench-cli/commit/c3aec22dbb28bcc8450760148a1c72e42fd4e51b))
+* **git:** untracked tab + eliminate index.lock contention (apps layout) ([de23669](https://github.com/Blaise1030/workbench-cli/commit/de23669ab7e50791f3ecba46c9fdd9ddcb143b49))
+
+
+### Performance Improvements
+
+* **terminal:** memoize file-path set in link provider ([f248e8b](https://github.com/Blaise1030/workbench-cli/commit/f248e8bbfbf1f3fd896f3776b39dce2d0f3d9943))
+* **terminal:** reuse xterm instance across agent switches ([8d25594](https://github.com/Blaise1030/workbench-cli/commit/8d2559441f1e70c679f855af7f2be5722f695fc1))
+
 ## [0.7.0](https://github.com/Blaise1030/workbench-cli/compare/v0.6.0...v0.7.0) (2026-06-10)
 
 
