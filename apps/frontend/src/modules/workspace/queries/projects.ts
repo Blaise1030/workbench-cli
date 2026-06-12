@@ -52,8 +52,11 @@ export function worktreesQueryOptions(projectId: MaybeRefOrGetter<string>) {
       return data.worktrees;
     },
     enabled: computed(() => Boolean(toValue(projectId))),
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: false,
+    // No polling: app-initiated changes invalidate via mutations, and external
+    // `git worktree add`/`remove` arrives over SSE (the "worktrees" topic, fired
+    // by the FS watcher on .git/worktrees changes). refetchOnWindowFocus still
+    // self-heals if an event is ever missed while the tab was backgrounded.
+    refetchOnWindowFocus: "always",
     gcTime: 60_000,
   });
 }

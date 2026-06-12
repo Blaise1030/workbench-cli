@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const hello= "blaise"
 import { computed, inject, ref, toValue, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
@@ -47,6 +46,7 @@ import {
   selectAllPathsState,
   selectablePathsFromDiffItems,
 } from "@/modules/git/lib/git-diff-selection";
+import { excludeUntrackedDiffItems } from "@/modules/git/lib/git-unstaged-filter";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   GIT_PANEL_DEFAULT_TAB,
@@ -208,7 +208,11 @@ const gitDiffQueries = useQueries({
   queries: computed(() =>
     GIT_PANEL_TAB_SCOPES.map((scope) => ({
       ...gitDiffQueryOptions(() => props.worktreeId, scope, () => null),
-      enabled: gitEnabled.value,
+      // Only the visible tab's diff stays live. Inactive scopes load lazily on
+      // tab switch (and keep their cached data via gcTime, so switching back is
+      // instant). Without this, every git-status change refetched all three
+      // diffs — tripling the request fan-out on a busy worktree.
+      enabled: gitEnabled.value && scope === activeTab.value,
     })),
   ),
 });
@@ -225,16 +229,20 @@ const gitDiffByScope = computed(() => {
   return map;
 });
 
-const { data: untrackedDiffData } = useQuery({
-  ...gitDiffQueryOptions(() => props.worktreeId, "untracked", () => null),
-  enabled: gitEnabled,
-});
-
 const changedFiles = computed(() => gitStatus.value?.files ?? []);
+
+/** Hide ignored entries and dot-prefixed top-level paths (build dirs, dotfiles) from the Untracked tab. */
+function isHiddenUntrackedPath(path: string, ignoredPaths: Set<string>): boolean {
+  if (ignoredPaths.has(path)) return true;
+  return path.split("/")[0].startsWith(".");
+}
 
 const diffItemsByTab = computed(() => {
   const items = {} as Record<GitPanelTabScope, ReturnType<typeof patchToCodeViewItems>>;
   const statusFiles = changedFiles.value;
+  const ignoredPaths = new Set(
+    statusFiles.filter((f) => f.unstaged === "ignored").map((f) => f.path),
+  );
   for (const scope of GIT_PANEL_TAB_SCOPES) {
     const patch = toValue(gitDiffByScope.value.get(scope)?.data)?.patch ?? "";
     let scopeItems = patchToCodeViewItems(
@@ -242,19 +250,12 @@ const diffItemsByTab = computed(() => {
       `${props.worktreeId}-${scope}`,
     );
     if (scope === "unstaged") {
-      const ignoredPaths = new Set(
-        statusFiles.filter((f) => f.unstaged === "ignored").map((f) => f.path),
+      // Unstaged shows tracked changes only; untracked files live in their own tab.
+      scopeItems = excludeUntrackedDiffItems(scopeItems, statusFiles);
+    } else if (scope === "untracked") {
+      scopeItems = scopeItems.filter(
+        (item) => !isHiddenUntrackedPath(item.id, ignoredPaths),
       );
-      const seenIds = new Set(scopeItems.map((item) => item.id));
-      const untrackedPatch = untrackedDiffData.value?.patch ?? "";
-      const untrackedItems = patchToCodeViewItems(untrackedPatch, `${props.worktreeId}-untracked`)
-        .filter((item) => {
-          if (ignoredPaths.has(item.id)) return false;
-          if (seenIds.has(item.id)) return false;
-          const firstSegment = item.id.split("/")[0];
-          return !firstSegment.startsWith(".");
-        });
-      scopeItems = [...scopeItems, ...untrackedItems];
     }
     items[scope] = scopeItems;
   }
@@ -280,6 +281,16 @@ function isDiffPending(tab: GitPanelTabScope): boolean {
   return toValue(query.isPending) ?? true;
 }
 
+/** A failed diff (e.g. transient index.lock contention) must not masquerade as "no changes". */
+function isDiffError(tab: GitPanelTabScope): boolean {
+  const query = gitDiffByScope.value.get(tab);
+  return query ? (toValue(query.isError) ?? false) : false;
+}
+
+function retryDiff(tab: GitPanelTabScope) {
+  void gitDiffByScope.value.get(tab)?.refetch();
+}
+
 function onExpandOneDiff(itemId: string) {
   allCollapsed.value = false;
   setCollapsedIdsForTab(
@@ -292,12 +303,22 @@ const displayBranch = computed(
   () => gitStatus.value?.branch ?? worktree.value?.branch ?? "detached",
 );
 
+/** Tracked working-tree changes (modified/deleted/renamed); untracked is its own tab. */
 const unstagedCount = computed(
-  () => changedFiles.value.filter((f) => {
-    if (!f.unstaged || f.unstaged === "ignored") return false;
-    const firstSegment = f.path.split("/")[0];
-    return !firstSegment.startsWith(".");
-  }).length,
+  () =>
+    changedFiles.value.filter(
+      (f) =>
+        f.unstaged != null &&
+        f.unstaged !== "ignored" &&
+        f.unstaged !== "untracked",
+    ).length,
+);
+const untrackedCount = computed(
+  () =>
+    changedFiles.value.filter(
+      (f) =>
+        f.unstaged === "untracked" && !f.path.split("/")[0].startsWith("."),
+    ).length,
 );
 /** Files with anything in the index vs HEAD. */
 const stagedCount = computed(
@@ -306,8 +327,16 @@ const stagedCount = computed(
 
 /** Tab badges follow `git status` buckets, not diff hunk count (diff can differ). */
 function tabCount(tab: GitPanelTabScope): number {
-  return tab === "staged" ? stagedCount.value : unstagedCount.value;
+  if (tab === "staged") return stagedCount.value;
+  if (tab === "untracked") return untrackedCount.value;
+  return unstagedCount.value;
 }
+
+const TAB_LABELS: Record<GitPanelTabScope, string> = {
+  staged: "Staged",
+  unstaged: "Unstaged",
+  untracked: "Untracked",
+};
 
 const canCommit = computed(() => stagedCount.value > 0);
 
@@ -457,7 +486,7 @@ async function submitCommit() {
                 :value="tab"
                 class="text-xs gap-1.5"
               >
-                {{ tab === "staged" ? "Staged" : "Unstaged" }}
+                {{ TAB_LABELS[tab as GitPanelTabScope] }}
                 <span
                   v-if="tabCount(tab as GitPanelTabScope)"
                   class="tabular-nums text-muted-foreground"
@@ -623,6 +652,24 @@ async function submitCommit() {
               class="flex min-h-0 flex-1 flex-col mt-0 overflow-hidden"              
             >
               <PanelLoading v-if="isDiffPending(tab as GitPanelTabScope)" />
+              <div
+                v-else-if="isDiffError(tab as GitPanelTabScope)"
+                class="p-2 flex flex-1"
+              >
+                <div
+                  class="flex flex-1 flex-col items-center justify-center gap-2 rounded-md border border-dashed text-xs text-muted-foreground"
+                >
+                  <IsoErrorMed class="size-20 text-muted-foreground" />
+                  <span>Couldn’t load this diff.</span>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    @click="retryDiff(tab as GitPanelTabScope)"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </div>
               <div
                 v-else-if="!diffItemsByTab[tab as GitPanelTabScope].length"
                 class="p-2 flex flex-1"

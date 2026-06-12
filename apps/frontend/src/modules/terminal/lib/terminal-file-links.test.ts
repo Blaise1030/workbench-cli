@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractFilePaths } from "./terminal-file-links";
+import { extractFilePaths, createMemoizedPathSet } from "./terminal-file-links";
 
 describe("extractFilePaths", () => {
   const root = "/home/user/project";
@@ -116,5 +116,42 @@ describe("extractFilePaths", () => {
         extractFilePaths("/usr/bin/node crashed", root, paths),
       ).toEqual([]);
     });
+  });
+});
+
+describe("createMemoizedPathSet", () => {
+  it("returns undefined when no getter is provided", () => {
+    const getSet = createMemoizedPathSet(undefined);
+    expect(getSet()).toBeUndefined();
+  });
+
+  it("returns a Set with the array contents", () => {
+    const getSet = createMemoizedPathSet(() => ["src/a.ts", "src/b.ts"]);
+    const set = getSet();
+    expect(set).toBeInstanceOf(Set);
+    expect(set?.has("src/a.ts")).toBe(true);
+    expect(set?.has("src/b.ts")).toBe(true);
+  });
+
+  it("reuses the same Set instance while the array reference is stable", () => {
+    const arr = ["src/a.ts"];
+    const getSet = createMemoizedPathSet(() => arr);
+    expect(getSet()).toBe(getSet());
+  });
+
+  it("rebuilds the Set when the array reference changes", () => {
+    let arr = ["src/a.ts"];
+    const getSet = createMemoizedPathSet(() => arr);
+    const first = getSet();
+    arr = ["src/c.ts"];
+    const second = getSet();
+    expect(second).not.toBe(first);
+    expect(second?.has("src/c.ts")).toBe(true);
+    expect(second?.has("src/a.ts")).toBe(false);
+  });
+
+  it("returns undefined when the getter yields undefined", () => {
+    const getSet = createMemoizedPathSet(() => undefined);
+    expect(getSet()).toBeUndefined();
   });
 });

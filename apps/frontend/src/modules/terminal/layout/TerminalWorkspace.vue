@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, provide, ref, watch, type ComponentPublicInstance } from "vue";
 import { useDebounceFn } from "@vueuse/core";
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import {
   FolderTreeIcon,
   GitBranchIcon,
@@ -35,6 +35,9 @@ import {
   useDeleteTerminalMutation,
   useTerminalsQuery,
 } from "@/modules/terminal/queries";
+import { workspaceKeys } from "@/modules/workspace/queries/keys";
+import type { TerminalTab } from "@/modules/terminal/queries/types";
+import { fallbackTerminalIdForRoute } from "@/modules/terminal/lib/active-terminal-route";
 import { useGitPanelStorage } from "@/modules/git/lib/git-panel-storage";
 import {
   activateWorktreeAuxPanel,
@@ -70,13 +73,18 @@ const props = defineProps<{
 
 const route = useRoute();
 const router = useRouter();
+const queryClient = useQueryClient();
 const { effectiveTheme } = useAppTheme();
 const sessions = useTerminalSessions();
 
-/** Remount terminal emulator when theme changes so xterm picks up new CSS tokens. */
+/** Remount only on theme change; terminal switches reuse the instance (see below). */
 const routerViewKey = computed(() => {
   if (route.name === "terminal") {
-    return `${route.params.terminalId as string}:${effectiveTheme.value}`;
+    // Key by theme only — NOT terminalId — so the xterm instance is reused
+    // across terminal switches. Terminal.vue's watch(() => props.sessionId)
+    // re-attaches the persistent emulator to the new session in place. Theme
+    // stays in the key because xterm reads CSS tokens at construction time.
+    return `terminal:${effectiveTheme.value}`;
   }
   return route.fullPath;
 });
@@ -162,7 +170,9 @@ const isExplorerVisible = computed(() =>
 );
 
 const splitTerminalKey = computed(
-  () => `${activeTerminalId.value}:${effectiveTheme.value}`,
+  // Theme only — see routerViewKey. activeTerminalId drives the in-place attach
+  // through the :session-id binding, so it must NOT force a remount here.
+  () => `terminal-split:${effectiveTheme.value}`,
 );
 
 const splitTerminalDefaultSize = computed(() =>
@@ -302,17 +312,24 @@ watch([terminals, () => route.name], ([list, name]) => {
   restoreDefaultRoute(list);
 });
 
-// Redirect if current terminal no longer exists
-watch([terminals, () => route.params.terminalId], ([list, terminalId]) => {
-  if (!list || route.name !== "terminal") return;
-  if (terminalId && !list.some((t) => t.id === terminalId)) {
-    const first = list[0];
-    if (first) {
-      router.replace({
-        name: "terminal",
-        params: { worktreeId: props.worktreeId, terminalId: first.id },
-      });
-    }
+// Redirect if the current terminal no longer exists (e.g. its tab was closed).
+// Validate against the list for the worktree the route points at, read straight
+// from the cache: the `terminals` reactive lags a tick behind the route during
+// an in-place worktree switch, so reading it here would check a freshly selected
+// tab against the previous worktree's list and bounce it to the first tab.
+watch([terminals, () => route.params.terminalId], ([, terminalId]) => {
+  if (route.name !== "terminal") return;
+  const worktreeId = route.params.worktreeId;
+  if (typeof worktreeId !== "string") return;
+  const list = queryClient.getQueryData<TerminalTab[]>(
+    workspaceKeys.terminals(worktreeId),
+  );
+  const fallback = fallbackTerminalIdForRoute(list, terminalId as string | undefined);
+  if (fallback && fallback !== terminalId) {
+    router.replace({
+      name: "terminal",
+      params: { worktreeId, terminalId: fallback },
+    });
   }
 });
 
