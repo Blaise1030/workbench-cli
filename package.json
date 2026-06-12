@@ -74,7 +74,7 @@
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "embla-carousel-vue": "^8.6.0",
-    "esbuild": "^0.25.12",
+    "esbuild": "^0.28.1",
     "hono": "^4.7.10",
     "markdown-it": "^14.2.0",
     "qrcode": "^1.5.4",
