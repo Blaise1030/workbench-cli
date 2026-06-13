@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/git"
+	"github.com/google/uuid"
 )
 
 type TerminalError struct {
@@ -26,6 +26,29 @@ type Terminal struct {
 	AgentKind      *string   `json:"agentKind"`
 	AgentSessionID *string   `json:"agentSessionId"`
 	CreatedAt      time.Time `json:"createdAt"`
+}
+
+// AgentTerminal is a Terminal enriched with its owning worktree's branch and
+// project name, so callers (the global sessions list) do not need to join
+// against the projects/worktrees data separately.
+type AgentTerminal struct {
+	Terminal
+	ProjectName string  `json:"projectName"`
+	Branch      *string `json:"branch"`
+}
+
+func scanAgentTerminal(rows *sql.Rows) (AgentTerminal, error) {
+	var a AgentTerminal
+	var createdAtMs int64
+	var resumeTrustedInt int
+	err := rows.Scan(&a.ID, &a.WorktreeID, &a.Title, &a.SortOrder,
+		&a.ResumeCommand, &resumeTrustedInt, &a.AgentKind, &a.AgentSessionID, &createdAtMs,
+		&a.ProjectName, &a.Branch)
+	if err == nil {
+		a.ResumeTrusted = resumeTrustedInt != 0
+		a.CreatedAt = time.UnixMilli(createdAtMs)
+	}
+	return a, err
 }
 
 func scanTerminal(rows *sql.Rows) (Terminal, error) {
@@ -123,10 +146,10 @@ func CreateTerminal(db *sql.DB, worktreeID string, title *string) (*Terminal, er
 }
 
 type UpdateTerminalPatch struct {
-	Title         *string  `json:"title,omitempty"`
-	SortOrder     *int     `json:"sortOrder,omitempty"`
-	ResumeCommand *string  `json:"resumeCommand"` // explicit null = clear
-	ResumeTrusted *bool    `json:"resumeTrusted,omitempty"`
+	Title         *string `json:"title,omitempty"`
+	SortOrder     *int    `json:"sortOrder,omitempty"`
+	ResumeCommand *string `json:"resumeCommand"` // explicit null = clear
+	ResumeTrusted *bool   `json:"resumeTrusted,omitempty"`
 }
 
 func UpdateTerminal(db *sql.DB, id string, patch UpdateTerminalPatch) (*Terminal, error) {
@@ -176,23 +199,32 @@ func DeleteTerminal(db *sql.DB, id string, onKill func(string)) error {
 	return err
 }
 
-// ListAgentTerminals returns all terminals that have an agent_kind set.
-func ListAgentTerminals(db *sql.DB) ([]Terminal, error) {
-	rows, err := db.Query(`SELECT `+terminalCols+` FROM terminals WHERE agent_kind IS NOT NULL ORDER BY created_at DESC`)
+// ListAgentTerminals returns all terminals that have an agent_kind set,
+// enriched with the owning worktree's branch and project name.
+func ListAgentTerminals(db *sql.DB) ([]AgentTerminal, error) {
+	rows, err := db.Query(`
+		SELECT t.id, t.worktree_id, t.title, t.sort_order, t.resume_command,
+		       t.resume_trusted, t.agent_kind, t.agent_session_id, t.created_at,
+		       p.name AS project_name, w.branch AS branch
+		FROM terminals t
+		JOIN worktrees w ON w.id = t.worktree_id
+		JOIN projects  p ON p.id = w.project_id
+		WHERE t.agent_kind IS NOT NULL
+		ORDER BY t.created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []Terminal
+	var out []AgentTerminal
 	for rows.Next() {
-		t, err := scanTerminal(rows)
+		t, err := scanAgentTerminal(rows)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, t)
 	}
 	if out == nil {
-		out = []Terminal{}
+		out = []AgentTerminal{}
 	}
 	return out, nil
 }
