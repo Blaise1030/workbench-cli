@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/Blaise1030/workbench-cli/compare/v0.7.1...v0.8.0) (2026-06-13)
+
+
+### Features
+
+* **events:** scope event bus and watcher subscriptions per workspace ([2511ac8](https://github.com/Blaise1030/workbench-cli/commit/2511ac8ba48f6165be775ac91cf81730470dd0a7))
+* **sessions:** add self-contained session context label and payload fields ([e5fedb5](https://github.com/Blaise1030/workbench-cli/commit/e5fedb547a9af7460211014cc67d636c84659f26))
+* **sessions:** enrich ListAgentTerminals with project name and branch ([646bc61](https://github.com/Blaise1030/workbench-cli/commit/646bc61ab858e579df46ea451b36d6d4a229ac29))
+* **sessions:** render sidebar session labels from payload, drop worktreeContextMap ([6b14cdb](https://github.com/Blaise1030/workbench-cli/commit/6b14cdba19e799b58ceaee0b7e32279eaf37d4ae))
+* **sessions:** return projectName and branch from GET /api/sessions ([1de3628](https://github.com/Blaise1030/workbench-cli/commit/1de362818f423ab53a633f07c9cb899ac4040b19))
+* **workspace:** single sidebar fetch for all worktrees grouped by project ([0f7e855](https://github.com/Blaise1030/workbench-cli/commit/0f7e855a04063d64a3dcde7b9390b58c9fb6c6c5))
+
 ## [0.7.1](https://github.com/Blaise1030/workbench-cli/compare/v0.7.0...v0.7.1) (2026-06-12)
 
 
