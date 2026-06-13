@@ -10,11 +10,18 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 )
 
+// Short debounce intervals keep tests fast and deterministic while preserving the
+// status-before-tree ordering the production defaults produce.
+const (
+	testStatusDebounce = 40 * time.Millisecond
+	testTreeDebounce   = 150 * time.Millisecond
+)
+
 // waitForMessage returns the next bus message or fails after timeout.
-func waitForMessage(t *testing.T, ch chan string, timeout time.Duration) string {
+func waitForMessage(t *testing.T, sub *events.Subscriber, timeout time.Duration) string {
 	t.Helper()
 	select {
-	case msg := <-ch:
+	case msg := <-sub.C:
 		return msg
 	case <-time.After(timeout):
 		t.Fatalf("timed out waiting for bus message")
@@ -22,12 +29,30 @@ func waitForMessage(t *testing.T, ch chan string, timeout time.Duration) string 
 	}
 }
 
+// waitForTopic reads messages until one contains substr (topics now arrive split
+// across separate publishes), failing after timeout.
+func waitForTopic(t *testing.T, sub *events.Subscriber, substr string, timeout time.Duration) string {
+	t.Helper()
+	deadline := time.After(timeout)
+	for {
+		select {
+		case msg := <-sub.C:
+			if strings.Contains(msg, substr) {
+				return msg
+			}
+		case <-deadline:
+			t.Fatalf("timed out waiting for topic %q", substr)
+			return ""
+		}
+	}
+}
+
 func TestWatchPublishesOnFileCreate(t *testing.T) {
 	dir := t.TempDir()
 	bus := events.NewBus()
-	ch := bus.Subscribe()
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
 
-	w := New(bus)
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -38,18 +63,26 @@ func TestWatchPublishesOnFileCreate(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 
-	msg := waitForMessage(t, ch, 2*time.Second)
-	if !strings.Contains(msg, "git-status:wt1") || !strings.Contains(msg, "file-tree:wt1") {
-		t.Fatalf("message missing expected topics: %q", msg)
+	// git-status publishes first on the short debounce, without the file-tree topic.
+	first := waitForMessage(t, ch, 2*time.Second)
+	if !strings.Contains(first, "git-status:wt1") {
+		t.Fatalf("expected git-status first, got: %q", first)
+	}
+	if strings.Contains(first, "file-tree:wt1") {
+		t.Fatalf("file-tree must not ride the fast status publish, got: %q", first)
+	}
+	// file-tree follows on the longer debounce.
+	if msg := waitForTopic(t, ch, "file-tree:wt1", 2*time.Second); msg == "" {
+		t.Fatal("expected a file-tree publish on the long debounce")
 	}
 }
 
 func TestWatchPicksUpNewSubdirectories(t *testing.T) {
 	dir := t.TempDir()
 	bus := events.NewBus()
-	ch := bus.Subscribe()
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
 
-	w := New(bus)
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -60,16 +93,14 @@ func TestWatchPicksUpNewSubdirectories(t *testing.T) {
 	if err := os.Mkdir(sub, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
-	// drain the event for the mkdir itself
-	waitForMessage(t, ch, 2*time.Second)
+	// drain the file-tree publish for the mkdir itself
+	waitForTopic(t, ch, "file-tree:wt1", 2*time.Second)
 
 	if err := os.WriteFile(filepath.Join(sub, "a.txt"), []byte("x"), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	msg := waitForMessage(t, ch, 2*time.Second)
-	if !strings.Contains(msg, "file-tree:wt1") {
-		t.Fatalf("expected file-tree topic for nested write, got: %q", msg)
-	}
+	// a write inside the newly-created dir is detected only if pkg got watched.
+	waitForTopic(t, ch, "file-tree:wt1", 2*time.Second)
 }
 
 func TestSkippedDirsDoNotNotify(t *testing.T) {
@@ -80,8 +111,8 @@ func TestSkippedDirsDoNotNotify(t *testing.T) {
 	}
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -93,7 +124,7 @@ func TestSkippedDirsDoNotNotify(t *testing.T) {
 	}
 
 	select {
-	case msg := <-ch:
+	case msg := <-ch.C:
 		t.Fatalf("unexpected notification for node_modules write: %q", msg)
 	case <-time.After(400 * time.Millisecond):
 		// expected: no event
@@ -103,8 +134,8 @@ func TestSkippedDirsDoNotNotify(t *testing.T) {
 func TestUnwatchStopsNotifications(t *testing.T) {
 	dir := t.TempDir()
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -116,7 +147,7 @@ func TestUnwatchStopsNotifications(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	select {
-	case msg := <-ch:
+	case msg := <-ch.C:
 		t.Fatalf("unexpected notification after Unwatch: %q", msg)
 	case <-time.After(400 * time.Millisecond):
 		// expected: no event

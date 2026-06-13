@@ -5,12 +5,12 @@ export const sessionKeys = {
   all: ["sessions"] as const,
 };
 
+// No polling: the `sessions` SSE topic invalidates this on real changes (terminal
+// register / state updates), and refetchOnWindowFocus self-heals any missed push.
 export function sessionsQueryOptions() {
   return queryOptions({
     queryKey: sessionKeys.all,
     queryFn: fetchSessions,
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: false,
     refetchOnWindowFocus: "always",
   });
 }

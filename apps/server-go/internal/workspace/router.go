@@ -28,8 +28,7 @@ func publishEvent(bus *events.Bus, topics ...string) {
 	if bus == nil {
 		return
 	}
-	data, _ := json.Marshal(map[string][]string{"topics": topics})
-	bus.Publish(string(data))
+	bus.Publish(topics...)
 }
 
 func jsonResp(w http.ResponseWriter, v any, code int) {

@@ -4,7 +4,6 @@
 package watcher
 
 import (
-	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -17,13 +16,24 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/events"
 )
 
-// debounceInterval collapses bursts of writes (e.g. an agent saving many files,
-// or a multi-step git operation) into a single publish. It is deliberately
-// generous: a busy worktree (an agent actively editing + running git) would
-// otherwise emit a publish every ~100ms, and each publish fans out on the client
-// to a git-status + several diff refetches. The 30s poll is the correctness
-// fallback, so push latency here only affects how snappy the panel feels.
-const debounceInterval = 400 * time.Millisecond
+// Two-tier debounce. A working-tree write affects both git status and the file
+// listing, but they have very different refetch costs and urgencies:
+//
+//   - git-status / worktrees: cheap and latency-sensitive — the user wants the
+//     diff panel to feel live. Debounced on the short interval.
+//   - file-tree: the file listing is the worktree's entire path set (tens of KB)
+//     and only actually changes on add/remove/rename, never on a content edit.
+//     Refetching it on every keystroke-save is the dominant cost when an agent
+//     edits continuously, so it gets a much longer debounce. A 1-3s lag before a
+//     newly-created file shows up in the tree is imperceptible next to the
+//     bandwidth/CPU saved.
+//
+// Both are trailing debounces: a burst collapses into one publish after writes
+// settle. The 30s client poll / refetch-on-focus is the correctness fallback.
+const (
+	defaultStatusDebounce = 1 * time.Second
+	defaultTreeDebounce   = 2500 * time.Millisecond
+)
 
 // skipDirs are directory base names that are never watched: either high-churn
 // noise or huge trees that would exhaust file descriptors. ".git" itself is
@@ -121,9 +131,11 @@ func gitStateRelevant(sub string) bool {
 
 // WorktreeWatcher maintains one fsnotify watcher per worktree.
 type WorktreeWatcher struct {
-	bus     *events.Bus
-	mu      sync.Mutex
-	handles map[string]*handle
+	bus            *events.Bus
+	statusDebounce time.Duration
+	treeDebounce   time.Duration
+	mu             sync.Mutex
+	handles        map[string]*handle
 }
 
 type handle struct {
@@ -132,7 +144,8 @@ type handle struct {
 	repoPath string
 
 	timerMu          sync.Mutex
-	timer            *time.Timer
+	statusTimer      *time.Timer // git-status + worktrees (short debounce)
+	treeTimer        *time.Timer // file-tree (long debounce)
 	pendingFileTree  bool
 	pendingGitStatus bool
 	pendingWorktrees bool
@@ -140,7 +153,18 @@ type handle struct {
 
 // New creates a watcher that publishes to the given bus.
 func New(bus *events.Bus) *WorktreeWatcher {
-	return &WorktreeWatcher{bus: bus, handles: map[string]*handle{}}
+	return newWithDebounce(bus, defaultStatusDebounce, defaultTreeDebounce)
+}
+
+// newWithDebounce builds a watcher with explicit debounce intervals; tests use
+// short ones to stay fast and deterministic.
+func newWithDebounce(bus *events.Bus, status, tree time.Duration) *WorktreeWatcher {
+	return &WorktreeWatcher{
+		bus:            bus,
+		statusDebounce: status,
+		treeDebounce:   tree,
+		handles:        map[string]*handle{},
+	}
 }
 
 // Watch begins watching repoPath (recursively) for the given worktree id.
@@ -176,8 +200,11 @@ func (w *WorktreeWatcher) Unwatch(id string) {
 	close(h.done)
 	_ = h.fsw.Close()
 	h.timerMu.Lock()
-	if h.timer != nil {
-		h.timer.Stop()
+	if h.statusTimer != nil {
+		h.statusTimer.Stop()
+	}
+	if h.treeTimer != nil {
+		h.treeTimer.Stop()
 	}
 	h.timerMu.Unlock()
 }
@@ -236,42 +263,63 @@ func (w *WorktreeWatcher) loop(id string, h *handle) {
 	}
 }
 
+// schedulePublish arms the relevant debounce timer(s). git-status and worktrees
+// share the short timer; file-tree gets the long one, so a burst of content edits
+// stops hammering the (large) file-listing refetch without slowing the diff panel.
 func (w *WorktreeWatcher) schedulePublish(id string, h *handle, fileTree, gitStatus, worktrees bool) {
 	h.timerMu.Lock()
 	defer h.timerMu.Unlock()
-	h.pendingFileTree = h.pendingFileTree || fileTree
-	h.pendingGitStatus = h.pendingGitStatus || gitStatus
-	h.pendingWorktrees = h.pendingWorktrees || worktrees
-	if h.timer == nil {
-		h.timer = time.AfterFunc(debounceInterval, func() { w.publish(id, h) })
-		return
+	if gitStatus || worktrees {
+		h.pendingGitStatus = h.pendingGitStatus || gitStatus
+		h.pendingWorktrees = h.pendingWorktrees || worktrees
+		if h.statusTimer == nil {
+			h.statusTimer = time.AfterFunc(w.statusDebounce, func() { w.publishStatus(id, h) })
+		} else {
+			h.statusTimer.Reset(w.statusDebounce)
+		}
 	}
-	h.timer.Reset(debounceInterval)
+	if fileTree {
+		h.pendingFileTree = true
+		if h.treeTimer == nil {
+			h.treeTimer = time.AfterFunc(w.treeDebounce, func() { w.publishTree(id, h) })
+		} else {
+			h.treeTimer.Reset(w.treeDebounce)
+		}
+	}
 }
 
-func (w *WorktreeWatcher) publish(id string, h *handle) {
+// publishStatus emits the worktrees + git-status topics on the short debounce.
+func (w *WorktreeWatcher) publishStatus(id string, h *handle) {
 	h.timerMu.Lock()
-	fileTree, gitStatus, worktrees := h.pendingFileTree, h.pendingGitStatus, h.pendingWorktrees
-	h.pendingFileTree, h.pendingGitStatus, h.pendingWorktrees = false, false, false
+	gitStatus, worktrees := h.pendingGitStatus, h.pendingWorktrees
+	h.pendingGitStatus, h.pendingWorktrees = false, false
 	h.timerMu.Unlock()
 
-	if w.bus == nil || (!fileTree && !gitStatus && !worktrees) {
+	if w.bus == nil || (!gitStatus && !worktrees) {
 		return
 	}
-	// worktrees first (set membership), then git-status (cheap), then file-tree.
-	// A file-tree change always implies a status change too.
-	topics := make([]string, 0, 3)
+	// worktrees first (set membership), then git-status (cheap).
+	topics := make([]string, 0, 2)
 	if worktrees {
 		topics = append(topics, "worktrees")
 	}
 	if gitStatus {
 		topics = append(topics, "git-status:"+id)
 	}
-	if fileTree {
-		topics = append(topics, "file-tree:"+id)
+	w.bus.Publish(topics...)
+}
+
+// publishTree emits the file-tree topic on the long debounce.
+func (w *WorktreeWatcher) publishTree(id string, h *handle) {
+	h.timerMu.Lock()
+	fileTree := h.pendingFileTree
+	h.pendingFileTree = false
+	h.timerMu.Unlock()
+
+	if w.bus == nil || !fileTree {
+		return
 	}
-	data, _ := json.Marshal(map[string][]string{"topics": topics})
-	w.bus.Publish(string(data))
+	w.bus.Publish("file-tree:" + id)
 }
 
 // addDirsRecursive walks root and adds a watch for each directory, skipping

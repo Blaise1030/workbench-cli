@@ -11,10 +11,10 @@ import (
 )
 
 // expectNoMessage fails if a bus message arrives within d.
-func expectNoMessage(t *testing.T, ch chan string, d time.Duration) {
+func expectNoMessage(t *testing.T, sub *events.Subscriber, d time.Duration) {
 	t.Helper()
 	select {
-	case msg := <-ch:
+	case msg := <-sub.C:
 		t.Fatalf("unexpected notification: %q", msg)
 	case <-time.After(d):
 	}
@@ -38,8 +38,8 @@ func TestGitInternalNoiseIgnored(t *testing.T) {
 	initGitDir(t, dir)
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -64,8 +64,8 @@ func TestGitStateChangePublishesStatusOnly(t *testing.T) {
 	initGitDir(t, dir)
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -94,8 +94,8 @@ func TestGitIndexChmodIgnored(t *testing.T) {
 	}
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -120,8 +120,8 @@ func TestGitIndexRenamePublishesStatus(t *testing.T) {
 	}
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -149,8 +149,8 @@ func TestRefChangePublishesStatusOnly(t *testing.T) {
 	initGitDir(t, dir)
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -178,8 +178,8 @@ func TestLinkedWorktreeAddPublishesWorktrees(t *testing.T) {
 	}
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -207,8 +207,8 @@ func TestLinkedWorktreeInternalChurnIgnored(t *testing.T) {
 	}
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}
@@ -228,8 +228,8 @@ func TestRefLockIgnored(t *testing.T) {
 	initGitDir(t, dir)
 
 	bus := events.NewBus()
-	ch := bus.Subscribe()
-	w := New(bus)
+	ch := bus.Subscribe(map[string]bool{"wt1": true})
+	w := newWithDebounce(bus, testStatusDebounce, testTreeDebounce)
 	if err := w.Watch("wt1", dir); err != nil {
 		t.Fatalf("Watch: %v", err)
 	}

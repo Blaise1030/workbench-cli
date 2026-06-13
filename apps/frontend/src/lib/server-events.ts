@@ -1,13 +1,23 @@
-import { onUnmounted } from 'vue';
+import { onUnmounted, toValue, watch, type MaybeRefOrGetter } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { invalidateWorkspaceFs } from '@/modules/workspace/queries/invalidate-workspace-fs';
 
-export function useServerEvents() {
+// Subscribes to the server's SSE stream, scoped to the worktree the user is
+// currently viewing. Per-worktree topics (git-status / file-tree) for other
+// worktrees never reach this client, so a busy background agent can't drive a
+// refetch storm here. Global topics (sessions / worktrees) always arrive.
+//
+// The interest set is fixed per connection (EventSource URLs are immutable), so a
+// change of active worktree tears down and reopens the stream with the new
+// ?worktree= scope. Switches are infrequent and the new worktree's queries refetch
+// on mount anyway, so the brief reconnect loses no state.
+export function useServerEvents(
+  activeWorktreeId: MaybeRefOrGetter<string | undefined>,
+) {
   const qc = useQueryClient();
+  let es: EventSource | null = null;
 
-  const es = new EventSource('/api/events', { withCredentials: true });
-
-  es.onmessage = (e: MessageEvent<string>) => {
+  function handleMessage(e: MessageEvent<string>) {
     try {
       const msg = JSON.parse(e.data) as { topics?: string[] };
       for (const topic of msg.topics ?? []) {
@@ -28,7 +38,18 @@ export function useServerEvents() {
     } catch {
       // ignore parse errors
     }
-  };
+  }
 
-  onUnmounted(() => es.close());
+  function connect(worktreeId: string | undefined) {
+    es?.close();
+    const url = worktreeId
+      ? `/api/events?worktree=${encodeURIComponent(worktreeId)}`
+      : '/api/events';
+    es = new EventSource(url, { withCredentials: true });
+    es.onmessage = handleMessage;
+  }
+
+  watch(() => toValue(activeWorktreeId), (id) => connect(id), { immediate: true });
+
+  onUnmounted(() => es?.close());
 }

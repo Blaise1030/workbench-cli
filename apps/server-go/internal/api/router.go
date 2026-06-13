@@ -23,8 +23,24 @@ func publishEvent(bus *events.Bus, topics ...string) {
 	if bus == nil {
 		return
 	}
-	data, _ := json.Marshal(map[string][]string{"topics": topics})
-	bus.Publish(string(data))
+	bus.Publish(topics...)
+}
+
+// parseWorktreeInterest turns the ?worktree= query value (comma-separated worktree
+// ids) into an interest set. Empty input yields a nil set: the connection then
+// receives only global topics (sessions / worktrees), never another worktree's
+// git-status / file-tree churn.
+func parseWorktreeInterest(raw string) map[string]bool {
+	if raw == "" {
+		return nil
+	}
+	interest := map[string]bool{}
+	for _, id := range strings.Split(raw, ",") {
+		if id = strings.TrimSpace(id); id != "" {
+			interest[id] = true
+		}
+	}
+	return interest
 }
 
 func writeJSON(w http.ResponseWriter, v any, code int) {
@@ -115,8 +131,8 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 				w.Header().Set("Connection", "keep-alive")
 				w.Header().Set("X-Accel-Buffering", "no")
 
-				ch := state.EventBus.Subscribe()
-				defer state.EventBus.Unsubscribe(ch)
+				sub := state.EventBus.Subscribe(parseWorktreeInterest(req.URL.Query().Get("worktree")))
+				defer state.EventBus.Unsubscribe(sub)
 
 				// Send a real data event so clients can confirm the connection is live.
 				fmt.Fprint(w, "data: {\"topics\":[]}\n\n")
@@ -129,7 +145,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 					select {
 					case <-req.Context().Done():
 						return
-					case msg, ok := <-ch:
+					case msg, ok := <-sub.C:
 						if !ok {
 							return
 						}

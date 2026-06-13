@@ -5,7 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AppCommandPalette from '@/modules/command-palette/AppCommandPalette.vue'
 import { Toaster } from '@/components/ui/sonner'
 import 'vue-sonner/style.css'
@@ -15,9 +16,11 @@ import { useServerEvents } from '@/lib/server-events'
 import { useWhatsNew } from '@/modules/workspace/hooks/use-whats-new'
 import { useFaviconBadge } from '@/shared/hooks/useFaviconBadge'
 
+const route = useRoute()
+
 useWorkbenchDocumentTitle()
 useAppColorMode()
-useServerEvents()
+useServerEvents(computed(() => route.params.worktreeId as string | undefined))
 useWhatsNew()
 useFaviconBadge()
 

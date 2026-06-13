@@ -12,10 +12,10 @@ import { workspaceKeys } from "@/modules/workspace/queries/keys";
 import { invalidateWorkspaceFs } from "@/modules/workspace/queries/invalidate-workspace-fs";
 import type { GitDiffScope, GitStatusEntry } from "./types";
 
-// No polling: the FS watcher pushes a `git-status:<id>` SSE event on real
-// changes (working-tree edits and .git HEAD/refs/index), and git mutations
-// invalidate optimistically. refetchOnWindowFocus self-heals the rare miss
-// (e.g. an external `git add` inside a linked worktree).
+// No polling: the FS watcher pushes a `git-status:<id>` SSE event on real changes
+// (working-tree edits and .git HEAD/refs/index), and git mutations invalidate
+// optimistically. refetchOnWindowFocus self-heals the rare miss (e.g. an external
+// `git add` inside a linked worktree).
 export function gitStatusQueryOptions(worktreeId: MaybeRefOrGetter<string>) {
   return queryOptions({
     queryKey: computed(() => workspaceKeys.gitStatus(toValue(worktreeId))),
