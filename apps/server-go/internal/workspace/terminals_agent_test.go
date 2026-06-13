@@ -77,3 +77,18 @@ func TestListAgentTerminals_nullBranch(t *testing.T) {
 		t.Fatalf("Branch = %v, want nil", got[0].Branch)
 	}
 }
+
+// The terminals table has a FOREIGN KEY on worktree_id and FK enforcement is
+// on, so a terminal can never reference a missing worktree. This guards that
+// invariant: inserting an orphaned terminal must be rejected, which is what
+// lets ListAgentTerminals safely use an inner JOIN without dropping sessions.
+func TestInsertTerminal_orphanedWorktreeRejected(t *testing.T) {
+	database := openTestDB(t)
+
+	now := time.Now().UnixMilli()
+	_, err := database.Exec(`INSERT INTO terminals (id,worktree_id,title,sort_order,resume_command,resume_trusted,agent_kind,agent_session_id,created_at) VALUES (?,?,?,?,?,?,?,?,?)`,
+		uuid.NewString(), uuid.NewString(), "Claude Code", 0, nil, 0, "claude", nil, now)
+	if err == nil {
+		t.Fatal("expected FOREIGN KEY constraint failure inserting a terminal with a missing worktree, got nil")
+	}
+}
