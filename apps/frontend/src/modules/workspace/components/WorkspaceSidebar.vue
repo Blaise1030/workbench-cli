@@ -46,6 +46,7 @@ import { isLocalHost } from "@/lib/is-local-host";
 import { cn } from "@/lib/utils";
 import { agentStatusClass } from "@/modules/sessions/agent-status";
 import { useSessionsQuery } from "@/modules/sessions/queries";
+import { sessionContextLabel } from "@/modules/sessions/session-context-label";
 import { useTerminalSessions } from "@/modules/terminal/hooks/terminal-sessions";
 import { openProjectWorkspace } from "@/modules/workspace/lib/open-project-workspace";
 import SidebarHelpMenu from "@/modules/workspace/components/SidebarHelpMenu.vue";
@@ -97,17 +98,6 @@ const pickProjectFolder = usePickProjectFolderMutation();
 const deleteProject = useDeleteProjectMutation();
 
 const { data: worktreesByProject } = useQuery(allWorktreesQueryOptions());
-
-const worktreeContextMap = computed(() => {
-  const map = new Map<string, { branch: string | null; projectName: string }>();
-  const byProject = worktreesByProject.value ?? {};
-  for (const project of projects.value ?? []) {
-    for (const wt of byProject[project.id] ?? []) {
-      map.set(wt.id, { branch: wt.branch, projectName: project.name });
-    }
-  }
-  return map;
-});
 
 const props = defineProps<{
   activeWorktreeId?: string;
@@ -327,10 +317,10 @@ async function removeProject(project: Project) {
                   </div>
                 </div>
                 <div
-                  v-if="worktreeContextMap.get(s.worktreeId)"
+                  v-if="s.projectName"
                   class="truncate text-muted-foreground"
                 >
-                  {{ worktreeContextMap.get(s.worktreeId)?.projectName }}<template v-if="worktreeContextMap.get(s.worktreeId)?.branch"> · {{ worktreeContextMap.get(s.worktreeId)?.branch }}</template>
+                  {{ sessionContextLabel(s) }}
                 </div>
               </div>
             </RouterLink>
