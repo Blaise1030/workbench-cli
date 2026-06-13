@@ -7,6 +7,8 @@ export interface AgentSession {
   agentStatus: string;
   isAlive: boolean;
   createdAt: string;
+  projectName: string;
+  branch: string | null;
 }
 
 export async function fetchSessions(): Promise<AgentSession[]> {
