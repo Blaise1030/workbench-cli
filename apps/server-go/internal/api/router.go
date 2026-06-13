@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/appstate"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/assets"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/auth"
@@ -17,6 +16,7 @@ import (
 	"github.com/blaisetiong/workbench-cli/server-go/internal/settings"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/terminal"
 	"github.com/blaisetiong/workbench-cli/server-go/internal/workspace"
+	"github.com/go-chi/chi/v5"
 )
 
 func publishEvent(bus *events.Bus, topics ...string) {
@@ -165,7 +165,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 					return
 				}
 				type sessionResp struct {
-					workspace.Terminal
+					workspace.AgentTerminal
 					AgentStatus string `json:"agentStatus"`
 					IsAlive     bool   `json:"isAlive"`
 				}
