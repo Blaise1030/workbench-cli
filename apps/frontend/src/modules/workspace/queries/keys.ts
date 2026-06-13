@@ -3,8 +3,7 @@ export const workspaceKeys = {
   projects: () => [...workspaceKeys.all, "projects"] as const,
   branches: (projectId: string) =>
     [...workspaceKeys.all, "branches", projectId] as const,
-  worktrees: (projectId: string) =>
-    [...workspaceKeys.all, "worktrees", projectId] as const,
+  worktrees: () => [...workspaceKeys.all, "worktrees"] as const,
   worktree: (worktreeId: string) =>
     [...workspaceKeys.all, "worktree", worktreeId] as const,
   terminals: (worktreeId: string) =>

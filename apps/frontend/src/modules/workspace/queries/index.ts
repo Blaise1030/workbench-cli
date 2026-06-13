@@ -5,6 +5,7 @@ export {
   projectsQueryOptions,
   useProjectsQuery,
   branchesQueryOptions,
+  allWorktreesQueryOptions,
   worktreesQueryOptions,
   worktreeQueryOptions,
   useRegisterProjectMutation,

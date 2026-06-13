@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/vue-query";
 import type { Router } from "vue-router";
-import { worktreesQueryOptions } from "@/modules/workspace/queries";
+import { allWorktreesQueryOptions } from "@/modules/workspace/queries";
 import { worktreePath } from "@/modules/workspace/lib/worktree-env";
 import type { Project } from "@/modules/workspace/queries/types";
 
@@ -10,11 +10,12 @@ export async function openProjectWorkspace(
   project: Project,
 ) {
   await queryClient.invalidateQueries({
-    queryKey: worktreesQueryOptions(project.id).queryKey,
+    queryKey: allWorktreesQueryOptions().queryKey,
   });
-  const worktrees = await queryClient.ensureQueryData(
-    worktreesQueryOptions(project.id),
+  const byProject = await queryClient.ensureQueryData(
+    allWorktreesQueryOptions(),
   );
+  const worktrees = byProject[project.id] ?? [];
   const main =
     worktrees.find((w) => w.path === project.repoPath) ?? worktrees[0];
   if (!main) throw new Error("No worktree found for project");

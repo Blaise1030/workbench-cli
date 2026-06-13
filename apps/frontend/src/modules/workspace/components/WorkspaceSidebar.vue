@@ -36,12 +36,12 @@ import {
 } from "@/components/ui/resizable";
 import {
   projectsQueryOptions,
-  worktreesQueryOptions,
+  allWorktreesQueryOptions,
   useDeleteProjectMutation,
   usePickProjectFolderMutation,
   type Project,
 } from "@/modules/workspace/queries";
-import { useQuery, useQueries } from "@tanstack/vue-query";
+import { useQuery } from "@tanstack/vue-query";
 import { isLocalHost } from "@/lib/is-local-host";
 import { cn } from "@/lib/utils";
 import { agentStatusClass } from "@/modules/sessions/agent-status";
@@ -96,19 +96,13 @@ const { data: projects, isPending: projectsPending } = useQuery(projectsQueryOpt
 const pickProjectFolder = usePickProjectFolderMutation();
 const deleteProject = useDeleteProjectMutation();
 
-const allWorktreeQueries = useQueries({
-  queries: computed(() =>
-    (projects.value ?? []).map((p) => worktreesQueryOptions(p.id)),
-  ),
-});
+const { data: worktreesByProject } = useQuery(allWorktreesQueryOptions());
 
 const worktreeContextMap = computed(() => {
   const map = new Map<string, { branch: string | null; projectName: string }>();
-  const projectList = projects.value ?? [];
-  for (let i = 0; i < projectList.length; i++) {
-    const project = projectList[i];
-    const worktrees = allWorktreeQueries.value[i]?.data ?? [];
-    for (const wt of worktrees) {
+  const byProject = worktreesByProject.value ?? {};
+  for (const project of projects.value ?? []) {
+    for (const wt of byProject[project.id] ?? []) {
       map.set(wt.id, { branch: wt.branch, projectName: project.name });
     }
   }
@@ -166,9 +160,7 @@ function sessionTitle(id: string, fallback: string): string {
 }
 
 function projectWorktrees(projectId: string) {
-  const projectIndex = projects.value?.findIndex((p) => p.id === projectId) ?? -1;
-  if (projectIndex < 0) return [];
-  return allWorktreeQueries.value[projectIndex]?.data ?? [];
+  return worktreesByProject.value?.[projectId] ?? [];
 }
 
 async function removeProject(project: Project) {

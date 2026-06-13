@@ -207,6 +207,16 @@ func RegisterRoutes(r chi.Router, db *sql.DB, session *auth.Session, bus *events
 		}
 	})
 
+	// All worktrees grouped by project (single sidebar fetch)
+	r.Get("/worktrees", func(w http.ResponseWriter, r *http.Request) {
+		grouped, err := ListAllWorktreesGrouped(db)
+		if err != nil {
+			wsErr(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		jsonResp(w, map[string]any{"worktreesByProject": grouped}, http.StatusOK)
+	})
+
 	// Individual worktree
 	r.Get("/worktrees/{id}", func(w http.ResponseWriter, r *http.Request) {
 		wt, err := GetWorktree(db, chi.URLParam(r, "id"))

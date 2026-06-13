@@ -98,6 +98,26 @@ func ListAllWorktrees(db *sql.DB) ([]Worktree, error) {
 	return out, nil
 }
 
+// ListAllWorktreesGrouped syncs every registered project's worktrees and
+// returns them keyed by project id. Powers the sidebar's single fetch so the
+// UI no longer needs one request per project.
+func ListAllWorktreesGrouped(db *sql.DB) (map[string][]Worktree, error) {
+	projects, err := ListProjects(db)
+	if err != nil {
+		return nil, err
+	}
+	grouped := make(map[string][]Worktree, len(projects))
+	for _, p := range projects {
+		_ = syncWorktreesForProject(db, p.ID)
+		wts, err := listWorktreesByProjectID(db, p.ID)
+		if err != nil {
+			return nil, err
+		}
+		grouped[p.ID] = wts
+	}
+	return grouped, nil
+}
+
 func ensureFolderWorktree(db *sql.DB, projectID, folderPath string) error {
 	existing, err := listWorktreesByProjectID(db, projectID)
 	if err != nil {

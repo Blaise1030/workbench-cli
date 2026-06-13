@@ -40,24 +40,39 @@ export function branchesQueryOptions(projectId: MaybeRefOrGetter<string>) {
   });
 }
 
-export function worktreesQueryOptions(projectId: MaybeRefOrGetter<string>) {
+/**
+ * Single request returning every project's worktrees, keyed by project id.
+ * Powers the whole sidebar — one fetch instead of one-per-project.
+ */
+export function allWorktreesQueryOptions() {
   return queryOptions({
-    queryKey: computed(() => workspaceKeys.worktrees(toValue(projectId))),
+    queryKey: workspaceKeys.worktrees(),
     queryFn: async () => {
-      const id = toValue(projectId);
-      const res = await apiClient.projects[":id"].worktrees.$get({
-        param: { id },
-      });
-      const data = await ensureOk<{ worktrees: Worktree[] }>(res);
-      return data.worktrees;
+      const res = await apiClient.worktrees.$get();
+      const data = await ensureOk<{
+        worktreesByProject: Record<string, Worktree[]>;
+      }>(res);
+      return data.worktreesByProject;
     },
-    enabled: computed(() => Boolean(toValue(projectId))),
     // No polling: app-initiated changes invalidate via mutations, and external
     // `git worktree add`/`remove` arrives over SSE (the "worktrees" topic, fired
     // by the FS watcher on .git/worktrees changes). refetchOnWindowFocus still
     // self-heals if an event is ever missed while the tab was backgrounded.
     refetchOnWindowFocus: "always",
     gcTime: 60_000,
+  });
+}
+
+/**
+ * Per-project worktrees, derived from {@link allWorktreesQueryOptions} via
+ * `select`. Shares the aggregate query key, so every consumer is served by the
+ * same single network request.
+ */
+export function worktreesQueryOptions(projectId: MaybeRefOrGetter<string>) {
+  return queryOptions({
+    ...allWorktreesQueryOptions(),
+    select: (data: Record<string, Worktree[]>) =>
+      data[toValue(projectId)] ?? [],
   });
 }
 
@@ -134,7 +149,7 @@ export function useCheckoutBranchMutation(projectId: MaybeRefOrGetter<string>) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workspaceKeys.worktrees(toValue(projectId)) });
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.worktrees() });
       toast.success("Branch checked out");
     },
     onError: (err) => {
@@ -161,7 +176,7 @@ export function useCreateWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: workspaceKeys.worktrees(toValue(projectId)),
+        queryKey: workspaceKeys.worktrees(),
       });
       toast.success("Worktree created");
     },
@@ -182,11 +197,12 @@ export function useDeleteProjectMutation() {
     },
     onSuccess: (_, projectId) => {
       const worktrees =
-        queryClient.getQueryData<Worktree[]>(workspaceKeys.worktrees(projectId)) ??
-        [];
+        queryClient.getQueryData<Record<string, Worktree[]>>(
+          workspaceKeys.worktrees(),
+        )?.[projectId] ?? [];
       queryClient.invalidateQueries({ queryKey: workspaceKeys.projects() });
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.worktrees() });
       queryClient.removeQueries({ queryKey: workspaceKeys.branches(projectId) });
-      queryClient.removeQueries({ queryKey: workspaceKeys.worktrees(projectId) });
       for (const w of worktrees) {
         queryClient.removeQueries({ queryKey: workspaceKeys.worktree(w.id) });
         queryClient.removeQueries({ queryKey: workspaceKeys.terminals(w.id) });
@@ -211,7 +227,7 @@ export function useDeleteWorktreeMutation(projectId: MaybeRefOrGetter<string>) {
     onSuccess: (_, worktreeId) => {
       const pid = toValue(projectId);
       queryClient.invalidateQueries({
-        queryKey: workspaceKeys.worktrees(pid),
+        queryKey: workspaceKeys.worktrees(),
       });
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.branches(pid),
