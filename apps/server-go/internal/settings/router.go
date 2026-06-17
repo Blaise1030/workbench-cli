@@ -17,18 +17,27 @@ type NetworkProvider interface {
 	GetURLScheme() string
 	GetLocalHost() string
 	Port() int
+	IsLANMode() bool
+	GetLANIPs() []string
+	GetLANURLs() []string
+	GetCurrentInviteToken() string
+	GetInviteURL() string
 }
 
 // NetworkSettings matches networkSettingsSchema.
 type NetworkSettings struct {
-	Host           string `json:"host"`
-	Port           int    `json:"port"`
-	ProdPort       int    `json:"prodPort"`
-	NonProdPort    int    `json:"nonProdPort"`
-	LocalURL       string `json:"localUrl"`
-	Scheme         string `json:"scheme"`
-	HostsFileLine  string `json:"hostsFileLine"`
-	PendingRestart bool   `json:"pendingRestart"`
+	Host           string   `json:"host"`
+	Port           int      `json:"port"`
+	ProdPort       int      `json:"prodPort"`
+	NonProdPort    int      `json:"nonProdPort"`
+	LocalURL       string   `json:"localUrl"`
+	Scheme         string   `json:"scheme"`
+	HostsFileLine  string   `json:"hostsFileLine"`
+	PendingRestart bool     `json:"pendingRestart"`
+	LANMode        bool     `json:"lanMode"`
+	LANURLs        []string `json:"lanUrls"`
+	LANIPs         []string `json:"lanIps"`
+	InviteURL      string   `json:"inviteUrl"`
 }
 
 func buildNetworkSettings(net NetworkProvider) NetworkSettings {
@@ -44,6 +53,10 @@ func buildNetworkSettings(net NetworkProvider) NetworkSettings {
 		Scheme:         net.GetURLScheme(),
 		HostsFileLine:  fmt.Sprintf("127.0.0.1 %s", saved.Host),
 		PendingRestart: pendingRestart,
+		LANMode:        net.IsLANMode(),
+		LANURLs:        net.GetLANURLs(),
+		LANIPs:         net.GetLANIPs(),
+		InviteURL:      net.GetInviteURL(),
 	}
 }
 

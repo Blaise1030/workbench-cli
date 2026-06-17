@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, provide } from "vue";
-import { useDebounceFn, useLocalStorage } from "@vueuse/core";
+import { useDebounceFn, useLocalStorage, useMediaQuery } from "@vueuse/core";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -38,7 +38,9 @@ provide(workspaceSidebarKey, workspaceSidebar);
 const terminalSessions = createTerminalSessionsStore();
 provide(terminalSessionsKey, terminalSessions);
 
-const sidebarDefaultSize = computed(() => clampWidth(sidebarWidth.value));
+const isMobile = useMediaQuery('(max-width: 768px)');
+
+const sidebarDefaultSize = computed(() => (isMobile.value ? 0 : clampWidth(sidebarWidth.value)));
 
 const persistSidebarWidth = useDebounceFn((width: number) => {
   sidebarWidth.value = clampWidth(width);
@@ -54,7 +56,7 @@ function onLayout(sizes: number[]) {
 </script>
 
 <template>
-  <div class="flex h-screen flex-col">
+  <div class="flex h-dvh min-h-dvh flex-col">
     <ResizablePanelGroup
       direction="horizontal"
       class="min-h-0 flex-1"
@@ -77,7 +79,7 @@ function onLayout(sizes: number[]) {
         />
         <WorkspaceSidebar :active-worktree-id="activeWorktreeId" />
       </ResizablePanel>
-      <ResizableHandle v-show="!workspaceSidebar.isCollapsed.value" with-handle />
+      <ResizableHandle v-show="!isMobile && !workspaceSidebar.isCollapsed.value" with-handle />
       <ResizablePanel :min-size="30" class="flex min-h-0 flex-col">
         <div class="flex h-full min-h-0 flex-1 flex-col">
           <slot />

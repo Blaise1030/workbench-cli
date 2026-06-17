@@ -9,6 +9,7 @@ export interface CliArgs {
   host: string;
   forceHttp: boolean;
   assumeYes: boolean;
+  lan: boolean;
   showHelp: boolean;
 }
 
@@ -21,6 +22,7 @@ Options:
   -p, --port <number>   Port (default: ${DEFAULT_NETWORK_PORT}, or PORT env, or ~/.workbench/config.json)
   --host <hostname>     Local hostname (default: ${DEFAULT_NETWORK_HOST}, or WORKBENCH_HOST env)
   --http, --insecure    Serve HTTP on localhost only (no mkcert)
+  --lan, --expose       Bind on all interfaces and show LAN URLs
   -y, --yes             Install mkcert without prompting if missing
   -h, --help            Show this help
 
@@ -36,6 +38,7 @@ export function parseCliArgs(argv: string[]): CliArgs {
   let host = process.env.WORKBENCH_HOST?.trim() || fileConfig.host;
   let forceHttp = false;
   let assumeYes = false;
+  let lan = false;
   let showHelp = false;
 
   for (let i = 0; i < argv.length; i++) {
@@ -46,6 +49,8 @@ export function parseCliArgs(argv: string[]): CliArgs {
       assumeYes = true;
     } else if (arg === "--http" || arg === "--insecure") {
       forceHttp = true;
+    } else if (arg === "--lan" || arg === "--expose") {
+      lan = true;
     } else if (arg === "--port" || arg === "-p") {
       const next = argv[++i];
       if (!next) throw new Error("Missing value for --port");
@@ -60,7 +65,7 @@ export function parseCliArgs(argv: string[]): CliArgs {
     }
   }
 
-  return { port, host, forceHttp, assumeYes, showHelp };
+  return { port, host, forceHttp, assumeYes, lan, showHelp };
 }
 
 export function printCliHelp(): void {

@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
+import QRCode from "qrcode";
 import { toast } from "vue-sonner";
 import { Input } from "@/components/ui/input";
+import { useQueryClient } from "@tanstack/vue-query";
+import { settingsKeys } from "@/modules/settings/queries/settings";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,8 +40,63 @@ const tlsSetupPrompt = computed(() =>
     : "",
 );
 
+const lanMode = computed(() => networkData.value?.lanMode ?? false);
+const lanUrls = computed(() => networkData.value?.lanUrls ?? []);
+const lanIps = computed(() => networkData.value?.lanIps ?? []);
+const inviteUrl = computed(() => networkData.value?.inviteUrl ?? "");
+const primaryLanUrl = computed(() => lanUrls.value[0] ?? "");
+const qrDataUrl = ref<string>("");
+
+watch(
+  inviteUrl,
+  async (url) => {
+    if (url) {
+      try {
+        // Use the invite URL (contains rotating single-use token) for the QR
+        qrDataUrl.value = await QRCode.toDataURL(url, { margin: 1, width: 160 });
+      } catch {
+        qrDataUrl.value = "";
+      }
+    } else if (lanUrls.value.length > 0) {
+      // fallback to plain LAN URL if no invite token
+      try {
+        qrDataUrl.value = await QRCode.toDataURL(lanUrls.value[0], { margin: 1, width: 160 });
+      } catch {
+        qrDataUrl.value = "";
+      }
+    } else {
+      qrDataUrl.value = "";
+    }
+  },
+  { immediate: true },
+);
+
 const hostInput = ref("");
 const portInput = ref("");
+
+const queryClient = useQueryClient();
+let inviteRefresh: ReturnType<typeof setInterval> | undefined;
+
+watch(
+  lanMode,
+  (active) => {
+    if (inviteRefresh) {
+      clearInterval(inviteRefresh);
+      inviteRefresh = undefined;
+    }
+    if (active) {
+      // Poll for fresh rotating invite token / QR (token changes every ~30s)
+      inviteRefresh = setInterval(() => {
+        queryClient.invalidateQueries({ queryKey: settingsKeys.network() });
+      }, 7000);
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  if (inviteRefresh) clearInterval(inviteRefresh);
+});
 
 watch(
   networkData,
@@ -106,6 +164,15 @@ async function copyTlsSetupPrompt() {
   try {
     await navigator.clipboard.writeText(tlsSetupPrompt.value);
     toast.success("Copied HTTPS setup prompt to clipboard.");
+  } catch {
+    toast.error("Could not copy to clipboard.");
+  }
+}
+
+async function copyLanUrl(url: string) {
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success("Copied LAN URL to clipboard.");
   } catch {
     toast.error("Could not copy to clipboard.");
   }
@@ -228,6 +295,39 @@ async function copyTlsSetupPrompt() {
               :model-value="tlsSetupPrompt"
               class="font-mono text-xs min-h-[120px] resize-none bg-muted pt-10 pr-28"
             />
+          </div>
+        </div>
+
+        <div v-if="lanUrls.length" class="mt-3 border-t pt-3">
+          <div class="mb-2">
+            <div class="font-medium text-sm">LAN access</div>
+            <div class="text-xs text-muted-foreground">
+              Base LAN URLs. For secure access from other devices use the rotating invite link below (token changes every 30s and is single-use).
+            </div>
+          </div>
+
+          <!-- Plain LAN URLs (for reference) -->
+          <div class="flex flex-col gap-2 mb-3">
+            <div v-for="u in lanUrls" :key="u" class="flex items-center gap-2">
+              <code class="flex-1 truncate rounded bg-muted px-2 py-1 text-xs font-mono">{{ u }}</code>
+              <Button variant="outline" size="sm" :disabled="loading" @click="copyLanUrl(u)">Copy</Button>
+            </div>
+          </div>
+
+          <!-- Invite link + QR (recommended for phone) -->
+          <div v-if="inviteUrl" class="space-y-2">
+            <div class="text-xs font-medium">Invite link (rotates every 30s, single-use)</div>
+            <div class="flex items-center gap-2">
+              <code class="flex-1 truncate rounded bg-muted px-2 py-1 text-xs font-mono">{{ inviteUrl }}</code>
+              <Button variant="outline" size="sm" :disabled="loading" @click="copyLanUrl(inviteUrl)">Copy</Button>
+            </div>
+            <div v-if="qrDataUrl" class="mt-2 flex items-start gap-3">
+              <img :src="qrDataUrl" alt="Scan to open on another device" class="rounded border bg-white p-1" />
+              <div class="text-[10px] text-muted-foreground pt-1 leading-tight">
+                Scan with phone camera.<br />
+                Token auto-invalidates after use or 30s.
+              </div>
+            </div>
           </div>
         </div>
 

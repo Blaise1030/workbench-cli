@@ -24,7 +24,7 @@ type AppState struct {
 	WorktreeWatcher *watcher.WorktreeWatcher
 }
 
-func New(port int, host string, forceHTTP bool) (*AppState, error) {
+func New(port int, host string, forceHTTP bool, lanMode bool) (*AppState, error) {
 	storeFile := filepath.Join(config.DataDir(), "settings.json")
 	database, err := db.Open(config.DbPath())
 	if err != nil {
@@ -33,7 +33,7 @@ func New(port int, host string, forceHTTP bool) (*AppState, error) {
 	bus := events.NewBus()
 	return &AppState{
 		Session:         auth.CreateSession(),
-		Lan:             lan.New(port, host, forceHTTP),
+		Lan:             lan.New(port, host, forceHTTP, lanMode),
 		SettingsStore:   settings.NewFileStore(storeFile),
 		DB:              database,
 		EventBus:        bus,

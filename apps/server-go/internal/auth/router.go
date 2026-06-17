@@ -32,12 +32,22 @@ func jsonErr(w http.ResponseWriter, msg string, code int) {
 }
 
 // RegisterRoutes mounts POST /local on the given router sub-path.
-func RegisterRoutes(r chi.Router, session *Session, cookieSecure bool) {
+// tokenValidator, if non-nil, is used to validate a one-time invite token for LAN access.
+func RegisterRoutes(r chi.Router, session *Session, cookieSecure bool, tokenValidator func(string) bool) {
 	r.Post("/local", func(w http.ResponseWriter, r *http.Request) {
-		if !IsLocalRequest(r) {
+		var body struct {
+			Token string `json:"token"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body) // best effort
+
+		if body.Token != "" && tokenValidator != nil && tokenValidator(body.Token) {
+			// token validated and consumed by validator
+		} else if !IsLoopbackAddress(ClientAddress(r)) {
+			// without a valid token, only allow pure localhost (loopback)
 			jsonErr(w, "Forbidden", http.StatusForbidden)
 			return
 		}
+
 		if !session.Active() {
 			session.Activate()
 		}

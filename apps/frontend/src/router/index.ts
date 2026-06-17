@@ -85,9 +85,20 @@ router.beforeEach(async (to, from) => {
     rememberSettingsReturnRoute(from.fullPath);
   }
 
+  const search = new URLSearchParams(window.location.search);
+  const inviteToken = search.get("invite") || search.get("token") || undefined;
+
   try {
-    await ensureLocalAuth();
+    await ensureLocalAuth(inviteToken);
     queryClient.prefetchQuery(networkSettingsQueryOptions());
+
+    // Clean the token from the URL after successful validation (one-time use)
+    if (inviteToken) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("invite");
+      url.searchParams.delete("token");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    }
   } catch {
     // Auth failed (e.g. API down, or dev UI origin not allowed on Go). Skip prefetch.
   }
