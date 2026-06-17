@@ -275,7 +275,7 @@ async function removeAgent(id: string) {
                       readonly
                       :model-value="buildPrompt(agent.id)"
                       class="font-mono text-xs min-h-[180px] resize-none bg-muted"
-                    />                    
+                    />
                   </div>
                 </div>
               </div>
