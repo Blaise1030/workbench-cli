@@ -535,11 +535,6 @@ func buildAgentManifest(a WorkbenchAgent, port int) AgentManifest {
 		Enabled:       a.Hooks.Enabled,
 		NotifyCommand: notifyCmd,
 	}
-	if !a.Hooks.Enabled {
-		manifest.InstallHint = "Enable hooks to generate install commands."
-		return manifest
-	}
-
 	events, ok := builtinHookEvents[a.ID]
 	if !ok {
 		// Custom agent: generate a basic stop → idle + notify hook.
