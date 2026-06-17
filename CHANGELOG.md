@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1](https://github.com/Blaise1030/workbench-cli/compare/v0.8.0...v0.8.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* **agents:** always show install prompt regardless of hooks enabled state ([87b9a5f](https://github.com/Blaise1030/workbench-cli/commit/87b9a5f26ce6325c0d51948b47706b42fc15dea8))
+* **agents:** always show install prompt regardless of hooks enabled state ([f602144](https://github.com/Blaise1030/workbench-cli/commit/f602144c71dc05d249f9a452233e92d3d70d1439))
+
 ## [0.8.0](https://github.com/Blaise1030/workbench-cli/compare/v0.7.1...v0.8.0) (2026-06-13)
 
 
