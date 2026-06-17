@@ -159,7 +159,7 @@ func RegisterRoutes(r *chi.Mux, version string, state *appstate.AppState, cookie
 			})
 
 			r.Route("/auth", func(r chi.Router) {
-				auth.RegisterRoutes(r, state.Session, cookieSecure)
+				auth.RegisterRoutes(r, state.Session, cookieSecure, state.Lan.ValidateAndConsumeInviteToken)
 			})
 
 			r.Route("/settings", func(r chi.Router) {

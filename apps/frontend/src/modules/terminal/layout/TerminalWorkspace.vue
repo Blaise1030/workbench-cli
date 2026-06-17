@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, ref, watch, type ComponentPublicInstance } from "vue";
-import { useDebounceFn } from "@vueuse/core";
+import { useDebounceFn, useMediaQuery } from "@vueuse/core";
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import {
   FolderTreeIcon,
@@ -76,6 +76,8 @@ const router = useRouter();
 const queryClient = useQueryClient();
 const { effectiveTheme } = useAppTheme();
 const sessions = useTerminalSessions();
+const isMobile = useMediaQuery('(max-width: 768px)');
+const effectiveLayoutMode = computed(() => (isMobile.value ? 'page' : layoutMode.value) as 'split' | 'page');
 
 /** Remount only on theme change; terminal switches reuse the instance (see below). */
 const routerViewKey = computed(() => {
@@ -117,7 +119,7 @@ const gitItemIdsRef = ref<string[]>([]);
 provide(contextQueueGitItemIdsKey, gitItemIdsRef);
 
 const effectiveRouteName = computed(() => {
-  if (layoutMode.value !== "split") return route.name;
+  if (effectiveLayoutMode.value !== "split") return route.name;
   if (splitAuxPanel.value === "explorer") return "explorer";
   if (splitAuxPanel.value === "git") return "git";
   return route.name;
@@ -158,13 +160,13 @@ const terminalTabItems = computed(() =>
 );
 
 const isGitVisible = computed(() =>
-  layoutMode.value === "split"
+  effectiveLayoutMode.value === "split"
     ? splitAuxPanel.value === "git"
     : route.name === "git",
 );
 
 const isExplorerVisible = computed(() =>
-  layoutMode.value === "split"
+  effectiveLayoutMode.value === "split"
     ? splitAuxPanel.value === "explorer"
     : route.name === "explorer",
 );
@@ -201,7 +203,7 @@ function onSplitLayout(sizes: number[]) {
 }
 
 const hasPanelContent = computed(() => {
-  if (layoutMode.value === "split") {
+  if (effectiveLayoutMode.value === "split") {
     return terminalTabItems.value.length > 0 || splitAuxPanel.value !== null;
   }
   return (
@@ -212,7 +214,7 @@ const hasPanelContent = computed(() => {
 });
 
 const activeId = computed(() => {
-  if (layoutMode.value === "split") {
+  if (effectiveLayoutMode.value === "split") {
     return activeTerminalId.value;
   }
   if (route.name === "terminal") return route.params.terminalId as string;
@@ -359,7 +361,7 @@ async function addTerminal(choice: AddTerminalChoice = { kind: "shell" }) {
 
 function openAuxPanel(type: "git" | "explorer") {
   panelsState.value = activateWorktreeAuxPanel(panelsState.value, type);
-  if (layoutMode.value === "page") {
+  if (effectiveLayoutMode.value === "page") {
     router.push({
       name: type,
       params: { worktreeId: props.worktreeId },
@@ -416,7 +418,7 @@ function toggleAuxPanel(type: "git" | "explorer") {
     } else {
       panelsState.value = { ...panelsState.value, explorer: false };
     }
-    if (layoutMode.value === "page") {
+    if (effectiveLayoutMode.value === "page") {
       navigateToFirstTerminal();
     }
     return;
@@ -480,7 +482,7 @@ function equalizeSplitPanes() {
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
-    <header v-if="layoutMode === 'page'" class="flex shrink-0 items-stretch bg-sidebar">
+    <header v-if="effectiveLayoutMode === 'page'" class="flex shrink-0 items-stretch bg-sidebar">
       <div
         class="flex aspect-square shrink-0 items-stretch border-e border-border/60"
       >
@@ -587,7 +589,7 @@ function equalizeSplitPanes() {
         </div>
       </div>
       <RouterView
-        v-else-if="layoutMode === 'page'"
+        v-else-if="effectiveLayoutMode === 'page'"
         :key="routerViewKey"
         class="absolute inset-0 border-t"
       />
@@ -681,12 +683,12 @@ function equalizeSplitPanes() {
           />
         </ResizablePanel>
         <ResizableHandle
-          v-if="activeTerminalId && splitAuxPanel"
+          v-if="!isMobile && activeTerminalId && splitAuxPanel"
           with-handle
           @dblclick.prevent="equalizeSplitPanes"
         />
         <ResizablePanel
-          v-if="splitAuxPanel === 'git'"
+          v-if="!isMobile && splitAuxPanel === 'git'"
           id="split-git"
           :min-size="SPLIT_AUX_MIN_SIZE"
           :default-size="splitAuxDefaultSize"
@@ -695,7 +697,7 @@ function equalizeSplitPanes() {
           <GitPanel :worktree-id="worktreeId" class="min-h-0 flex-1" />
         </ResizablePanel>
         <ResizablePanel
-          v-else-if="splitAuxPanel === 'explorer'"
+          v-else-if="!isMobile && splitAuxPanel === 'explorer'"
           id="split-explorer"
           :min-size="SPLIT_AUX_MIN_SIZE"
           :default-size="splitAuxDefaultSize"

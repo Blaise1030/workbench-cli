@@ -34,7 +34,7 @@ func Version() string {
 
 // buildAllowedHosts lists Origin header hosts permitted for state-changing API calls.
 // WORKBENCH_DEV_UI_PORT adds localhost:<port> when Vite proxies /api during dev:go.
-func buildAllowedHosts(port int, host string) []string {
+func buildAllowedHosts(port int, host string, lanIPs []string) []string {
 	portStr := fmt.Sprintf("%d", port)
 	hosts := []string{
 		fmt.Sprintf("localhost:%s", portStr),
@@ -42,6 +42,10 @@ func buildAllowedHosts(port int, host string) []string {
 	}
 	if cfgHost := fmt.Sprintf("%s:%s", host, portStr); cfgHost != hosts[0] && cfgHost != hosts[1] {
 		hosts = append(hosts, cfgHost)
+	}
+	for _, ip := range lanIPs {
+		h := fmt.Sprintf("%s:%s", ip, portStr)
+		hosts = append(hosts, h)
 	}
 	if devPort := strings.TrimSpace(os.Getenv("WORKBENCH_DEV_UI_PORT")); devPort != "" {
 		hosts = append(hosts,
@@ -57,10 +61,11 @@ type Config struct {
 	Host      string
 	ForceHTTP bool
 	AssumeYes bool
+	Lan       bool
 }
 
 func Run(cfg Config) error {
-	state, err := appstate.New(cfg.Port, cfg.Host, cfg.ForceHTTP)
+	state, err := appstate.New(cfg.Port, cfg.Host, cfg.ForceHTTP, cfg.Lan)
 	if err != nil {
 		return fmt.Errorf("init state: %w", err)
 	}
@@ -109,14 +114,23 @@ func Run(cfg Config) error {
 	cookieSecure := !cfg.ForceHTTP
 	r := chi.NewRouter()
 
+	lanIPs := state.Lan.GetLANIPs()
 	openHost := cfg.Host
-	if cfg.ForceHTTP {
+	listenHost := "127.0.0.1"
+	if cfg.Lan {
+		listenHost = "0.0.0.0"
+		if len(lanIPs) > 0 {
+			// Prefer first LAN IP for display when explicitly in lan mode
+			openHost = lanIPs[0]
+		}
+	}
+	if cfg.ForceHTTP && !cfg.Lan {
 		openHost = "127.0.0.1"
 	}
-	allowedHosts := buildAllowedHosts(cfg.Port, cfg.Host)
+	allowedHosts := buildAllowedHosts(cfg.Port, cfg.Host, lanIPs)
 	api.RegisterRoutes(r, version, state, cookieSecure, registry, allowedHosts)
 
-	listenAddr := fmt.Sprintf("127.0.0.1:%d", cfg.Port)
+	listenAddr := fmt.Sprintf("%s:%d", listenHost, cfg.Port)
 
 	ln, err := net.Listen("tcp", listenAddr)
 	if err != nil {
@@ -125,13 +139,17 @@ func Run(cfg Config) error {
 
 	scheme := "http"
 	if !cfg.ForceHTTP {
-		hosts := []string{cfg.Host, "localhost", "127.0.0.1"}
+		hosts := state.Lan.GetTLSHosts()
 		creds, tlsErr := tlsutil.EnsureTLS(hosts, tlsutil.EnsureOptions{
 			AutoInstall: cfg.AssumeYes,
 		})
 		if tlsErr != nil {
 			slog.Warn("TLS setup failed, falling back to HTTP", "err", tlsErr)
-			fmt.Printf("\n  ⚠ Serving over HTTP on localhost only (not encrypted).\n  %s\n\n", tlsErr)
+			if cfg.Lan {
+				fmt.Printf("\n  ⚠ TLS failed; serving over HTTP on LAN (not encrypted).\n  %s\n\n", tlsErr)
+			} else {
+				fmt.Printf("\n  ⚠ Serving over HTTP on localhost only (not encrypted).\n  %s\n\n", tlsErr)
+			}
 		} else {
 			scheme = "https"
 			ln = tls.NewListener(ln, &tls.Config{
@@ -140,7 +158,13 @@ func Run(cfg Config) error {
 		}
 	}
 
-	fmt.Printf("\n  → %s://%s:%d\n\n", scheme, openHost, cfg.Port)
+	fmt.Printf("\n  → %s://%s:%d\n", scheme, openHost, cfg.Port)
+	if cfg.Lan {
+		for _, u := range state.Lan.GetLANURLs() {
+			fmt.Printf("  → %s (LAN)\n", u)
+		}
+	}
+	fmt.Println()
 	slog.Info("workbench-cli started", "url", fmt.Sprintf("%s://%s:%d", scheme, openHost, cfg.Port))
 
 	srv := &http.Server{

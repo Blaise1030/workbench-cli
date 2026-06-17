@@ -34,5 +34,6 @@ func Execute(argv []string) error {
 		Host:      cfg.Host,
 		ForceHTTP: cfg.ForceHTTP,
 		AssumeYes: cfg.AssumeYes,
+		Lan:       cfg.Lan,
 	})
 }

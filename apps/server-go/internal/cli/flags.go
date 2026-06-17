@@ -14,6 +14,7 @@ type Config struct {
 	Host      string
 	ForceHTTP bool
 	AssumeYes bool
+	Lan       bool
 	ShowHelp  bool
 }
 
@@ -27,10 +28,12 @@ Options:
   -p, --port <number>   Port (default: %d, or PORT env, or ~/.workbench/config.json)
   --host <hostname>     Local hostname (default: %s, or WORKBENCH_HOST env)
   --http, --insecure    Serve HTTP on localhost only (no mkcert)
+  --lan, --expose       Bind on all interfaces (0.0.0.0) and show LAN IPs for other devices
   -y, --yes             Install mkcert without prompting if missing
   -h, --help            Show this help
 
 HTTPS uses mkcert for trusted local certificates. HTTP mode skips mkcert.
+--lan serves on the local network (anyone on your WiFi/LAN can reach it).
 Without --yes, the CLI asks before installing mkcert.
 
 Add to /etc/hosts once: 127.0.0.1 %s
@@ -51,7 +54,7 @@ func ParseArgs(argv []string) (Config, error) {
 		host = envHost
 	}
 
-	var forceHTTP, assumeYes, showHelp bool
+	var forceHTTP, assumeYes, lan, showHelp bool
 
 	for i := 0; i < len(argv); i++ {
 		arg := argv[i]
@@ -62,6 +65,8 @@ func ParseArgs(argv []string) (Config, error) {
 			assumeYes = true
 		case "--http", "--insecure":
 			forceHTTP = true
+		case "--lan", "--expose":
+			lan = true
 		case "--port", "-p":
 			i++
 			if i >= len(argv) {
@@ -90,6 +95,7 @@ func ParseArgs(argv []string) (Config, error) {
 		Host:      host,
 		ForceHTTP: forceHTTP,
 		AssumeYes: assumeYes,
+		Lan:       lan,
 		ShowHelp:  showHelp,
 	}, nil
 }
