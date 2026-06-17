@@ -52,10 +52,10 @@ importers:
         version: 5.2.8
       '@hono/node-server':
         specifier: ^1.13.8
-        version: 1.19.14(hono@4.12.23)
+        version: 1.19.14(hono@4.12.25)
       '@hono/zod-validator':
         specifier: ^0.8.0
-        version: 0.8.0(hono@4.12.23)(zod@3.25.76)
+        version: 0.8.0(hono@4.12.25)(zod@3.25.76)
       '@hugeicons/core-free-icons':
         specifier: ^4.1.4
         version: 4.2.0
@@ -150,8 +150,8 @@ importers:
         specifier: ^0.25.12
         version: 0.25.12
       hono:
-        specifier: ^4.7.10
-        version: 4.12.23
+        specifier: ^4.12.25
+        version: 4.12.25
       markdown-it:
         specifier: ^14.2.0
         version: 14.2.0
@@ -3558,8 +3558,8 @@ packages:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
 
-  hono@4.12.23:
-    resolution: {integrity: sha512-eIaZ9qDgu7XV0pxOCrg7/WhnQ6Ivm22UcxhXx/A3dcbqbbYgBEkc6e/J/s7j2tS96zoB0S9VBdLwQNCWwUo4LA==}
+  hono@4.12.25:
+    resolution: {integrity: sha512-2NFaIyNVgJmBs/ecmtGzlmluTFs5cHEWGTdu0t1HBwYzoGXOL5nUQBRMXsXWla5i4KkG//QMzVP88m1+I3fdAQ==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -6377,13 +6377,13 @@ snapshots:
 
   '@fontsource-variable/geist@5.2.9': {}
 
-  '@hono/node-server@1.19.14(hono@4.12.23)':
+  '@hono/node-server@1.19.14(hono@4.12.25)':
     dependencies:
-      hono: 4.12.23
+      hono: 4.12.25
 
-  '@hono/zod-validator@0.8.0(hono@4.12.23)(zod@3.25.76)':
+  '@hono/zod-validator@0.8.0(hono@4.12.25)(zod@3.25.76)':
     dependencies:
-      hono: 4.12.23
+      hono: 4.12.25
       zod: 3.25.76
 
   '@hugeicons/core-free-icons@4.2.0': {}
@@ -6675,7 +6675,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.29.0(zod@3.25.76)':
     dependencies:
-      '@hono/node-server': 1.19.14(hono@4.12.23)
+      '@hono/node-server': 1.19.14(hono@4.12.25)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
@@ -6685,7 +6685,7 @@ snapshots:
       eventsource-parser: 3.1.0
       express: 5.2.1
       express-rate-limit: 8.5.2(express@5.2.1)
-      hono: 4.12.23
+      hono: 4.12.25
       jose: 6.2.3
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -8641,7 +8641,7 @@ snapshots:
 
   he@1.2.0: {}
 
-  hono@4.12.23: {}
+  hono@4.12.25: {}
 
   hookable@5.5.3: {}
 
