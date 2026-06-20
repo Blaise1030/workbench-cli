@@ -6,7 +6,7 @@ require (
 	github.com/coder/websocket v1.8.13
 	github.com/creack/pty v1.1.24
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/chi/v5 v5.2.4
 	github.com/google/uuid v1.6.0
 	modernc.org/sqlite v1.37.1
 )
