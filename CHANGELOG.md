@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/Blaise1030/workbench-cli/compare/v0.8.1...v0.9.0) (2026-07-03)
+
+
+### Features
+
+* LAN mode with rotating single-use 30s invite tokens ([813d324](https://github.com/Blaise1030/workbench-cli/commit/813d324667b9400c7320cfb18105d062a1cb71ef))
+* **lan:** add rotating single-use invite tokens for secure LAN access (30s) ([b022f39](https://github.com/Blaise1030/workbench-cli/commit/b022f3923a075269ef3c616b80790776cac9920c))
+
+
+### Bug Fixes
+
+* **terminal:** suppress input forwarding during scrollback replay ([d64642c](https://github.com/Blaise1030/workbench-cli/commit/d64642cbda9e259538df32cb7fd85d00b0b33f5d))
+* **terminal:** suppress input forwarding during scrollback replay ([defd245](https://github.com/Blaise1030/workbench-cli/commit/defd24573847f0c3d4649d7790ad925006df3f06))
+
 ## [0.8.1](https://github.com/Blaise1030/workbench-cli/compare/v0.8.0...v0.8.1) (2026-06-17)
 
 
