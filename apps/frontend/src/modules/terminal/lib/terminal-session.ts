@@ -33,6 +33,7 @@ export class TerminalSession {
   private disposed = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private hasConnected = false;
+  private replaying = false;
 
   constructor(meta: TerminalSessionMeta) {
     this.id = meta.id;
@@ -132,7 +133,13 @@ export class TerminalSession {
       terminal.reset();
     }
     if (!this.buffer.isEmpty) {
-      terminal.write(this.buffer.snapshot());
+      // ponytail: replayed scrollback can contain old escape-sequence queries
+      // (cursor position, DA, OSC color); xterm answers those via onData even
+      // during replay, so suppress input forwarding until the write completes.
+      this.replaying = true;
+      terminal.write(this.buffer.snapshot(), () => {
+        this.replaying = false;
+      });
     }
     this.sendResize(terminal.cols, terminal.rows);
     terminal.focus();
@@ -143,6 +150,7 @@ export class TerminalSession {
   }
 
   sendInput(data: string) {
+    if (this.replaying) return;
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(data);
     }
