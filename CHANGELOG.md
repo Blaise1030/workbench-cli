@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.1](https://github.com/Blaise1030/workbench-cli/compare/v0.9.0...v0.9.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **deps:** apply Dependabot security patches ([37e1486](https://github.com/Blaise1030/workbench-cli/commit/37e1486fc669197eb9ecb0dcba4cac741f061cc4))
+* **deps:** apply Dependabot security patches ([0700543](https://github.com/Blaise1030/workbench-cli/commit/0700543671cca359e6e5b7790b40b558c77ebfbe))
+* **deps:** regenerate lockfile with pinned pnpm 11.5.2 ([a93271c](https://github.com/Blaise1030/workbench-cli/commit/a93271c7313b6f46963a5607f1cb1587e590a8c4))
+
 ## [0.9.0](https://github.com/Blaise1030/workbench-cli/compare/v0.8.1...v0.9.0) (2026-07-03)
 
 
