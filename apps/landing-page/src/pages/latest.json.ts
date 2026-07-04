@@ -6,12 +6,12 @@ export const GET: APIRoute = async () => {
   if (!latest) {
     return new Response(JSON.stringify({ error: 'no release found' }) + '\n', {
       status: 404,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   }
 
   const manifest = buildManifest(latest.version, latest.tag);
   return new Response(JSON.stringify(manifest, null, 2) + '\n', {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
   });
 };
