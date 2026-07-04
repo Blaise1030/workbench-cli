@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.3](https://github.com/Blaise1030/workbench-cli/compare/v0.9.2...v0.9.3) (2026-07-04)
+
+
+### Bug Fixes
+
+* **frontend:** exclude built-in Shiki themes from production bundle ([531ef8a](https://github.com/Blaise1030/workbench-cli/commit/531ef8acf798c6c6cde841668b4e5989f0341339))
+* **frontend:** exclude built-in Shiki themes from production bundle ([b495683](https://github.com/Blaise1030/workbench-cli/commit/b49568328618c32c104193c7228baaac4e1ec6ae))
+
 ## [0.9.2](https://github.com/Blaise1030/workbench-cli/compare/v0.9.1...v0.9.2) (2026-07-04)
 
 
