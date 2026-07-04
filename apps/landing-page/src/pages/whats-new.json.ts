@@ -64,6 +64,6 @@ export const GET: APIRoute = async () => {
   });
 
   return new Response(JSON.stringify(result, null, 2) + '\n', {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
   });
 };

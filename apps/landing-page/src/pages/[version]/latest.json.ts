@@ -14,6 +14,6 @@ export const GET: APIRoute = ({ params, props }) => {
   const { tag } = props as { tag: string };
   const manifest = buildManifest(version!, tag);
   return new Response(JSON.stringify(manifest, null, 2) + '\n', {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
   });
 };
