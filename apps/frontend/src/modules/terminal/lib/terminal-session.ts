@@ -87,6 +87,13 @@ export class TerminalSession {
       if (report.commandExit === 0 && this.shouldNotifySuccess()) {
         notifyCommandSuccess(this.tabLabel);
       }
+      // ponytail: a foreground program (vim, claude, htop, ...) can enable mouse
+      // tracking and exit without disabling it, leaking SGR mouse codes into the
+      // shell on hover/click. OSC 133 fires the instant control returns to the
+      // prompt, so reset mouse modes there regardless of tab switching.
+      if (report.commandExit !== undefined) {
+        this.terminal?.write("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?1015l");
+      }
     }
     if (changed) this.emitLabel();
   }
@@ -139,7 +146,13 @@ export class TerminalSession {
       this.replaying = true;
       terminal.write(this.buffer.snapshot(), () => {
         this.replaying = false;
+        // ponytail: replayed output may have enabled mouse tracking (e.g. a TUI
+        // that exited without disabling it) without a matching disable further
+        // down; force it off so stray hovers/clicks don't leak SGR mouse codes.
+        terminal.write("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?1015l");
       });
+    } else if (options?.reset) {
+      terminal.write("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?1015l");
     }
     this.sendResize(terminal.cols, terminal.rows);
     terminal.focus();
