@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2](https://github.com/Blaise1030/workbench-cli/compare/v0.9.1...v0.9.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* **terminal:** reset mouse-tracking mode on command exit ([0c4d326](https://github.com/Blaise1030/workbench-cli/commit/0c4d32668b162d7790334c17fbac83fd48c6c98a))
+* **terminal:** reset mouse-tracking mode on command exit ([90c7b25](https://github.com/Blaise1030/workbench-cli/commit/90c7b250cd427d4e21b54f2968a472a1050fd468))
+
 ## [0.9.1](https://github.com/Blaise1030/workbench-cli/compare/v0.9.0...v0.9.1) (2026-07-03)
 
 
