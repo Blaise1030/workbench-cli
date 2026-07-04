@@ -2,66 +2,15 @@
 
 A self-contained developer workbench — single Go binary, frontend embedded.
 
-## CI/CD workflow
+Workbench lets you run coding agents (Claude Code, Codex, Aider, OpenCode, etc.) side by side in the browser, next to the tools you already use for a task — terminals, git worktrees, a file editor, and git diffs, all in one tab. It's a ~20MB Go binary with no Electron and no runtime dependencies; it serves the UI from `localhost` only, so your code never leaves your machine.
 
-```
-Pull Request
-    │
-    ▼
-CI (typecheck + unit tests)
-    │
-    └─ merge to main
-            │
-            ▼
-    Release Please
-    (opens/updates release PR,
-     bumps version, updates CHANGELOG)
-            │
-            └─ release PR merged
-                    │
-                    ▼
-            Release workflow
-            ┌──────────────────────────────┐
-            │ Build Go binaries (4 platforms)│
-            │   linux/amd64                  │
-            │   linux/arm64                  │
-            │   darwin/amd64                 │
-            │   darwin/arm64                 │
-            └──────────┬───────────────────┘
-                       │
-                       ▼
-            Upload tarballs to GitHub Release
-                       │
-                       ▼
-            Deploy landing page to Cloudflare
-            (install manifest updated with new tag)
-```
+Key features:
 
-### Workflows
+- **Parallel git worktrees** with one-click switching, so multiple agents/branches can run at once
+- **Real terminal per worktree** to run any CLI-based coding agent
+- **Built-in file editor** with syntax highlighting
+- **Line-level git diffs** (staged/unstaged) without switching apps
+- **Command palette** for fuzzy-searching commands, files, and worktrees
+- **Agent notifications** when an agent completes or stops
 
-| File | Trigger | Purpose |
-|------|---------|---------|
-| `ci.yml` | PR → `main` | Typecheck + unit tests |
-| `release-please.yml` | Push → `main` | Opens release PRs; dispatches `release-go.yml` when a release is cut |
-| `release-go.yml` | Via `release-please.yml` or `workflow_dispatch` | Builds Go binaries, uploads to GitHub Release, redeploys Cloudflare landing page |
-| `deploy-landing-page.yml` | Push → `main` (landing page paths) | Builds and deploys the Astro landing page to Cloudflare |
-| `preview.yml` | PR from `release-please--*` branch | Builds a dev-versioned binary preview for release PRs |
-
-### Release platforms
-
-| Platform | Asset |
-|----------|-------|
-| `darwin/arm64` | `workbench-cli-macos-aarch64.tar.gz` |
-| `darwin/amd64` | `workbench-cli-macos-x86_64.tar.gz` |
-| `linux/arm64` | `workbench-cli-linux-aarch64.tar.gz` |
-| `linux/amd64` | `workbench-cli-linux-x86_64.tar.gz` |
-
-### Re-running a release manually
-
-If binaries are missing from a GitHub Release (e.g. the pipeline failed mid-run):
-
-```bash
-gh workflow run Release --ref main -f tag=v0.4.3
-```
-
-This re-builds all four platform binaries, re-uploads them to the existing release, and redeploys the Cloudflare landing page with the updated install manifest.
+The frontend is a Vue app (`apps/frontend`) served by a Go server (`apps/server-go`); `apps/cli` and `apps/landing-page` handle the CLI installer and marketing site respectively.
