@@ -8,26 +8,45 @@ import { visualizer } from "rollup-plugin-visualizer";
 const shikiShim = fileURLToPath(new URL("./src/shims/shiki.ts", import.meta.url));
 const shikiWasmShim = fileURLToPath(new URL("./src/shims/shiki-wasm.ts", import.meta.url));
 
-const shikiLangImport = /[/\\]@shikijs[/\\]langs[/\\]([^/\\]+?)(?:\.mjs)?$/;
+const relativeImport = /^\.\.?[/\\]/;
 
-/** Only allowlisted @shikijs/langs/* may be bundled (see pierre-shiki-langs.ts). */
-function allowlistShikiLanguageBundles() {
+/** Excludes non-allowlisted deep imports from a @shikijs/<pkg> package, including
+ * relative imports from within that package's own barrel file (e.g. shiki's full
+ * bundle doing `import("./javascript.mjs")` from inside @shikijs/langs/dist/index.mjs). */
+function excludeShikiSubmodules(pkg: string, isAllowed: (id: string) => boolean) {
+  const deepImport = new RegExp(`(?:^|[/\\\\])@shikijs[/\\\\]${pkg}[/\\\\]([^/\\\\]+?)(?:\\.mjs)?$`);
+  const pkgDir = new RegExp(`(?:^|[/\\\\])@shikijs[/\\\\]${pkg}[/\\\\]`);
+  const excludedId = `\0shiki-${pkg}-excluded`;
   return {
-    name: "allowlist-shiki-language-bundles",
+    name: `allowlist-shiki-${pkg}-bundles`,
     enforce: "pre" as const,
-    resolveId(id: string) {
-      const match = id.match(shikiLangImport);
+    resolveId(id: string, importer?: string) {
+      let match = id.match(deepImport);
+      if (!match && importer && pkgDir.test(importer) && relativeImport.test(id)) {
+        match = id.match(/([^/\\]+?)(?:\.mjs)?$/);
+      }
       if (!match) return null;
-      if (isAllowedShikiLang(match[1]!)) return null;
-      return "\0shiki-lang-excluded";
+      if (isAllowed(match[1]!)) return null;
+      return excludedId;
     },
     load(id: string) {
-      if (id === "\0shiki-lang-excluded") {
+      if (id === excludedId) {
         return "export default { name: \"text\", scopeName: \"source.text\", patterns: [] };";
       }
       return null;
     },
   };
+}
+
+/** Only allowlisted @shikijs/langs/* may be bundled (see pierre-shiki-langs.ts). */
+function allowlistShikiLanguageBundles() {
+  return excludeShikiSubmodules("langs", isAllowedShikiLang);
+}
+
+/** No built-in @shikijs/themes/* are used — the app only registers custom
+ * CSS-variable themes ("pierre-shadcn-dark/light") via @pierre/theme. */
+function allowlistShikiThemeBundles() {
+  return excludeShikiSubmodules("themes", () => false);
 }
 
 const logger = createLogger();
@@ -64,6 +83,7 @@ export default defineConfig({
   plugins: [
     excludeTestFilesFromBuild(),
     allowlistShikiLanguageBundles(),
+    allowlistShikiThemeBundles(),
     vue(),
     tailwindcss(),
     ...(process.env.ANALYZE ? [visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })] : []),
@@ -89,7 +109,7 @@ export default defineConfig({
     : {}),
   worker: {
     format: "es",
-    plugins: () => [allowlistShikiLanguageBundles()],
+    plugins: () => [allowlistShikiLanguageBundles(), allowlistShikiThemeBundles()],
     rollupOptions: {
       output: {
         manualChunks(id) {
