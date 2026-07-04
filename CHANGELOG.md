@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.4](https://github.com/Blaise1030/workbench-cli/compare/v0.9.3...v0.9.4) (2026-07-04)
+
+
+### Bug Fixes
+
+* **landing-page:** add CORS header to version manifest endpoints ([9a55cd2](https://github.com/Blaise1030/workbench-cli/commit/9a55cd2ed03aaa6e6940d5b0bd3528a074d33efa))
+* **landing-page:** add CORS header to version manifest endpoints ([1658ed7](https://github.com/Blaise1030/workbench-cli/commit/1658ed7e5ece93cb0a6394f6464bdb6f749027ef))
+
 ## [0.9.3](https://github.com/Blaise1030/workbench-cli/compare/v0.9.2...v0.9.3) (2026-07-04)
 
 
